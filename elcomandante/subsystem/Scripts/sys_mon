@@ -1,0 +1,53 @@
+#!/bin/bash
+
+CMD_NAME="sysmon";
+CMD_OPTS="-d";
+NAME="system health monitoring";
+SEARCH=$CMD_NAME;
+
+export CLIENTID="`hostname -s`:`basename $0`";
+export INTERVAL_SEC=60;
+
+# find the correct binary for CMD_NAME
+BIN=`find ~/sdvlp/subserver -name $CMD_NAME -type f -executable | head -n 1`
+MONFILE="`dirname $BIN`/monitor_files";
+
+if [ ! -x $BIN ]; then
+	echo "Could not find correct binary: \"$BIN\"";
+	exit 1;
+fi
+export BIN;
+if [ ! -e $MONFILE ]; then
+	echo "cannot find config file for $BIN: $MONFILE does not exist!";
+	exit 1;
+fi
+
+case $1 in
+start)
+	echo "*** starting $NAME ..."
+	source setup_environment
+	cd `dirname $BIN`
+	./`basename $BIN` $CMD_OPTS;
+	;;
+stop)
+	echo "*** stopping $NAME ..."
+	for i in 1 2; do 
+		PID=`ps -eo pid,command | grep "$SEARCH" | grep -v "grep"`;
+		PID=`echo $PID | cut -f1 -d" "`
+		if [[ ! -z "$PID" ]]; then
+			echo "*** killing $NAME (pid $PID)";
+			kill -term $PID || echo "ERROR: Could not send this signal! Check permissions!";
+		else
+			echo "*** could not find pid of process";
+		fi
+	done
+	;;
+status)
+	ps aux | grep "$SEARCH" | grep -v "grep" && echo "*** $NAME running" || echo "*** $NAME NOT running!";
+	;;
+*)
+	echo "usage: $0 {start|stop|status}";
+	;;
+esac;
+
+

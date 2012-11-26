@@ -1,0 +1,36 @@
+#!/bin/sh
+
+ABO=/thpc/data
+
+#echo "looking for thpc directory"
+THPC_DIR=`find ~ -name thpc -type d | head -n 1`
+#echo "found at $THPC_DIR"
+THPC=`find $THPC_DIR -name main | head -n 1`
+#echo "binary found at $THPC"
+
+case $1 in
+start)
+	echo "*** starting thpc background submissions..."
+	source setup_environment
+	nohup sh -c "$THPC 2>&1 >/dev/null | $CLIENT $ABO" &
+	sleep 1; #nohup output.
+	;;
+stop)
+	echo "*** stopping thpc background submissions..."
+	PID=`ps -eo pid,command | grep "$THPC" | grep -v "grep" | grep -v "sh -c" | cut -f1 -d" "`
+	if [[ ! -z "$PID" ]]; then
+		echo "*** killing THPC (pid $PID)";
+		kill -term $PID || echo "ERROR: Could not send this signal! Check permissions!";
+	else
+		echo "*** could not find pid of thpc process";
+	fi
+	;;
+status)
+	ps aux | grep "$THPC" | grep -v "grep" && echo "*** THPC running" || echo "*** THPC not running!";
+	;;
+*)
+	echo "usage: $0 {start|stop|status}";
+	;;
+esac;
+
+

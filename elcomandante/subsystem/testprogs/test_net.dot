@@ -1,0 +1,61 @@
+
+digraph test123 {
+
+	node [shape=ellipse, color=cornsilk3, style=filled];
+	thpc_temp [label="/thpc/temperatre"];
+	thpc_pres [label="/thpc/pressure"];
+	hv_channel1 [label="/hv/channel1"];
+	hv_channel2 [label="/hv/channel2"];
+	relay_control [label="/relais/control"];
+	flowbus_flow1 [label="/flowbus/flow1"];
+	flowbus_flow2 [label="/flowbus/flow2"];
+	flowbus_flow3 [label="/flowbus/flow3"];
+
+
+
+	node [ shape=box, color=dodgerblue2, style=solid ];
+	edge [len=2];	// stretch the drawing a bit for neato
+
+	client [label="client"];
+	relay [label="relay-sc"];
+		relay -> relay_control;
+		relay_control -> relay;
+
+	iSegHV [label="iSeg\nHV-sc"];
+		iSegHV -> hv_channel1;
+		iSegHV -> hv_channel2;
+		hv_channel1 -> iSegHV;
+		hv_channel2 -> iSegHV;
+
+	thpc [label="thpc-sc"];
+		thpc -> thpc_temp;
+		thpc -> thpc_pres;
+
+	flowbus [label="flowbus-sc"];
+		flowbus_flow1 -> flowbus;
+		flowbus_flow2 -> flowbus;
+		flowbus_flow3 -> flowbus;
+		flowbus -> flowbus_flow1;
+		flowbus -> flowbus_flow2;
+		flowbus -> flowbus_flow3;
+
+	control [label="CONTROL", style=filled];
+		control -> relay_control;
+		thpc_temp -> control;
+		thpc_pres -> control;
+		control -> hv_channel1;
+		control -> hv_channel2;
+		hv_channel1 -> control;
+		hv_channel2 -> control;
+		control -> flowbus_flow1;
+		control -> flowbus_flow2;
+		control -> flowbus_flow3;
+		flowbus_flow1 -> control;
+		flowbus_flow2 -> control;
+		flowbus_flow3 -> control;
+	// supplies
+
+
+
+
+}

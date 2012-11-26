@@ -1,0 +1,244 @@
+<html><head><title>Using Magboltz</title><!-- Changed by: Rob Veenhof,  5-Jul-2002 --><!-- Changed by: Stephen Biagi,  5-Jul-2002 --><!-- Changed by: Rob Veenhof, 22-Jul-2002 -->
+
+
+
+
+
+<link href="usage_files/style.css" rel="stylesheet" type="text/css"></head><body>
+<table bgcolor="#ffff99" border="1" cellpadding="0" cellspacing="0" width="100%">
+<tbody><tr align="left">
+<td><a href="http://www.cern.ch/">
+ <img src="usage_files/cern.gif" alt="CERN home page" align="left" border="0" hspace="0" vspace="0">
+ <img src="usage_files/a-rl.gif" alt="CERN home page" align="left" border="0" hspace="0" vspace="0">
+</a>
+<a href="http://consult.cern.ch/">
+ <img src="usage_files/consult.gif" alt="The Consult page" align="left" border="0" hspace="0" vspace="0">
+ <img src="usage_files/a-rl.gif" alt="The Consult page" align="left" border="0" hspace="0" vspace="0">
+</a>
+<a href="http://consult.cern.ch/writeups">
+ <img src="usage_files/writeups.gif" alt="Writeups at CERN" align="left" border="0" hspace="0" vspace="0">
+ <img src="usage_files/a-rl.gif" alt="Writeups at CERN" align="left" border="0" hspace="0" vspace="0">
+</a>
+<a href="http://consult.cern.ch/writeups/magboltz">
+ <img src="usage_files/magboltz.gif" alt="Magboltz" align="left" border="0" hspace="0" vspace="0">
+ <img src="usage_files/a-rl.gif" alt="Magboltz" align="left" border="0" hspace="0" vspace="0">
+</a>
+ <img src="usage_files/Usage.gif" alt="This page" align="left" border="0" hspace="0" vspace="0">
+ <img src="usage_files/r-c.gif" alt="This page" align="left" border="0" hspace="0" vspace="0">
+</td>
+</tr>
+</tbody></table>
+<h1>Using Magboltz</h1>
+<h2>Introduction</h2>
+Calculates drift, diffusion, gain and attachment of electrons in 
+gases with applied electric and magnetic fields at arbitrary angles.
+The common block structure of the results is outlined below.       
+<p>
+LINUX PC version uses DRAND48 double precision random no generator
+(can also use RNDM2 from CERNLIB with the same precision). 
+</p><p>
+The program allows anisotropic elastic and inelastic scattering,
+reference: NIM A 421 (1999) 234-240  
+The gas data base list below shows those x-sections which contain 
+anisotropic scattering data. 
+</p><p>
+PostScript plots of the database x-sections can be obtained on:-
+<a href="http://cern.ch/magboltz/cross">http://cern.ch/magboltz/cross</a>.
+</p><p>
+This version allows spatial gradients to be included in the solution 
+for the Townsend gain and attachment coeficients. 
+The program automatically gives a solution with spatial gradients  
+for both time of flight (TOF), pulsed townsend (PT) and steady state  
+townsend (SST) parameters. 
+The nomenclature is similar to Sakai et al. 
+J.&nbsp;Phys.&nbsp;D10&nbsp;(1977)&nbsp;1035.
+The simulation of avalanche gain detectors at high field requires the
+use of SST Townsend parameters.     
+The program automatically updates the common blocks <code>/CTOWNS/</code> and
+<code>/CTWNER/</code> with the SST parameters if the spatial gradients are 
+greater than: 
+<code>|&nbsp;alpha&nbsp;-&nbsp;attachment&nbsp;|&nbsp;=&nbsp;60/cm</code>
+at NTP.  
+where <code>alpha</code> is the Townsend coefficient and
+<code>attachment</code> the attachment coefficient.
+(For smaller values of 
+<code>|&nbsp;alpha&nbsp;-&nbsp;attachment&nbsp;|&nbsp;&lt;&nbsp;60/cm</code>,
+the change of the gain or attachment is typically less than 
+3&nbsp;% for the solution without spatial gradients). 
+</p><p>
+Estimates of the Penning effect at high field can be obtained by 
+inspection of the detailed collision frequencies for excited states 
+in the gas mixtures. Penning effects can occur between excited states
+in the gas mixture which are higher in energy than the lowest 
+ionisation potential in the mixture.
+Previous results in Argon hydrocarbon mixtures show a transfer 
+efficiency of about 25&nbsp;% from excited states in Argon to ionisation of
+hydrocarbons.
+</p><p>
+The program should always converge to a solution. the error on the 
+integration should scale with the square root of the number of 
+collisions (parameter <code>NMAX</code>).
+The output should always be checked to
+ensure that the number of collisions in the last energy bin is small,
+any value less than  500 should give reasonable systematic errors
+if the number of collisions is greater than 500 then the integration 
+energy range should be increased.  
+</p><p>
+The program is limited in precision by the statistical accuracy
+of the results. It is possible  to obtain a statistical accuracy 
+of better than 0.1&nbsp;% on the drift velocity and 1&nbsp;% on the
+diffusion coeficients in most counting gas mixtures in about    
+30 seconds of computing time on a PC, Alpha or workstation.
+At high field when the Townsend coeficient is included in the spatial
+gradient the computation time may be required to increase to a few 
+minutes.     
+When velocity vectors are small such as the case with small Lorentz
+angles the parameter <code>NMAX</code> will need to be increased to 20
+or more.          
+</p><h2>Geometry</h2>
+The electric field is taken along the z-axis and the 
+magnetic field is taken in the z-x plane at an angle, 
+<code>BTHETA</code>, to the electric field. 
+<p>
+The results of the calculation are loaded into common blocks:
+</p><pre>COMMON/VEL/WX,WY,WZ
+COMMON/VELERR/DWX,DWY,DWZ
+COMMON/DIFLAB/DIFXX,DIFYY,DIFZZ,DIFYZ,DIFXY,DIFXZ
+COMMON/DIFERB/DXXER,DYYER,DZZER,DYZER,DXYER,DXZER
+COMMON/DIFVEL/DIFLN,DIFTR  
+COMMON/DIFERL/DFLER,DFTER
+COMMON/CTOWNS/ALPHA,ATT    
+COMMON/CTWNER/ALPER,ATTER
+</pre>
+Where
+<ul>
+<li><code>WX,WY,WZ</code> are the drift velocity vectors
+</li><li><code>DIFXX,DIFYY,DIFZZ,DIFYZ,DIFXY,DIFXZ</code> are the values 
+of the diffusion tensor in the cartesian coordinate system.
+Note: off-diagonal elements are defined so that the coefficients are equal,
+<code>DIFXY=DIFYX</code>, <code>DIFXZ=DIFZX</code> and
+<code>DIFYZ=DIFZY</code>.
+</li><li><code>DIFLN,DIFTR,DIFXX</code> are the diffusion coefficients in 
+the coordinate system aligned along the drift direction (it is only
+calculated for the case where the magnetic field is at 90° to the
+electric field).
+If there is no magnetic field the values <code>DIFLN</code> and
+<code>DIFTR</code> represent the longitudinal and transverse diffusion.
+</li></ul>
+Output units in common blocks:   
+<ul>
+<li>velocity: cm/sec
+</li><li>diffusion: cm**2/sec
+</li><li><code>ALPHA</code>: 1/cm
+</li><li><code>ATT</code>: 1/cm
+</li><li>calculation errors: % of value.
+</li></ul>
+NB: The observed <code>ALPHA</code> is <code>ALPHA-ATT</code>.
+For magnetic fields <code>ALPHA</code> and <code>ATT</code> are defined
+parallel to the electric field.
+<h2>INPUT CARDS</h2>
+<h3>First card</h3>
+Format: <code>2I10,F10.5</code>,
+variables: <code>NGAS,NMAX,EFINAL</code>
+<ul>
+<li><code>NGAS</code>: number of gases in mixture;
+</li><li><code>NMAX</code>: number of real collisions (multiple of 10**7),
+use a value between 2 and 5 for inelastic gas to obtain 1&nbsp;% accuracy,
+use a value above 10 for better than 0.5&nbsp;% accuracy
+and a value of at least 10 for pure elastic gases like Argon;
+</li><li><code>EFINAL</code>:
+upper limit of the electron energy in electron Volts,
+if <code>EFINAL = 0.0</code>, program automatically calculates upper
+integration energy limit.
+</li></ul>
+<h3>Second card</h3>
+Format: <code>6I5</code>,
+variables: <code>NGAS1,NGAS2,NGAS3,NGAS4,NGAS5,NGAS6</code>
+<ul>
+<li><code>NGAS1</code> etc.: gas number identifiers (between 1 and 80)
+see gas list below for identifying numbers.
+</li></ul>
+<h3>Third card</h3>
+Format: <code>8F10.4</code>,
+variables: <code>FRAC1,FRAC2,FRAC3,FRAC4,FRAC5,FRAC6,TEMP,TORR</code>
+<ul>
+<li><code>FRAC1</code> etc.: percentage fraction of gas1 etc.;
+</li><li><code>TEMP</code>: temperature of gas in centigrade;
+</li><li><code>TORR</code>: pressure of gas in Torr.
+</li></ul>
+<h3>Fourth card</h3>
+Format: <code>6F10.3</code>,
+variables: <code>EFIELD,BMAG,BTHETA</code>
+<ul>
+<li><code>EFIELD</code>: electric field in Volt/cm;
+</li><li><code>BMAG</code>: magnitude of the magnetic field in kilogauss;
+</li><li><code>BTHETA</code>: angle between the electric and magnetic fields
+in degrees.               
+</li></ul>
+<h3>Card 4*N+1</h3>
+Use <code>NGAS=0</code> to terminate correctly.
+<h2>Gas numbers</h2>
+<table border="1" width="90%">
+<tbody><tr><th>Routine</th>
+    <th>Gas</th>
+    <th>Last update</th>
+    <th>Notes</th>
+    <th>Star rating</th></tr>
+<tr><td>GAS1</td> <td>CF<sub>4</sub>       </td><td>2001</td><td>anisotropic scattering     </td><td>5*</td></tr>
+<tr><td>GAS2</td> <td>Argon                </td><td>1997</td><td>&nbsp;                     </td><td>5*</td></tr> 
+<tr><td>GAS3</td> <td>Helium 4             </td><td>1997</td><td>&nbsp;                     </td><td>5*</td></tr> 
+<tr><td>GAS4</td> <td>Helium 3             </td><td>1992</td><td>&nbsp;                     </td><td>5*</td></tr>
+<tr><td>GAS5</td> <td>Neon                 </td><td>1992</td><td>&nbsp;                     </td><td>5*</td></tr>
+<tr><td>GAS6</td> <td>Krypton              </td><td>2001</td><td>&nbsp;                     </td><td>4*</td></tr>
+<tr><td>GAS7</td> <td>Xenon                </td><td>2001</td><td>&nbsp;                     </td><td>4*</td></tr>
+<tr><td>GAS8</td> <td>methane              </td><td>1994</td><td>&nbsp;                     </td><td>5*</td></tr>
+<tr><td>GAS9</td> <td>ethane               </td><td>1999</td><td>&nbsp;                     </td><td>5*</td></tr>
+<tr><td>GAS10</td><td>propane              </td><td>1999</td><td>&nbsp;                     </td><td>4*</td></tr>
+<tr><td>GAS11</td><td>isobutane            </td><td>1999</td><td>&nbsp;                     </td><td>3*</td></tr>
+<tr><td>GAS12</td><td>CO<sub>2</sub>       </td><td>2001</td><td>&nbsp;                     </td><td>5*</td></tr>
+<tr><td>GAS13</td><td>C(CH<sub>3</sub>)<sub>4</sub> neo-pentane</td><td>1995</td><td>&nbsp;                     </td><td>3* </td></tr>
+<tr><td>GAS14</td><td>H<sub>2</sub>0       </td><td>1998</td><td>&nbsp;                     </td><td>3*</td></tr>
+<tr><td>GAS15</td><td>Oxygen               </td><td>1990</td><td>3-body attachment included </td><td>4*</td></tr>
+<tr><td>GAS16</td><td>Nitrogen             </td><td>1985</td><td>Pitchford and Phelps       </td><td>4*</td></tr>
+<tr><td>GAS17</td><td>nitric oxide         </td><td>1995</td><td>attaching gas              </td><td>4*</td></tr>
+<tr><td>GAS18</td><td>nitrous oxide        </td><td>1995</td><td>attaching gas              </td><td>4*</td></tr>
+<tr><td>GAS19</td><td>C<sub>2</sub>H<sub>4</sub> ethene</td><td>1999</td><td>&nbsp;                     </td><td>4*</td></tr>
+<tr><td>GAS20</td><td>C<sub>2</sub>H<sub>2</sub> acetylene</td><td>1992</td><td>&nbsp;                     </td><td>3*</td></tr>
+<tr><td>GAS21</td><td>Hydrogen             </td><td>2001</td><td>&nbsp;                     </td><td>5*</td></tr>
+<tr><td>GAS22</td><td>Deuterium            </td><td>1998</td><td>&nbsp;                     </td><td>5*</td></tr>
+<tr><td>GAS23</td><td>Carbon monoxide      </td><td>1998</td><td>&nbsp;                     </td><td>5*</td></tr>
+<tr><td>GAS24</td><td>methylal             </td><td>1988</td><td>&nbsp;                     </td><td>2*</td></tr>
+<tr><td>GAS25</td><td>DME                  </td><td>1998</td><td>&nbsp;                     </td><td>4*</td></tr>
+<tr><td>GAS26</td><td>Reid step model      </td><td>?   </td><td>anisotropic version        </td><td>-</td></tr>
+<tr><td>GAS27</td><td>Maxwell model        </td><td>?   </td><td>&nbsp;                     </td><td>-</td></tr>
+<tr><td>GAS28</td><td>Reid ramp model      </td><td>?   </td><td>&nbsp;                     </td><td>- </td></tr> 
+<tr><td>GAS29</td><td>C<sub>2</sub>F<sub>6</sub></td><td>1999</td><td>anisotropic                </td><td>4*</td></tr>
+<tr><td>GAS30</td><td>SF<sub>6</sub>       </td><td>?   </td><td>do not use high percentage </td><td>3*</td></tr>
+<tr><td>GAS31</td><td>NH<sub>3</sub> ammonia</td><td>1999</td><td>&nbsp;                     </td><td>3*</td></tr>
+<tr><td>GAS32</td><td>C<sub>3</sub>H<sub>6</sub> propene</td><td>1999</td><td>&nbsp;                     </td><td>4*</td></tr>
+<tr><td>GAS33</td><td>C<sub>3</sub>H<sub>6</sub> cyclopropane</td><td>1999</td><td>&nbsp;                     </td><td>4*</td></tr>
+<tr><td>GAS34</td><td>CH<sub>3</sub>OH methanol</td><td>1999</td><td>&nbsp;                     </td><td>2*</td></tr>
+<tr><td>GAS35</td><td>C<sub>2</sub>H<sub>5</sub>OH ethanol</td><td>1999</td><td>&nbsp;                     </td><td>3*</td></tr>
+<tr><td>GAS36</td><td>C<sub>3</sub>H<sub>7</sub>OH isopropanol</td><td>1999</td><td>&nbsp;                     </td><td>2*</td></tr>
+<tr><td>GAS37</td><td>Cæsium         </td><td>2001</td><td>no dimers                  </td><td>2*</td></tr> 
+<tr><td>GAS38</td><td>Fluorine             </td><td>?   </td><td>Morgan                     </td><td>2*</td></tr>
+<tr><td>GAS39</td><td>CS<sub>2</sub>       </td><td>2001</td><td>ion drift, dark matter     </td><td>2*</td></tr>
+<tr><td>GAS40</td><td>COS                  </td><td>2001</td><td>&nbsp;                     </td><td>2*</td></tr>  
+<tr><td>GAS41</td><td>CD<sub>4</sub>       </td><td>2001</td><td>TPCs in neutron background environment</td><td>3*</td></tr>
+<tr><td>GAS42</td><td>BF<sub>3</sub> Boron trifluoride</td><td>2001</td><td>anisotropic                </td><td>3*</td></tr>
+<tr><td>GAS43</td><td>C<sub>2</sub>HF<sub>5</sub> or C<sub>2</sub>H<sub>2</sub>F<sub>4</sub>      </td><td>?   </td><td>estimated no data, anisotropic</td><td>1*</td></tr>
+<tr><td>GAS44</td><td>Helium 3             </td><td>2002</td><td>anisotropic                </td><td>5*</td></tr>
+<tr><td>GAS45</td><td>Helium 4             </td><td>2002</td><td>anisotropic                </td><td>5*</td></tr>
+<tr><td>GAS46</td><td>Neon                 </td><td>2002</td><td>anisotropic                </td><td>5*</td></tr>
+<tr><td>GAS47</td><td>Argon                </td><td>2002</td><td>anisotropic                </td><td>5*</td></tr>
+<tr><td>GAS48</td><td>Krypton              </td><td>2002</td><td>anisotropic                </td><td>4*</td></tr>
+<tr><td>GAS49</td><td>Xenon                </td><td>2002</td><td>anisotropic                </td><td>4*</td></tr>
+<tr><td>GAS50</td><td>methane              </td><td>2002</td><td>anisotropic                </td><td>5* </td></tr> 
+<tr><td>GAS52-80</td><td>Dummy routines    </td><td>?   </td><td>&nbsp;                     </td><td>-  </td></tr>
+</tbody></table>
+<h3>Author</h3>
+Magboltz has been written by Stephen Biagi,
+<a href="mailto:stephen.biagi@hotmail.co.uk">stephen.biagi@hotmail.co.uk</a>.
+<hr>
+Last updated on 7/9/2006.
+</body></html>

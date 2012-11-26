@@ -1,0 +1,21 @@
+
+new packet_type HVsim (
+	const string "Vset="
+	double	Vset
+	const string ", Vmon="
+	double  Vmon
+	const string "\n"
+);
+
+subscribe HVsim on /script/HVsim;
+waitfor /script/HVsim:HVsim;
+
+while ( /script/HVsim:HVsim:Vset >= 0 ) {
+	send /script/HVsim
+		   "Vset="
+		 . /script/HVsim:HVsim:Vset
+		 . ", Vmon="
+		 . (/script/HVsim:HVsim:Vmon + ( /script/HVsim:HVsim:Vset-/script/HVsim:HVsim:Vmon) / 10)
+		;
+	sleep 1;
+};

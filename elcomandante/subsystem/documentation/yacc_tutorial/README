@@ -1,0 +1,81 @@
+
+=== This Tutorial ===================================================
+
+This tutorial is aimed to facilitate the construction of a parser for
+a newly defined protocol using flex and yacc. Starting from a HOWTO
+on the net, the example is more and more adapted to parse the 'SlowIO
+Protocol' (see subserver technical notes).
+
+- tutorial01
+
+	This code is for a very simple lex/yacc parser as described in
+	http://tldp.org/HOWTO/Lex-YACC-HOWTO-4.html
+
+	It already does the parameter assignment.
+
+- tutorial02
+
+	This code is a miniature version parser of the subservers
+	'SlowIO Protocol'.  It is strongly based on tutorial01, and
+	the limitations of yytype become apparent for the
+	INTEGER/FLOAT type parameters.
+
+	Nevertheless, it's a good idea, to understand this first
+	before going to tut03.
+
+- tutorial03
+
+	This code is a complete parser for the subserver 'SlowIO
+	Protocol'.  It uses a %union type yylval for strtol/strtod
+	results. The makefile and %lexer now contain a lot of
+	debugging output, the corresponding lines are
+	'YACC_OPTS+=--debug' (makefile:14) and 'int yydebug=1;'
+	(grammar.y:5).
+
+	Next steps would be to handle parsing/syntax errors correctly.
+
+- tutorial04
+
+	This code is a complete parser for the subserver 'SlowIO
+	Protocol'.  (except the 'ALL' keyword for channel) The
+	structure was changed to return from yyparse() call after each
+	command was parsed. The value argument for 'set' now takes int
+	and float args. 'exit' and 'debug' commands where added for
+	testing purposes.
+
+- tutorial05
+
+	A small parport access library is added and the appropriate
+	function calls are inserted into the corresponding grammar
+	actions.  Initialization is done in the grammar.y main()
+	function.
+
+- tutorial06
+
+	This example code shows how to create a parser, which is to be
+	loaded into a main program at runtime. It uses the dlopen()
+	and dlsym() functions to open a shared object library and load
+	the parser found therein. Note that the parser has no links to
+	the main program, except for the loaded symbol name (here it
+	is 'yyparse') and may be compiled separately without any
+	knowledge of the main.
+
+- tutorial07
+
+	Short example, how to compile a modular parser with g++
+	instead of gcc.  Care has to be taken with the yywrap, yylex
+	and yydebug definitions used by the lexer and parser from the
+	main.  Also, the order of linkage is important.
+
+
+Comments appreciated!
+
+
+=== Bison Quickref ==================================================
+
+As a quick reference some parts of 
+http://www.gnu.org/software/bison/manual/html_mono/bison.html
+have been copied to this directory.
+
+
+(Dennis Terhorst)

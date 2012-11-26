@@ -1,0 +1,159 @@
+
+
+          PROGRAM MAGBOLTZ 2 VERSION 7.1 
+
+          MONTE CARLO SOLUTION FOR MIXTURE OF  2 GASES.
+     ------------------------------------------------------
+
+       GASES  USED       PERCENTAGE USED 
+
+      ARGON 2002 ISOT       90.0000
+      METHANE 2004          10.0000
+
+
+  GAS TEMPERATURE =  20.0 DEGREES CENTIGRADE.
+  GAS PRESSURE =   760.0 TORR.
+
+  INTEGRATION FROM 0.0 TO    16.00 EV.  IN 2048 STEPS. 
+
+  ELECTRIC FIELD =   3300.0000 VOLTS/CM.
+  MAGNETIC FIELD =     0.0000 KILOGAUSS.
+  ANGLE BETWEEN ELECTRIC AND MAGNETIC FIELD =     0.000 DEGREES.
+  CYCLOTRON FREQ. =   0.000E+00 RADIANS/PICOSECOND
+
+  INITIAL ELECTRON ENERGY =   0.320 EV.
+
+  TOTAL NUMBER OF REAL COLLISIONS =   50000000
+
+  NULL COLLISION FREQUENCY AT  8 EQUALLY SPACED ENERGY INTERVALS (*10**12/SEC)
+      0.874E+01      0.874E+01      0.874E+01      0.874E+01
+      0.874E+01      0.874E+01      0.874E+01      0.874E+01
+
+  REAL COLLISION FREQUENCY AT  8 EQUALLY SPACED ENERGY INTERVALS (*10**12/SEC)
+      0.218E+00      0.120E+01      0.285E+01      0.498E+01
+      0.690E+01      0.817E+01      0.866E+01      0.873E+01
+
+
+    VEL      POS        TIME      ENERGY   COUNT   DIFXX     DIFYY     DIFZZ
+
+    23.08  0.710E-01  0.308E+07   3.2713    50     2825.4    2660.3       0.0
+    23.21  0.142E+00  0.614E+07   3.2806   100     3184.8    3251.9       0.0
+    23.21  0.213E+00  0.920E+07   3.2836   150     3228.0    3052.2     520.2
+    23.25  0.285E+00  0.123E+08   3.2834   200     3070.6    2929.4     487.9
+    23.24  0.356E+00  0.153E+08   3.2820   250     3031.9    2986.9     494.6
+    23.25  0.428E+00  0.184E+08   3.2841   300     3129.7    2965.6     504.3
+    23.25  0.499E+00  0.215E+08   3.2818   350     3127.0    2941.5     503.6
+    23.23  0.571E+00  0.246E+08   3.2808   400     3050.9    2978.3     513.6
+    23.22  0.642E+00  0.276E+08   3.2812   450     3069.1    2964.7     518.3
+    23.25  0.713E+00  0.307E+08   3.2824   500     3066.5    2887.0     521.1
+-----------------------------------------------------------------------------
+-----------------------------------------------------------------------------
+
+  CALCULATED MAX. COLLISION TIME =  36.35 PICOSECONDS.
+
+  NUMBER OF NULL COLLISIONS =  218193461
+  NUMBER OF REAL COLLISIONS =   50000000
+
+  Z DRIFT VELOCITY = 0.2325E+02 MICRONS/NANOSECOND  +-    0.58% 
+  Y DRIFT VELOCITY = 0.0000E+00 MICRONS/NANOSECOND  +-    0.00%
+  X DRIFT VELOCITY = 0.0000E+00 MICRONS/NANOSECOND  +-    0.00%
+
+
+           DIFFUSION IN CM**2/SEC.
+
+
+  TRANSVERSE DIFFUSION   = 0.2977E+04 +-   13.82%
+          =   4.2256 EV. +-   13.84%
+          =  506.057 MICRONS/CENTIMETER**0.5  +-    6.92%
+
+
+  LONGITUDINAL DIFFUSION = 0.5211E+03 +-     6.4%
+          =   0.7396 EV. +-    6.46%
+          =  211.724 MICRONS/CENTIMETER**0.5  +-    3.23%
+
+
+
+  IONISATION RATE /CM.= 0.0000E+00 +/-  0.00 PERCENT.
+  ATTACHMENT RATE /CM.= 0.4205E-01 +/- 57.74 PERCENT.
+
+
+
+  MEAN ELECTRON ENERGY =   3.2824 EV. ERROR =  +-    0.28%
+
+-----------------------------------------------------------------------------
+-----------------------------------------------------------------------------
+
+
+ NUMBER OF COLLISIONS IN FINAL ENERGY BIN =     0.0
+
+      TOTAL COLL. FREQ. = 0.1629E+01 (*10**12)/SEC.
+  INELASTIC COLL. FREQ. = 0.2439E-01 (*10**12)/SEC.
+    ELASTIC COLL. FREQ. = 0.1605E+01 (*10**12)/SEC.
+
+-----------------------------------------------------------------------------
+
+  DETAILED COLLISION FREQUENCIES FOR EACH GAS IN UNITS OF 10**12/SEC. :
+
+
+   ARGON 2002 ISOT
+------------------
+
+
+    ELASTIC       ARGON              0.1290E+01 +-  0.0159 %
+    IONISATION    ELOSS= 15.7        0.0000E+00 +-  0.0000 %
+    ATTACHMENT                       0.0000E+00 +-  0.0000 %
+    EXC S-LEVELS  ELOSS= 11.55       0.9776E-07 +- 57.7350 %
+    EXC P-LEVELS  ELOSS= 13.0        0.0000E+00 +-  0.0000 %
+    EXC D-LEVELS  ELOSS= 14.O        0.0000E+00 +-  0.0000 %
+   METHANE 2004   
+------------------
+
+
+    ELASTIC (ANIS) METHANE           0.3147E+00 +-  0.0322 %
+    IONISATION    ELOSS= 12.99       0.0000E+00 +-  0.0000 %
+    ATTACHMENT                       0.9776E-07 +- 57.7350 %
+    VIB V2+V4     ELOSS= -0.1625     0.2112E-04 +-  3.9284 %
+    VIB V2+V4     ELOSS=  0.1625     0.1186E-01 +-  0.1658 %
+    VIB V1+V3     ELOSS=  0.3743     0.9796E-02 +-  0.1824 %
+    VIB  HAR      ELOSS=  0.544      0.1472E-02 +-  0.4705 %
+    VIB  HAR      ELOSS=  0.736      0.1236E-02 +-  0.5135 %
+    EXC DISOCIATN ELOSS=  9.0        0.1075E-04 +-  5.5048 %
+    EXC DISOCIATN ELOSS= 10.0        0.1890E-05 +- 13.1306 %
+    EXC DISOCIATN ELOSS= 11.0        0.2281E-06 +- 37.7964 %
+    EXC DISOCIATN ELOSS= 11.8        0.0000E+00 +-  0.0000 %
+-----------------------------------------------------------------------------
+
+
+           NORMALISED ENERGY DISTRIBUTION
+      E=  0.250      SPEC= 0.732E-03
+      E=  0.750      SPEC= 0.515E-02
+      E=  1.250      SPEC= 0.148E-01
+      E=  1.750      SPEC= 0.283E-01
+      E=  2.250      SPEC= 0.460E-01
+      E=  2.750      SPEC= 0.667E-01
+      E=  3.250      SPEC= 0.879E-01
+      E=  3.750      SPEC= 0.106E+00
+      E=  4.250      SPEC= 0.118E+00
+      E=  4.750      SPEC= 0.120E+00
+      E=  5.250      SPEC= 0.111E+00
+      E=  5.750      SPEC= 0.930E-01
+      E=  6.250      SPEC= 0.710E-01
+      E=  6.750      SPEC= 0.502E-01
+      E=  7.250      SPEC= 0.333E-01
+      E=  7.750      SPEC= 0.209E-01
+      E=  8.250      SPEC= 0.125E-01
+      E=  8.750      SPEC= 0.718E-02
+      E=  9.250      SPEC= 0.391E-02
+      E=  9.750      SPEC= 0.190E-02
+      E= 10.250      SPEC= 0.942E-03
+      E= 10.750      SPEC= 0.421E-03
+      E= 11.250      SPEC= 0.187E-03
+      E= 11.750      SPEC= 0.725E-04
+      E= 12.250      SPEC= 0.185E-04
+      E= 12.750      SPEC= 0.280E-05
+      E= 13.250      SPEC= 0.120E-06
+      E= 13.750      SPEC= 0.000E+00
+      E= 14.250      SPEC= 0.000E+00
+      E= 14.750      SPEC= 0.000E+00
+      E= 15.250      SPEC= 0.000E+00
+      E= 15.750      SPEC= 0.000E+00

@@ -1,0 +1,32 @@
+<ui version="4.0" >
+ <class>frm_Aboview</class>
+ <widget class="QWidget" name="frm_Aboview" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>353</width>
+    <height>236</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>abo - PKT_TYPE</string>
+  </property>
+  <layout class="QVBoxLayout" >
+   <item>
+    <widget class="QTextBrowser" name="txtShow" >
+     <property name="font" >
+      <font>
+       <family>Courier</family>
+      </font>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLineEdit" name="lineEdit" />
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

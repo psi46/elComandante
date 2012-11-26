@@ -1,0 +1,95 @@
+Data Aquisition Group                                        D. Terhorst
+Technical Note: 003                                          RWTH Aachen
+Category: Informational                                       March 2009
+
+                           NTP Status Protocol
+
+Status of this Memo
+
+   This memo provides information for the Internet community.  This memo
+   does not specify an Internet standard of any kind.  Distribution of
+   this memo is unlimited.
+
+Table of Contents
+
+   1.   Introduction . . . . . . . . . . . . . . . . . . . . . . . .
+   2.   Subserver Architecture . . . . . . . . . . . . . . . . . . .
+   3.   Subserver Packets  . . . . . . . . . . . . . . . . . . . . . 
+   3.1    Packet Types
+   3.2    Usual Packet Transmissions
+
+
+1. Introduction
+
+   The protocol described in this document is intended to be used for
+   monitoring the status of Network Time Protocol [1] servers to assure
+   correct time among the hosts comprising the subsystem network. It is
+   based on the Subserver Protocol [2] to send data messages.
+   
+
+2. Packet Format
+
+   The monitoring program should send packets according to the format
+   described below. A reasonable interval is not less than once a
+   minute, because usually ntp status rarely changes. A more
+   convenient solution might be to check the stratum at a higher rate
+   and only report changes. It should nevertheless be assured to send
+   a packet at least approximately every ten minutes to distinguish
+   between a constant stratum and a failing monitor process.
+
+   Type: PKT_DATA
+   Data: <timestamp> <hostname> <stratum> [svr=<server>] [acc=<acc>ms]
+
+	<timestamp>
+		Unix timestamp of the host sending the packet.
+
+	<hostname>
+		An Identifyer for the host machine being monitored. It
+		should be the name given by the 'hostname' command, or
+		the the first part of it.
+
+	<stratum>
+		The synchronisation level (stratum) of the ntp server
+		on the host machine. Depending on implementation this
+		can be requested with something like
+		# ntpdc -c sysinfo
+		or 
+		# ntpstat
+		If the stratum is indeterminant this field should
+		contain the string "N/A".
+
+	<server>
+		[optional] The name or IP of the server the host is
+		synchronised to.
+		
+	<acc>
+		[optional] The expected accuracy of the host time.
+
+   Different hosts in a given network MAY provide the a different set
+   of arguments, although it might be usefull to have all senders
+   write their packets in the same format.
+
+   The following examples show different valid combinations of the
+   possible arguments. Each line shows the PKT_DATA data part.
+
+	1236166991 host1 3
+	1236166992 host2 N/A
+	1236166997 host3 3 svr=134.130.4.17
+	1236166999 host4 3 acc=56ms
+	1236167021 host5 3 svr=134.130.4.17 acc=56ms
+
+   With the hostname given in each packet, it is possible to have all
+   hosts sending the packets to the same abo. This joins all data into
+   a single stream, which reduces abo count and is more managable.
+   A suggestion for this abo name could be "/system/ntpd_stati".
+
+
+4. References
+
+   [1] Mills, David L., "Network Time Protocol (Version 3) -
+      Specification, Implementation and Analysis", RFC 1305, University
+      of Delaware, March 1992.
+
+   [2] Terhorst, D., "The Subserver Protocol". NOTE 001, DAQ-Group,
+       RWTH-Aachen Germany, III. phys. Institut b, November 2008.
+

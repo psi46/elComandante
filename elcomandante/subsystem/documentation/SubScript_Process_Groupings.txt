@@ -1,0 +1,131 @@
+ PPID   PID  PGID   SID TTY      TPGID STAT   UID   TIME COMMAND
+
+shell running subserver
+ 5781  5782  5782  5782 pts/5     5789 Ss    1000   0:00 /bin/bash
+ 5782  5789  5789  5782 pts/5     5789 S+    1000   0:00  \_ /bin/sh ./subserver.sh start
+ 5789  5790  5789  5782 pts/5     5789 S+    1000   0:00      \_ ./server
+
+ 5774  5775  5775  5775 pts/4     5791 Ss    1000   0:00 /bin/bash
+ 5775  5791  5791  5775 pts/4     5791 S+    1000   0:00  \_ tail -f subserver.log
+
+
+run sleeptest
+ 6000  6001  6001  6001 pts/8    15423 Ss    1000   0:00 /bin/bash
+ 6001 15423 15423  6001 pts/8    15423 S+    1000   0:00  \_ ./subscript
+15423 15433 15423  6001 pts/8    15423 S+    1000   0:00      \_ /bin/sh ./sleepscript.sh
+15433 15434 15423  6001 pts/8    15423 S+    1000   0:00          \_ /bin/sh ./sleepscript.sh
+15434 15439 15423  6001 pts/8    15423 S+    1000   0:00          |   \_ sleep 1
+15433 15436 15423  6001 pts/8    15423 S+    1000   0:00          \_ ./client /sleeptest/info
+
+kill sleeptest
+ PPID   PID  PGID   SID TTY      TPGID STAT   UID   TIME COMMAND
+ 6000  6001  6001  6001 pts/8    15423 Ss    1000   0:00 /bin/bash
+ 6001 15423 15423  6001 pts/8    15423 S+    1000   0:00  \_ ./subscript
+    1 15436 15423  6001 pts/8    15423 S+    1000   0:00 ./client /sleeptest/info
+    1 15434 15423  6001 pts/8    15423 S+    1000   0:00 /bin/sh ./sleepscript.sh
+15434 15473 15423  6001 pts/8    15423 S+    1000   0:00  \_ sleep 1
+
+
+subscript ctrl-c
+ PPID   PID  PGID   SID TTY      TPGID STAT   UID   TIME COMMAND
+ 6000  6001  6001  6001 pts/8     6001 Ss+   1000   0:00 /bin/bash
+
+//
+// with setpgid
+//
+ PPID   PID  PGID   SID TTY      TPGID STAT   UID   TIME COMMAND
+ 6000  6001  6001  6001 pts/8    15676 Ss    1000   0:00 /bin/bash
+ 6001 15676 15676  6001 pts/8    15676 S+    1000   0:00  \_ ./subscript
+
+
+run sleeptest
+ 6000  6001  6001  6001 pts/8    15676 Ss    1000   0:00 /bin/bash
+ 6001 15676 15676  6001 pts/8    15676 S+    1000   0:00  \_ ./subscript
+15676 15679 15679  6001 pts/8    15676 S     1000   0:00      \_ /bin/sh ./sleepscript.sh
+15679 15680 15679  6001 pts/8    15676 S     1000   0:00          \_ /bin/sh ./sleepscript.sh
+15680 15685 15679  6001 pts/8    15676 S     1000   0:00          |   \_ sleep 1
+15679 15681 15679  6001 pts/8    15676 S     1000   0:00          \_ ./client /sleeptest/info
+
+kill sleeptest
+ 6000  6001  6001  6001 pts/8    15676 Ss    1000   0:00 /bin/bash
+ 6001 15676 15676  6001 pts/8    15676 S+    1000   0:00  \_ ./subscript
+    1 15681 15679  6001 pts/8    15676 S     1000   0:00 ./client /sleeptest/info
+    1 15680 15679  6001 pts/8    15676 S     1000   0:00 /bin/sh ./sleepscript.sh
+15680 15711 15679  6001 pts/8    15676 S     1000   0:00  \_ sleep 1
+
+ctrl-c
+ 6000  6001  6001  6001 pts/8     6001 Ss+   1000   0:00 /bin/bash
+    1 15681 15679  6001 pts/8     6001 S     1000   0:00 ./client /sleeptest/info
+    1 15680 15679  6001 pts/8     6001 S     1000   0:00 /bin/sh ./sleepscript.sh
+15680 15757 15679  6001 pts/8     6001 S     1000   0:00  \_ sleep 1
+
+//
+// with setsid
+//
+ 6000  6001  6001  6001 pts/8    16759 Ss    1000   0:00  |   \_ /bin/bash
+ 6001 16759 16759  6001 pts/8    16759 S+    1000   0:00  |       \_ ./subscript
+
+run sleeptest
+ 6000  6001  6001  6001 pts/8    16759 Ss    1000   0:00  |   \_ /bin/bash
+ 6001 16759 16759  6001 pts/8    16759 S+    1000   0:00  |       \_ ./subscript
+16759 16761 16761 16761 ?           -1 Ss    1000   0:00  |           \_ /bin/sh ./sleepscript.sh
+16761 16762 16761 16761 ?           -1 S     1000   0:00  |               \_ /bin/sh ./sleepscript
+16762 16766 16761 16761 ?           -1 S     1000   0:00  |               |   \_ sleep 1
+16761 16763 16761 16761 ?           -1 S     1000   0:00  |               \_ ./client /sleeptest/i
+
+kill sleeptest
+    1 16763 16761 16761 ?           -1 S     1000   0:00 ./client /sleeptest/info
+    1 16762 16761 16761 ?           -1 S     1000   0:00 /bin/sh ./sleepscript.sh
+16762 16782 16761 16761 ?           -1 S     1000   0:00  \_ sleep 1
+
+ 6000  6001  6001  6001 pts/8    16759 Ss    1000   0:00  |   \_ /bin/bash
+ 6001 16759 16759  6001 pts/8    16759 S+    1000   0:00  |       \_ ./subscript
+
+// with setsid and kill(-pid, SIGTERM)
+
+ PPID   PID  PGID   SID TTY      TPGID STAT   UID   TIME COMMAND
+ 6000  6001  6001  6001 pts/8    16899 Ss    1000   0:00  |   \_ /bin/bash
+ 6001 16899 16899  6001 pts/8    16899 S+    1000   0:00  |       \_ ./subscript
+
+run sleeptest
+ 6000  6001  6001  6001 pts/8    16899 Ss    1000   0:00  |   \_ /bin/bash
+ 6001 16899 16899  6001 pts/8    16899 S+    1000   0:00  |       \_ ./subscript
+16899 16901 16901 16901 ?           -1 Ss    1000   0:00  |           \_ /bin/sh ./sleepscript.sh
+16901 16902 16901 16901 ?           -1 S     1000   0:00  |               \_ /bin/sh ./sleepscript
+16902 16915 16901 16901 ?           -1 S     1000   0:00  |               |   \_ sleep 1
+16901 16904 16901 16901 ?           -1 S     1000   0:00  |               \_ ./client /sleeptest/i
+// need to close stdout!!
+
+kill sleeptest
+ 6000  6001  6001  6001 pts/8    16899 Ss    1000   0:00  |   \_ /bin/bash
+ 6001 16899 16899  6001 pts/8    16899 S+    1000   0:00  |       \_ ./subscript
+
+ctrl-c
+ 6000  6001  6001  6001 pts/8     6001 Ss+   1000   0:00  |   \_ /bin/bash
+
+
+run sleeptest
+ 5083  6000  5083  5083 ?           -1 S     1000   0:06  \_ konsole [kdeinit]
+ 6000  6001  6001  6001 pts/8    16955 Ss    1000   0:00  |   \_ /bin/bash
+ 6001 16955 16955  6001 pts/8    16955 S+    1000   0:00  |       \_ ./subscript
+16955 16956 16956 16956 ?           -1 Ss    1000   0:00  |           \_ /bin/sh ./sleepscript.sh
+16956 16957 16956 16956 ?           -1 S     1000   0:00  |               \_ /bin/sh ./sleepscript
+16957 16972 16956 16956 ?           -1 S     1000   0:00  |               |   \_ sleep 1
+16956 16959 16956 16956 ?           -1 S     1000   0:00  |               \_ ./client /sleeptest/i
+
+ctrl-c
+ 6000  6001  6001  6001 pts/8     6001 Ss+   1000   0:00  |   \_ /bin/bash
+
+parsing "ping 46"
+parsing "ping 47"
+parsing "ping 48"
+parsing "ping 49"
+parsing "ping 50"
+parsing "ping 51"
+sending SIGTERM to child process group pgid 16956
+waiting for child pid 16956 to terminate...
+pid 16956 still running
+child pid 16956 terminated. abnormal exit due to signal SIGTERM(15).
+WARNING: DefaultSendname not set and sclient::printf() used!
+printf  1206749536 M   ERR    0                  sleeptest "./sleepscript.sh"
+

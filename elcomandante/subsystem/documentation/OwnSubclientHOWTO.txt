@@ -1,0 +1,20 @@
+/**
+\page OwnSubclientHOWTO Writing an own Subclient
+
+This short HOWTO should provide all information necessary to make the
+subsystem available to your own programs. 
+
+\section secInvolved Classes Involved
+\li sclient
+\li packet_t
+
+\section secScript Using Shell Scripts
+using <TT>./client</TT> with shell scripts.
+
+\section secModes Different Modes of Usage
+
+\subsection secBlocking Synchonous Operation (Blocking Read)
+\subsection secSelect Multiplexed I/O with <TT>select()</TT>
+\subsection secBlocking Asynchonous Operation (Non-Blocking Read)
+
+*/

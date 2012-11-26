@@ -1,0 +1,30 @@
+
+user / interface
+
+bottom:
+> read data streams
+< post set commands
+
+---------------
+calibration and interpretation layer
+top:
+< post out calibrated single data streams or data columns
+> read "set <argno> <value>" commands
+with	<argno> =
+	<value> =
+
+
+bottom:
+> read instrument raw_data streams
+< pass down discalibrated set commands
+
+---------------
+instrument interface layer
+
+top: sclient
+> read "set <argno> <value>" commands
+with	<argno> =
+	<value> =
+< post out raw_data in multi-column mode
+	
+bottom: hardware specific protocol

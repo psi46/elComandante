@@ -1,0 +1,21 @@
+
+	new packet_type protoB ( real number  ... );
+	subscribe protoB on /test/B;
+
+	new proc ptest {
+		waitfor /test/B:protoB;
+		if ( /test/B:protoB:number < 6 ) {
+			pcall testB;
+		}
+	};
+	
+	new proc testB {
+		waitfor /test/B:protoB;
+		while ( /test/B:protoB:number < 42 ) {
+			send /script/out "low B\n";
+			sleep 2;
+		}
+	};
+	
+	ptest;
+	

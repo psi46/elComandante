@@ -1,0 +1,54 @@
+load "DAQ.def";
+
+new packet_type rc_next (
+	const string "next:"
+	string state
+	const string "\n"
+);
+new packet_type rc_state (
+	string state
+	const string ":"
+	string substate
+	const string "\n"
+);
+subscribe rc_state on /runcontrol;
+
+new proc measurement_VDA {
+	subscribe DAQ_done on /control/DAQ;
+	send /control/DAQ PKT_SETDATA "VDA";
+	waitfor /control/DAQ:DAQ_done;
+};
+new proc measurement_VDB {
+	send /runcontrol "VDA : start\n";
+	subscribe DAQ_done on /control/DAQ;
+	send /control/DAQ PKT_SETDATA "VDB";
+	waitfor /control/DAQ:DAQ_done;
+	send /runcontrol "VDA : done\n";
+};
+
+new proc runcontrol {
+	waitfor /runcontrol:rc_state;
+
+	new proc next_measurement {
+		waitfor /runcontrol:rc_next;
+		if ( /runcontrol:rc_next:state == "VDA" ) { send /runcontrol "next: VDB"; break; }
+		if ( /runcontrol:rc_next:state == "VDB" ) { send /runcontrol "next: GAINA"; break; }
+		if ( /runcontrol:rc_next:state == "GAINA" ) { send /runcontrol "next: GAINB"; break; }
+		if ( /runcontrol:rc_next:state == "GAINB" ) { send /runcontrol "next: VDA"; break; }
+		send /runcontrol "next: VDA";  // default
+	};
+
+	while (true) {
+		if ( /runcontrol:rc_next == "VDA" ) { measurement_VDA; };
+		if ( /runcontrol:rc_next == "VDB" ) { measurement_VDB; };
+		if ( /runcontrol:rc_next == "GAINA" ) { measurement_GAINA; };
+		if ( /runcontrol:rc_next == "GAINB" ) { measurement_GAINB; };
+		if ( /runcontrol:rc_next == "PGAINA" ) { measurement_PGAINA; };
+		if ( /runcontrol:rc_next == "PGAINB" ) { measurement_PGAINB; };
+		if ( /runcontrol:rc_next == "TGAINA" ) { measurement_TGAINA; };
+		if ( /runcontrol:rc_next == "TGAINB" ) { measurement_TGAINB; };
+		next_measurement;
+		sleep 1;
+	};
+}
+

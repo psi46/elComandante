@@ -1,0 +1,9 @@
+#!/bin/sh
+
+#echo "looking for sclient..."
+CLIENT=`find ~/sdvlp/subserver -name client | head -n 1`;
+#echo "found CLIENT=$CLIENT";
+
+
+echo "\$SUBSERVER is set to \"$SUBSERVER\"";
+

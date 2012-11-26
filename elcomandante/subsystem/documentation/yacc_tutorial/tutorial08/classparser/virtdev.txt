@@ -1,0 +1,79 @@
+//
+// ideas for grammar of the subscript language
+// Tue Oct 20 17:35:30 CEST 2009 - Dennis Terhorst
+//
+
+
+new packet_type HVproto_voltages (
+	integer timestamp
+	double V1
+	const string "V"
+	double V2
+	const string "V"
+	double V3
+	const string "V"
+	double V4
+	const string "V"
+	const string "\n"
+);
+
+new packet_type HVproto_channeldata (
+	integer timestamp
+	string status
+	string mode
+	double vset
+	const string "Vset"
+	double vmon
+	const string "Vmon"
+	double iset
+	const string "uAtrip"
+	double imon
+	const string "uAmon\n"
+);
+
+subscribe HVproto_channeldata on /equip/HV/channel_00;
+subscribe HVproto_channeldata on /equip/HV/channel_01;
+subscribe HVproto_voltages    on /equip/HV/voltages;
+
+// something like a "virtual device":
+new device fieldcageA (
+	meshvoltage is /equip/HV/channel_00:HVproto_voltages:V1;
+	cathvoltage is /equip/HV/channel_00:HVproto_voltages:V2;
+	field       is /equip/HV/channel_00:HVproto_voltages:V2 - /equip/HV/channel_00:HVproto_voltages:V1;
+	I_balance   is /equip/HV/channel_00:HVproto_channeldata:imon
+			 / (  /equip/HV/channel_00:HVproto_channeldata:imon
+			    + /equip/HV/channel_01:HVproto_channeldata:imon );
+);
+
+if ( fieldcageA.I_balance < 0.05 ) { send /warnings "BAD I-BALANCE! CHAMBER A WILL TRIP!"; };
+
+
+new packet_type adc_status (
+	integer timestamp
+	const string "adc"
+	string status
+	const string "\n"
+);
+
+new packet_type measurement_start (
+	integer timestamp
+	const string "measurement started\n"
+);
+new packet_type measurement_status (
+	integer timestamp
+	const string "measurement"
+	string status
+	const string "\n"
+);
+
+subscribe measurement_status on /control/DAQ;
+subscribe         adc_status on /control/DAQ;
+subscribe measurement_start  on /control/DAQ;	// need to parse packets with all protocols, no stop on first match!
+
+new device DAQ (
+	adc_stat is /control/DAQ:adc_status:status;
+	status   is /control/DAQ:measurement_status:status;
+	starttime is /control/DAQ:measurement_start:timestamp;
+);
+
+

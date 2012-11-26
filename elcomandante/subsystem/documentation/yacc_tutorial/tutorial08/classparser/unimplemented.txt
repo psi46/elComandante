@@ -1,0 +1,18 @@
+
+template <int ERRNO=errno>
+class errno_exception : public general_exception {
+public:
+	errno_exception(std::string newtext="",int errnumber=ERRNO) throw()
+		: general_exception((newtext==""?"":newtext+": ")+strerror(errnumber), errnumber)
+	{ }
+};
+
+
+g++   -g -L/home/t2k_user/lib -lsubsystem -pthread  exception_test.cpp   -o exception_test
+exceptions.h: In instantiation of ‘errno_exception<(* int* __errno_location())>’:
+exception_test.cpp:9:   instantiated from here
+exceptions.h:32: sorry, unimplemented: call_expr cannot be mangled due to a defect in the C++ ABI
+exceptions.h:32: sorry, unimplemented: call_expr cannot be mangled due to a defect in the C++ ABI
+exception_test.cpp:11: sorry, unimplemented: call_expr cannot be mangled due to a defect in the C++ ABI
+exception_test.cpp:11: sorry, unimplemented: call_expr cannot be mangled due to a defect in the C++ ABI
+make: *** [exception_test] Error 1

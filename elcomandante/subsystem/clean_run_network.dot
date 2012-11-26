@@ -1,0 +1,44 @@
+digraph subservices {
+
+	// list of abos
+	node [shape=ellipse, color=cornsilk3, style=filled];
+	abo000 [label=</flowbus/BH1<BR/><FONT POINT-SIZE="10">L-- 1/1 +2</FONT>>];
+	abo001 [label=</thpc/data<BR/><FONT POINT-SIZE="10">L-- 1/1 +4</FONT>>];
+	abo002 [label=</vhs4060n/status<BR/><FONT POINT-SIZE="10">-T- 1/1 +2</FONT>>];
+	abo003 [label=</control<BR/><FONT POINT-SIZE="10">--- 2/3 +5080</FONT>>];
+	abo004 [label=</log<BR/><FONT POINT-SIZE="10">-T- 1/1 +11985</FONT>>];
+	abo005 [label=</vfadc/data<BR/><FONT POINT-SIZE="10">--- 1/1 +2</FONT>>];
+
+	// list of clients and connections
+	node [ shape=box, color=dodgerblue2, style=solid ];
+	edge [len=1.6];   // stretch the drawing a bit for neato
+
+	client000 [label=<thpc_main<BR/><FONT POINT-SIZE="10">134.61.14.174:1032</FONT>>]
+		client000 -> abo001
+		abo001 -> client000
+
+	client001 [label=<../../subserver/software/client<BR/><FONT POINT-SIZE="10">134.61.14.174:1031</FONT>>]
+		client001 -> abo000
+		abo000 -> client001
+
+	client002 [label=<t2k_vfadc<BR/><FONT POINT-SIZE="10">134.61.14.186:32778</FONT>>]
+		client002 -> abo003
+		client002 -> abo004
+		client002 -> abo002
+		client002 -> abo005
+
+	client003 [label=<client<BR/><FONT POINT-SIZE="10">134.61.14.171:1537</FONT>>]
+		client003 -> abo003
+		abo003 -> client003
+
+	client004 [label=<client_logchange<BR/><FONT POINT-SIZE="10">134.61.14.171:1538</FONT>>]
+		abo002 -> client004
+		abo003 -> client004
+
+	client005 [label=<client_logchange<BR/><FONT POINT-SIZE="10">134.61.14.171:1539</FONT>>]
+		abo005 -> client005
+		abo003 -> client005
+
+	client006 [label=<./client<BR/><FONT POINT-SIZE="10">134.61.15.163:59059</FONT>>]
+		abo004 -> client006
+}

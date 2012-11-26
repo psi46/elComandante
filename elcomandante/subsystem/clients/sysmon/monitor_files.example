@@ -1,0 +1,11 @@
+
+# Files on my pc
+#/sys/devices/platform/i2c-9191/9191-0290/temp1_input
+#/sys/devices/platform/i2c-9191/9191-0290/fan2_input
+
+
+# Files on pp3btpc01
+#/sys/devices/platform/fsl-i2c.1/i2c-0/0-0048/temp1_input
+
+
+/proc/loadavg

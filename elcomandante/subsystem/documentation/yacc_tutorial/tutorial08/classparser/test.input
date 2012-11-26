@@ -1,0 +1,33 @@
+#!/home/t2k_user/sdvlp/subscript_parser/classparser/action
+new packet_type protoA (
+	real number
+	const string nl "\n"
+);
+new packet_type protoB (
+	real number
+	const string nl ";\n"
+);
+subscribe protoA on /test/A;
+subscribe protoB on /test/B;
+subscribe protoA on /test/B;
+
+
+new procedure test {
+	echo "\ttest() started";
+	waitfor /test/B:protoB;
+	while ( /test/B:protoB:number < 6) {
+		echo "\ttest() sending";
+		if ( /test/B:protoB:number == 1 ) { break; };
+		send /script/errors "number " . /test/B:protoB:number . " is smaller than 6";
+		sleep 1;
+	};
+	echo "\ttest() exiting";
+};
+
+	echo "defines okay";
+	sleep 10;
+	echo "starting test;";
+	test;
+	echo "test done";
+	sleep 1;
+	echo "end.";

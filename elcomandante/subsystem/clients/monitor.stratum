@@ -1,0 +1,1 @@
+( while true; do echo -e "`date +%s`\t`/usr/sbin/ntpdc -c "sysi" | grep "stratum" | cut -c 23-`"; sleep 15; done; ) | ./txclient /`hostname -s`/ntp/stratum

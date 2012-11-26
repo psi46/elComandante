@@ -1,0 +1,126 @@
+/**
+\mainpage
+
+
+
+\section motivation Motivation
+
+In computerized lab environments you often find various different systems and
+instruments that are connected to different PCs. This makes data taking (or
+the organisation thereof) quite complex, as data arrives at different locations
+at different times and often has to be aggregated manually to analyse
+correlations. On one side, today every computer is equipped with an ethernet
+card providing access to an IP based network which can be used to transport
+data between PCs. On the other side almost all measurement/control programs
+write their data to stdout or simple ASCII files.
+
+In the environment described above you find sensor devices (sources of data),
+control programs and control devices ("data sinks"). A priori one might not
+oversee the whole structure of sinks and sources of data and it can become
+quite inconvenient if one needs to change a whole set of programs, just
+because you have a new idea of algorithm that needs different specific data.
+
+The subserver software aids in data aggregation and run control across
+multiple PCs. Different architectures are supported (x86, ppc) running with a
+Linux OS. There even is a port of the sclient for Windows.
+
+
+
+\section concept Concept
+
+The standard Linux tools provide some powerful filters, editors and scripting
+functionalities which all can be used together by piping the output of one
+command to the input of another or to a file.
+
+\code
+	cat some.data | grep "PEAK" >filtered.data
+\endcode
+
+Besides the commands grep(1), cut(1), sed(1), awk(1), bash(1) (see man pages)
+often own little C/C++ scripts and programs are used for data analysis or
+visualisation (see <A HREF="http://root.cern.ch">root</A>). All these
+interfaces faciliate the Linux/Unix file interfaces, which is exactly where
+the subserver clients attatch.
+
+
+\subsection submodel Subscription Model
+
+Given an arbitrary sensor, it is not known which programs might need the data
+and where in the network the program will run. But in contrast you definitely
+know the meaning of the output data.
+
+Given an arbitrary control or measurement program, it is not initially clear
+where (from which program on which pc) to get the data from, but in contrast
+you will know which data you need for your analysis.
+
+This leads to the <B>subscription model</B> used by the subserver: Every
+sensor submitts data to the server giving a meaningful name. One sensor might
+give the ambient pressure as "/ambient/pressure", another might give ambient
+temperature and humidity as "/ambient/temperature" and "/ambient/humidity",
+other instruments could give monitoring data or measurement values.
+
+Of course, if you start analysing the data you do not want to care about the
+exact location of your data. All you need is the data from the sensor of which
+you know that it is in the lab somewhere. Maybe you want to compare your
+measurement with the ambient pressure, to do so you just need to subscribe the
+"/ambient/pressure" abo from the server. Each time there is an update
+available for an abo you subscribed, the server will immidiately forward the
+packet to you.
+
+
+\subsection subserveroverview The Subscription Server (subserver)
+
+takes abos
+
+\dot
+digraph abo23 {
+
+	subserver [ shape=box, color=dodgerblue2, style=filled ];
+	submission [ shape=box, color=dodgerblue2, style=solid ];
+	subscriber_1 [ shape=box, color=dodgerblue2, style=solid ];
+	subscriber_2 [ shape=box, color=dodgerblue2, style=solid ];
+	subscriber_3 [ shape=box, color=dodgerblue2, style=solid ];
+	subscriber_4 [ shape=box, color=dodgerblue2, style=solid ];
+
+	submission -> subserver -> subscriber_1;
+	subserver -> subscriber_2;
+	subserver -> subscriber_3;
+	subserver -> subscriber_4;
+};
+\enddot
+
+
+
+\section Aims
+
+The subserver architecture is not aimed to become a maximum speed and
+performance DAQ system, but is a simple and easy-to-use slow-control and
+run-control. Especially note the following points:
+
+\li The foreseen time resolution is somewhere near one second
+resolution (without time differences between different system clocks). This
+only applies to the features provided by the subsystem itself. Any
+better resolution is in the responsibility of the abo senders, ofcourse more
+detailed timestamps can be in the packet data area.
+
+\li The system will not be reliable on a packet basis because it uses the user
+datagram protocol (UDP). Stable operation is ensured by periodic
+(re-)transmission of sensor information.
+
+\li Almost no security features are intended to be provided by the subsystem.
+It is assumed that the lab network is properly routed and firewalled to public
+nets and there are no hostile packets coming from hosts inside the lab
+network.
+
+<HR>
+\section sec_toc More Information
+<UL>
+<LI> \ref InstallingHOWTO
+<LI> \ref BasicUsageHOWTO
+<LI> \ref OwnSubclientHOWTO
+<LI> \ref SemanticClassIndex
+<LI> \ref pageReferences
+</UL>
+*/
+
+

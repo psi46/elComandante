@@ -1,0 +1,9 @@
+
+Notes On Usage
+
+If you want to use '-c' option, you should always give it as one of
+the first few parameters, because an unknown option will be forked,
+execed and presumably gives "exec failed: No such file or directory"
+to stderr, which will be the default value for a process named like
+the missinterpreted option.
+

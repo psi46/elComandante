@@ -1,0 +1,10 @@
+
+new packet_type HVsim (
+	const string "Vset="
+	double	Vset
+	const string ", Vmon="
+	double  Vmon
+	const string "\n"
+);
+
+

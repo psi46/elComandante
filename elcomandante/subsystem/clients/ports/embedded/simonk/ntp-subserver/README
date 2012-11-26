@@ -1,0 +1,7 @@
+The smallest subclient ever.
+See http://de.klinkerstein.m-faq.de/index.php/MicroWebServer for further informationon the hardware.
+The software is an extension of the uIP stack for sending subserver packets. 
+
+This embedded server takes the NTP-Clock from 192.168.0.100 and sends the decodes time as an String to /test on 192.168.0.100:12334. The refreh cycle for the Clock can be adjusted in ntpD.h and the subserver packets are send every second. The IP of the client is 192.168.0.93. Even there is a webserver which displays the clock on Port 8080.
+
+All Parameters have to be adjusted via source code.

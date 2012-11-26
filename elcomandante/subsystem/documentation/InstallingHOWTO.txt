@@ -1,0 +1,34 @@
+/**
+\page InstallingHOWTO Installing HOWTO
+
+\section secDownload Download
+
+\todo Download location has to be specified in the Installing-HOWTO
+
+
+\section secCompile Compile
+
+To compile the library you just need to go to the directory you unpacked the
+source code to and type
+\code
+$ make
+\endcode
+
+You can then use all programs you find from that directory
+
+\code
+$ ./server              # start the server with default parameters
+$ ./client /test/asdf   # open a client connection
+
+\endcode
+
+More details about the subsystem usage can be found in the \ref
+BasicUsageHOWTO .
+
+
+To install the library for use
+
+*/
+
+
+

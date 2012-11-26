@@ -1,0 +1,252 @@
+Data Aquisition Group                                        D. Terhorst
+Technical Note: 001                                          RWTH Aachen
+Category: Informational                                    November 2008
+
+                           The Subserver Protocol
+
+Status of this Memo
+
+   This memo provides information for the Internet community.  This memo
+   does not specify an Internet standard of any kind.  Distribution of
+   this memo is unlimited.
+
+Table of Contents
+
+   1.   Introduction . . . . . . . . . . . . . . . . . . . . . . . .
+   1.1  Requirements Terminology
+   2.   Subserver Architecture . . . . . . . . . . . . . . . . . . .
+   3.   Subserver Packets  . . . . . . . . . . . . . . . . . . . . . 
+   3.1    Packet Types
+   3.2    Usual Packet Transmissions
+   4.	References . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+
+1. Introduction
+
+   This protocol is intended to be used for the subsystem service,
+   providing a network based data aquisition scheme and is used for
+   client-server commuinication. It uses IP/UDP packets to provide
+   sensor data and control messages to the networked system components.
+   It is intended to be a light-weight protocol which can be implemented
+   on many differernt platforms, including very limited environments
+   like micro-controllers or embedded systems.
+   
+1.1.  Requirements Terminology
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED",  "MAY", and "OPTIONAL" in this
+   document are to be interpreted as described in BCP 14 / RFC 2119.
+
+2. Subserver Architecture
+
+   The server receives packets on a given port, of which each has a
+   defined type, name and data block. Depending on the type field, the
+   packet it eiter processed internally in the server or forwarded to
+   all clients which have subscribed packets with the corresponding
+   name. Due to the datagram nature of the packets IP/UDP [2] has been
+   chosen for the underlaying transport protocol.
+
+3. Subserver Packets
+
+   The main objective was to keep the packets as small and simple as
+   possible.
+
+   The number fields in the packet header MUST be in network byte order
+   (big-endian) to be interpreted correctly on different platforms.
+   
+   The length of the total packet is restricted to the maximum transfer
+   unit (MTU) defined in the Internet Protocol [1]. Packet fragmentation
+   over lower MTU paths may also need to be considered. The effects
+   arising from large packet sizes, close to the MTU limit or across a
+   fragmentation path, are not covered by this document.
+
+   The packets transmitted from and to the server are defined as
+   follows:
+
+    Pos  Byte   Description
+    0     2     Packet Type (16-bit integer)
+    2     2     Name Length (16-bit integer)
+    4     n-4   Abo Name (C-type string)
+    n     1     String termination char '\0' (0x00)
+    n+1   x	Data (ascii or binary)
+
+
+   Byte  0   1   2   3   4           n
+        +---+---+---+---+---+--   --+---+---+---+--   --+
+        | type  | nlen  | name ...  | 0 | data     ...  |
+        +---+---+---+---+---+--   --+---+---+---+--   --+
+
+
+    type
+
+	The packet type specifies how the packet is to be treated. Valid
+	packet types are:
+	    PKT_MANAGEMENT  
+	    PKT_DATA        
+	    PKT_SUBSCRIBE   
+	    PKT_UNSUBSCRIBE 
+	    PKT_SUPPLY      
+	    PKT_UNSUPPLY    
+	    PKT_CLIENTTERM  
+	    PKT_SERVERTERM  
+	    PKT_SETDATA    
+
+	The preferred default packet type is defined as PKT_DEFAULTTYPE
+	and should be PKT_DATA. The different types are discussed in a
+	following section.
+
+    nlen
+
+	The length of the <name> field in bytes, including the C-type
+	string termination character '\0'. A zero-length name field is
+	allowed, resulting in nlen = 1.
+
+    name + \0
+
+	This identifier SHOULD consists of a series of printable ascii
+	letters and normally names the subscription the packet belongs
+	to. The <name> field is case-sensitive and it is strongly
+	RECOMMENDED to use letters, digits, underscore (_) and slashes
+	(/) only, as the <name> may be used as a filename in some
+	places. Especially the newline characters NL/CR SHOULD NOT be
+	used. The <name> is case-sensitive and the string termination
+	null character following the <name> field MUST allways be
+	present. The null character MAY be used for packet consistency
+	checks.  The name field MAY have zero length (nlen = 1) for some
+	packet types.
+
+    data
+
+	The <data> field may contain any sequence of bytes. The
+	semantics SHALL be defined in a separate note describing the
+	communication type indicated by the <name> field. It is
+	RECOMMENDED to use the ascii representation of the data. If
+	binary data is transmitted it is the responsibility of the
+	source and sink programs to assure correct byte ordering. The
+	data field MAY have zero length. The data field SHOULD NOT be
+	modified by the server.
+
+
+3.1 Packet Types
+
+   PKT_DATA        (type=1)
+
+      This packet type is to be used for normal data transmissions. A
+      packet of this type is forwarded to all subscribers of the <name>
+      given in the packets header. The name field SHOULD NOT be empty
+      for this type of packets, the server MAY discard PKT_DATA with no
+      name.
+      
+   PKT_MANAGEMENT  (type=0)
+
+      Packets of this type are never forwarded by the server. Instead,
+      it evaluates the <data> field and acts as instructed therein. The
+      commands applicable in these packets are defined in a separate
+      note [FIXME]. The <name> field is not used by the server, but may
+      be assigned a function in a future note, thus it SHOULD be left
+      empty.
+
+   PKT_SUBSCRIBE   (type=2)
+
+      To register a subscription, a client needs to send a packet of
+      this type. The <name> field of the packet defines the name of the
+      subscription. The <data> field is not used, but may be assigned a
+      function in a future note, thus it SHOULD be left empty.  A client
+      MAY send multiple packets of this type, of which the <name> field
+      MAY be different. The server should register the client to each
+      <name>d subscription, and must ignore double subscriptions.
+
+   PKT_UNSUBSCRIBE (type=3)
+
+      A client MAY unsubscribe a subscription named by the <name> field
+      with this packet type. The server SHOULD NOT send any more packets
+      with this <name> to the client.  The <data> field is not used, but
+      may be assigned a function in a future note, thus it SHOULD be
+      left empty. Multiple receptions of PKT_UNSUBSCRIBE packets with
+      the same <name> field MUST be ignored by the server.
+
+   PKT_SUPPLY      (type=4)
+
+      A client providing a specifically named subscription MAY announce
+      this to the server by sending a packet of this type. The <name>
+      field SHALL contain the supplied subscription name. The <data>
+      field is not used, but may be assigned a function in a future
+      note, thus it SHOULD be left empty. Multiple receptions of these
+      packets with the same <name> field MUST be ignored by the server.
+
+   PKT_UNSUPPLY    (type=5)
+      
+      If a client ceases to provide packets for a subscription, it MAY
+      announce this to the server by sending a packet of this type. The
+      <name> field SHALL contain the supplied subscription name. The
+      <data> field is not used, but may be assigned a function in a
+      future note, thus it SHOULD be left empty. Multiple receptions of
+      these packets with the same <name> field MUST be ignored by the
+      server.
+
+   PKT_CLIENTTERM  (type=6)
+
+      Before closing the connection to the server a client SHOULD send a
+      packet of this type. The server then MUST unregister the client
+      for any submissions and subscriptions, and should not send any
+      further packets to this client. The <name> and <data> fields are
+      not used,  but may be assigned a function in a future note, thus
+      they SHOULD be left empty.  Multiple receptions of these packets
+      with the same <name> field MUST be ignored by the server.  Packets
+      of this type are never forwarded by the server.
+
+   PKT_SERVERTERM  (type=7)
+
+      A server receiving a packet of this type SHOULD terminate.
+      Security issues suggest, that the server MAY ignore this packet. A
+      detailed discussion has to be covered by a separate note. 
+      
+   PKT_SETDATA     (type=8)
+
+      Packets of this type are forwarded by the server to all suppliers
+      (!) of the subscription with the name given in the <name> field of
+      the packet. These packets SHOULD be used for control messages. The
+      name field SHOULD NOT be empty for this type of packets, the
+      server MAY discard PKT_DATA with no name.
+
+
+3.2 Usual Packet Transmissions
+
+   The clients can send and receive any packet at any time, but ususally a
+   client subscribing data from the server will send packets according to
+   the following list:
+
+		<type>		<name>		<data>
+   1. send PKT_SUBSCRIBE	"somename"	""
+   2. receive many PKT_DATA	"somename"	"somedata"
+      and
+      send many PKT_SETDATA	"somename"	"somedata" (optional)
+   3. send PKT_CLIENTTERM	""		""	(mandatory)
+   4. terminate.
+
+   A client supplying data to the server will usually send packets like
+   the following:
+
+		<type>		<name>		<data>
+   1. send PKT_SUPPLY		"somename"	""	(optional)
+   2. send many PKT_DATA	"somename"	"somedata"
+      and
+      receive many PKT_SETDATA	"somename"	"somedata"
+   3. send PKT_CLIENTTERM	""		""	(mandatory)
+   4. terminate.
+
+   Clients that terminate unexpectedly, not sending PKT_CLIENTTERM
+   packets, will be sent further packets, unless a mechanism for
+   removing dead subscription entries is implemented in the server or a
+   separate client.  This has to be covered in a separate note.
+
+4. References
+
+   [1] Postel, J., "Internet Protocol". STD 005, RFC 791 (see also RFC
+       792, RFC 919, RFC 922, RFC 950, RFC 1112),  USC/Information
+       Sciences Institute, September 1981.
+
+   [2] Postel, J., "User Datagram Protocol" STD 006, RFC 768,
+       USC/Information Sciences Institute, August 1980.
+
+

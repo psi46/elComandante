@@ -1,0 +1,6 @@
+This code is a complete parser for the subserver 'SlowIO Protocol'.
+It uses a %union type yylval for strtol/strtod results. The makefile
+and lexer now contain a lot of debugging output, the corresponding lines
+are 'YACC_OPTS+=--debug' (makefile:14) and 'int yydebug=1;' (grammar.y:5).
+
+Next steps would be to handle parsing/syntax errors correctly.

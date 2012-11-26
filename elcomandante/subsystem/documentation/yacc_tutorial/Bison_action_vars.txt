@@ -1,0 +1,123 @@
+4.4 Special Features for Use in Actions
+
+Here is a table of Bison constructs, variables and macros that are useful in
+actions.
+
+- Variable: $$
+
+	Acts like a variable that contains the semantic value for the
+	grouping made by the current rule. See Actions. 
+
+- Variable: $n
+
+	Acts like a variable that contains the semantic value for the
+	nth component of the current rule. See Actions. 
+
+- Variable: $<typealt>$
+
+	Like $$ but specifies alternative typealt in the union
+	specified by the %union declaration. See Data Types of Values
+	in Actions. 
+
+- Variable: $<typealt>n
+
+	Like $n but specifies alternative typealt in the union
+	specified by the
+	%union declaration. See Data Types of Values in Actions. 
+
+- Macro: YYABORT;
+
+	Return immediately from yyparse, indicating failure. See The
+	Parser Function yyparse. 
+
+- Macro: YYACCEPT;
+
+	Return immediately from yyparse, indicating success. See The
+	Parser Function yyparse. 
+
+- Macro: YYBACKUP (token, value);
+
+	Unshift a token. This macro is allowed only for rules that
+	reduce a single value, and only when there is no look-ahead
+	token. It is also disallowed in GLR parsers. It installs a
+	look-ahead token with token type token and semantic value
+	value; then it discards the value that was going to be reduced
+	by this rule.
+
+	If the macro is used when it is not valid, such as when there
+	is a look-ahead token already, then it reports a syntax error
+	with a message `cannot back up' and performs ordinary error
+	recovery.
+
+	In either case, the rest of the action is not executed. 
+
+- Macro: YYEMPTY
+
+	Value stored in yychar when there is no look-ahead token. 
+
+- Macro: YYEOF
+
+	Value stored in yychar when the look-ahead is the end of the
+	input stream. 
+
+- Macro: YYERROR;
+
+	Cause an immediate syntax error. This statement initiates
+	error recovery just as if the parser itself had detected an
+	error; however, it does not call yyerror, and does not print
+	any message. If you want to print an error message, call
+	yyerror explicitly before the `YYERROR;' statement. See Error
+	Recovery. 
+
+- Macro: YYRECOVERING
+
+	The expression YYRECOVERING () yields 1 when the parser is
+	recovering from a syntax error, and 0 otherwise. See Error
+	Recovery. 
+
+- Variable: yychar
+
+	Variable containing either the look-ahead token, or YYEOF when
+	the look-ahead is the end of the input stream, or YYEMPTY when
+	no look-ahead has been performed so the next token is not yet
+	known. Do not modify yychar in a deferred semantic action (see
+	GLR Semantic Actions). See Look-Ahead Tokens. 
+
+- Macro: yyclearin;
+
+	Discard the current look-ahead token. This is useful primarily
+	in error rules. Do not invoke yyclearin in a deferred semantic
+	action (see GLR Semantic Actions). See Error Recovery. 
+
+- Macro: yyerrok;
+
+	Resume generating error messages immediately for subsequent
+	syntax errors.  This is useful primarily in error rules. See
+	Error Recovery. 
+
+- Variable: yylloc
+
+	Variable containing the look-ahead token location when yychar
+	is not set to YYEMPTY or YYEOF. Do not modify yylloc in a
+	deferred semantic action (see GLR Semantic Actions). See
+	Actions and Locations. 
+
+- Variable: yylval
+
+	Variable containing the look-ahead token semantic value when
+	yychar is not set to YYEMPTY or YYEOF. Do not modify yylval in
+	a deferred semantic action (see GLR Semantic Actions). See
+	Actions. 
+
+- Value: @$
+
+	Acts like a structure variable containing information on the
+	textual location of the grouping made by the current rule. See
+	Tracking Locations. 
+
+- Value: @n
+
+	Acts like a structure variable containing information on the
+	textual location of the nth component of the current rule. See
+	Tracking Locations. 
+

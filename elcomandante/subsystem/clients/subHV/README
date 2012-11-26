@@ -1,0 +1,4 @@
+
+Parser for the 'High Voltage Protocol' (see Notes).
+Only PKT_SETDATA commands are parsed.
+

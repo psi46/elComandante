@@ -1,0 +1,6 @@
+/**
+ * \page pageExampleNet Example Network
+
+\image html visualize_net.png "Example network of a Subserver system."
+*/
+

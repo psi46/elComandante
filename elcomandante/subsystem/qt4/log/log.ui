@@ -1,0 +1,52 @@
+<ui version="4.0" >
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>521</width>
+    <height>301</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>LogView</string>
+  </property>
+  <widget class="QWidget" name="centralwidget" >
+   <widget class="QLineEdit" name="aboname" >
+    <property name="geometry" >
+     <rect>
+      <x>0</x>
+      <y>10</y>
+      <width>241</width>
+      <height>28</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="logoutput" >
+    <property name="geometry" >
+     <rect>
+      <x>0</x>
+      <y>40</y>
+      <width>521</width>
+      <height>261</height>
+     </rect>
+    </property>
+    <property name="frameShadow" >
+     <enum>QFrame::Plain</enum>
+    </property>
+    <property name="undoRedoEnabled" >
+     <bool>false</bool>
+    </property>
+    <property name="lineWrapMode" >
+     <enum>QTextEdit::NoWrap</enum>
+    </property>
+    <property name="readOnly" >
+     <bool>true</bool>
+    </property>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

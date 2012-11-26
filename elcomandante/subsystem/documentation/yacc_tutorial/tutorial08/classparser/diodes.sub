@@ -1,0 +1,9 @@
+load "HV.def";
+
+subscribe HVchannel  on /equip/diode/channel_00;
+subscribe HVchannel  on /equip/diode/channel_01;
+subscribe HVchannel  on /equip/diode/channel_02;
+subscribe HVchannel  on /equip/diode/channel_03;
+subscribe HVvoltages on /equip/diode/voltages;
+echo "subscribed diode channels";
+

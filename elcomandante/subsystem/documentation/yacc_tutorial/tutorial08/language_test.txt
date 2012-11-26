@@ -1,0 +1,184 @@
+
+////////////////////////////////////////////////////////////////////////////////
+// Evaluations
+time		constant current time value as if you typed 1234567890 directly.
+(time)		always the current time, re-evaluated on each call.
+((time))	time at the next received packet with "time" sensation.
+
+
+// suppose unix time-stamp is posted to the "/time" abo every now and then...
+define packet "/time" PKT_DATA { integer("time", "s"); };
+
+// CONDITIONALS
+time > 1234567890	// always true/false (compare of two constant values).
+(time) > 1234567890	// false before 'Sat Feb 14 00:31:30 CET 2009', true after.
+((time)) > 1234567890	// as above, but only evaluated if a "time" packet was received.
+
+
+execute action once after rx
+need rate limit for on clauses?
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+{
+	define packet "/measurement/status" PKT_DATA {
+		int("time",s),
+		string("measurement")
+	}
+	new action hv_control {
+		new action hv_on {
+			send("/hv/control", "on");
+		}
+		on measurement == "running": send("/hv/control", "on");
+		on measurement == "stopped": send("/hv/control", "off");
+	}
+
+	start hv_control;	// immidiate return
+	start pressure_control;	// immidiate return
+	stop 
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////
+{
+
+	new protocol error {
+		test {
+			on (voltage) > 0 : BAD;
+			on (flow) > 0 : BAD;
+			GOOD;
+		}
+		start {
+			stop HV;			// caution: forward definition!!!
+			stop gasflow;
+		}
+		stop {
+			start HV;
+			start gasflow;
+		}
+	}
+
+	// HIGH VOLTAGE CONTROLS
+	define packet "/equip/HV/voltage_1" PKT_DATA {
+		int("time","s", NO_READ_UNIT),
+		double("voltage", "V", NO_WRITE_UNIT),
+		double("set_voltage", "V", NO_WRITE_UNIT),
+		double("current", "A", NO_WRITE_UNIT),
+		double("set_current", "A", NO_WRITE_UNIT)
+	};
+	new protocol HV {
+		test {	// quasi procedure (only immidiate-return functions here)
+			if (voltage) > (set_voltage) - 1  && (voltage) < (set_voltage) + 1: GOOD;
+			if (current) > 20 : enable error;
+			BAD;
+		}
+		start {	// procedure
+			send("/equip/HV/voltage_1", "set on 1", PKT_SETDATA);
+			send("/equip/HV/voltage_1", "set voltage 1 "+(set_voltage), PKT_SETDATA);
+			wait(3);
+		}
+		stop {	// procedure
+			send("/equip/HV/voltage_1", "set off 1", PKT_SETDATA);
+			wait(3);
+		}
+	}
+	
+	// GAS FLOW CONTROLS
+	define packet "/equip/flowbus/flow_1" PKT_DATA {
+		int("time","s", NO_READ_UNIT),			// SAME NAME AS ABOVE!!!
+		double("flow", "l/h", NO_WRITE_UNIT),
+		double("set_flow", "l/h", NO_WRITE_UNIT)
+	};
+	new protocol gasflow {
+		test {
+			if (flow) > (set_flow)+1: BAD;
+			if (flow) < (set_flow)-1: BAD;
+			GOOD;
+		}
+		start {	// procedure
+			send("/equip/flowbus/flow_1", "set on 1", PKT_SETDATA);
+			send("/equip/flowbus/flow_1", "set flow 1 "+(set_flow), PKT_SETDATA);
+			wait(3);
+		}
+		stop {	// procedure
+			send("/equip/flowbus/flow_1", "set off 1", PKT_SETDATA);
+			wait(3);
+		}
+	}
+
+	// uses packet definitions from HV and gasflow	
+	new protocol measurement {
+		test {
+			if (measurement) == "running" : GOOD;
+			BAD;
+		}
+		start {
+			start gasflow;
+			start HV;
+			for measureflow in 1.234,2.345,4.567 do
+				send("/equip/flowbus/flow_1", "set flow 1 "+(measureflow), PKT_SETDATA);
+				wait(1);
+				wait for gasflow good;
+				send("/equip/flowbus/flow_1", "set flow 1 "+(measureflow), PKT_SETDATA);
+				wait for HV good;
+			done;
+		}
+		stop {
+			//stop gasflow;
+			stop HV;
+		}
+	}
+	
+	//procedure
+	new procedure startup
+	open_valve();
+	wait (flow) > 5.0;
+	wait (time) > time + 10;
+	activate hv_on();
+	wait (voltage) == 2000+-1;
+	start();
+	wait (eventcnt) > 1000;
+	stop();
+	activate hv_off();
+}
+
+
+send("/abo/name", "pi" + 3.1416 );	// will send "pi3.1416" as data packet
+send("/abo/name", "pi" , 3.1416 );	// will send "pi 3.1416" as data packet
+send("/abo/name":PKT_DATA, "pi" , 3.1416 );	// will send "pi 3.1416" as data packet
+send("/abo/name":PKT_SETDATA, "pi" , 3.1416 );	// will send "pi 3.1416" as setdata packet
+
+
+
+
+
+
+{
+	on (error)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/ define actions
+action overpressure_handler{
+        send_packet /valves "open 42"
+        send_packet /led "red on"
+        CANCEL
+}
+action trip_handler{
+        send_packet /HV "off"
+        send_packet /led "red blink"
+        CANCEL
+}
+on pressure > 1013+56 do overpressure_handler
+on HV_trip do trip_handler
+request adc_ready
+for $kathode_voltage = 4000, 5000, 6000 do
+        on adc_ready -> set_HV kathode_voltage
+        on abs(HV_Chan1-kathode_voltage) < 2 -> {
+                 adc_start
+                next kathode_voltage
+        }
+}
+////////////////////////////////////////////////////////////////////////////////

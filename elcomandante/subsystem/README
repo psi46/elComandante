@@ -1,0 +1,35 @@
+
+SUBSCRIPTION SERVER/CLIENT
+
+This client server application allows a multiplexed communication between programms.
+A client may provide a named resource to the server, which in turn delivers these
+packets to all clients which have subscribed this resource.
+
+Resource naming is arbitrary, although currently CR and LF are mapped to
+the string terminator '\0'. Due to the underlaying IP/UDP protocol used, the maximum
+namelength plus datalength may not exceed IP MTU limit.
+
+The great flexibility in naming the resources allows for structured naming schemes
+to be used, e.g. depending on the experimental setup like "/lx3btpc03/camac/adc"
+and "/lx3btpc04/flowbus/gas-pressure". By convention one should not use spaces,
+because they will break some scripts.
+
+Clients may identify the server by a default environment variable 'SUBSERVER' or the
+compiled in default value "127.0.0.1:12334", if the client does not explicitly
+specify an address during execution.
+
+Compatibility with most other measurement programms is acieved by interfacing stdin
+and stdout to a resource name with the standard clients. All kinds of line-oriented
+ascii data can just be piped to the client and by this provided to the rest of the
+system. More complex applications may want to include the sclient.h and packet_t.h
+files and send/receive packets directly. The sources of rxclient, txclient and
+client can be used as reference for writing own programs.
+
+The "make lib" command will install a libsubsystem.a and the corresponding headers
+in the directory specified in the makefile. This library can easily be used by other
+programms, without bothering about sub*s source code...
+
+3. Physikalisches Institut (b) der RWTH Aachen
+Dennis Terhorst <terhorst@physik.rwth-aachen.de>
+18.Feb.2008
+

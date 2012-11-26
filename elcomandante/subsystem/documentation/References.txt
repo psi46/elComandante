@@ -1,0 +1,20 @@
+/**
+ * \page pageReferences References
+
+
+\section secRFCs Internet Request For Comments
+Read the following standards for a better understanding of the underlaying
+processes and structures involved:
+\li <A HREF="http://www.faqs.org/rfcs/rfc791.html">RFC791 - Internet Protocol</A>
+\li <A HREF="http://www.faqs.org/rfcs/rfc768.html">RFC768 - User Datagram Protocol</A>
+\li <A HREF="http://www.faqs.org/rfcs/rfc1054.html">RFC1054 - Host extensions for IP multicasting</A>
+\li <A HREF="http://www.faqs.org/rfcs/rfc1075.html">RFC1075 - Distance Vector Multicast Routing Protocol</A>
+\li <A HREF="http://www.faqs.org/rfcs/rfc4605.html">RFC4605 - Internet Group Management Protocol (IGMP) / Multicast</A>
+
+\section secWiki Wikipedia Articles
+\li <A HREF="http://de.wikipedia.org/wiki/Spanning_Tree_Protocol">Wiki: Spanning Tree Protocol</A>
+
+\section secBooks Books
+\li <EM>Linux Unix Systemprogrammierung</EM>, Helmut Herold, Addison Wesley, 200?
+*/
+

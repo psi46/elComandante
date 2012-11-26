@@ -1,0 +1,32 @@
+
+
+
+	new packet_type protoA ( real number  ... );
+	subscribe protoA on /test/A;
+	new proc ptest {
+		waitfor /test/A:protoA;
+		while ( /test/A:protoA:number < 6 ) {
+			send /script/out "small number A\n";
+			sleep 2;
+		}
+	};
+	
+	new packet_type protoB ( real number  ... );
+	new proc testB {
+		subscribe protoB on /test/B;
+		waitfor /test/B:protoB;
+		while ( /test/B:protoB:number < 42 ) {
+			send /script/out "low B\n";
+			sleep 2;
+		}
+	};
+	
+	pcall ptest;
+	pcall testB;
+	waitfor /test/A:protoA;
+	while ( /test/A:protoA:number < 3 ) {
+		send /script/out "very small number A\n";
+		sleep 2;
+	}
+	send /script/out "Hello world";
+	

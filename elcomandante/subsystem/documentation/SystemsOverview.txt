@@ -1,0 +1,25 @@
+\page syspovview Systems Overview
+
+
+\li Bridges and Translations to other protocols
+	\li irc
+	\li http (curl)
+	\li mysql
+	\li subserver
+
+
+\li Clients for Data Sources and Sinks
+	\li pdf
+	\li pdf
+	\li simulation
+	\li sysmon.sclients.sh
+
+\li Clients for Data Management
+	\li aggregator
+	\li configure
+	\li subscript
+	\li watchdog
+	\li Aggregator
+	\li Split
+	\li ...
+

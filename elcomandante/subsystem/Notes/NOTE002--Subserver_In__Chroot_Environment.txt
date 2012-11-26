@@ -1,0 +1,209 @@
+Data Aquisition Group                                    D. Terhorst
+Technical Note: 002                                      RWTH Aachen
+Category: Informational                                 January 2009
+
+          Running a Subserver Inside a Chroot Environment
+
+Status of this Memo
+
+   This memo provides information for the Internet community.  This
+   memo does not specify an Internet standard of any kind.
+   Distribution of this memo is unlimited.
+
+Table of Contents
+
+   1.  Introduction . . . . . . . . . . . . . . . . . . . . . . . .
+   2.  Setting up a chroot environment  . . . . . . . . . . . . . .
+   2.1   Directory structure
+   2.2   File and directory permissions
+   2.3   Mounting the /proc filesystem
+   3.  Running the Subserver  . . . . . . . . . . . . . . . . . . .
+   4.  See also . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+
+1. Introduction
+
+   This file describes how to run the subserver process in a chroot
+   jail.  Normally a process is run in a chroot environment to
+   protect the system from malicous behaviour of the process or what
+   it has become after an malicious attac. But also for many other
+   reasons it makes perfect sense to run the subserver in such an
+   environment.
+
+   By setting up a clearly arranged environment, in which the server
+   process will be running, you have complete conrtrol of the server
+   configuration, storage locations and logfile quota, accessible
+   files, etc.
+
+   NOTE: This description is for a Linux environment only. And you
+   need priviledged (root) access to the machine for this setup.
+
+
+2. Setting up a chroot environment
+
+   DISCLAIMER:
+	For the remainder of this document you are frequently using
+	root privileges. Bare in mind, that this is very dangerous!
+	You need to be VERY CLEAR about your what you are doing! Be
+	sure to manipulate files inside the chroot directory only, a
+	mistyped 'rm -rf /bin' will have desasterous consequences if
+	'rm -rf bin' was what you intended...
+
+	I can not take any responsibility whatsoever for anything
+	good or bad resulting from the information contained in this
+	document. If you wreck your system you are on your own,
+	sorry.
+
+2.1 Directory structure
+
+   The file subserver_root.tar.gz contains a complete environment for
+   the subserver and a limited shell for scripting. The archive
+   contains the standard linux directories needed for the complete
+   operation of the server.  To unpack the file with the correct file
+   ownerships and permissions you need to have root privileges.
+   (Also, if you are not on a Linux machine, this will probably give
+   some strange results)
+
+	sudo tar -xvzpf subserver_root.tar.gz --same-owner
+
+   First you should now check if all files have successfully been
+   created. The dev/ directory created should contain a device node
+   called 'null'. If the mknod command from tar failed, you need to
+   create that node by hand. First look at dev/
+
+	# cd subserver_root
+	# ls -lsia dev/
+	total 0
+	58755 0 drwxr-xr-x  2 root root   55 Jan 28 14:28 .
+	58738 0 drwxr-xr-x 10 root root  247 Jan 28 15:26 ..
+	58759 0 crw-rw-rw-  1 root root 1, 3 Jan 28 14:28 null
+
+   If you do not find this file, you have to create it with the mknod
+   command (which needs priviledges):
+
+	# sudo mknod dev/null c 1 3
+
+2.2 File and directory permissions
+
+   Now you need to choose an unprivileged user:group as which the
+   server will run later. Check the ownership of the following files:
+
+	# ls -ld bin/server DATA var/tmp var/log/*
+	drwxr-xr-x 2 dennis users    35 Jan 28 14:12 DATA
+	-rwsr-sr-x 1 dennis users 65073 Jan 28 14:12 bin/server
+	-rw-r--r-- 1 dennis users   581 Jan 28 17:10 var/log/server.stderr
+	-rw-r--r-- 1 dennis users     0 Jan 28 14:48 var/log/server.stdout
+	drwxrwxrwt 2 root   root     35 Jan 28 17:10 var/tmp
+
+   As you can see, I chose dennis:users for this example :) All other
+   files should still be owned by root:root and only those in bin/
+   and lib/ should have execute permission! -- I will now go through
+   the above list in detail.
+
+   DATA/
+
+	This directory must be writable by the server for the
+	server-side logging to work.
+
+   bin/server
+
+	The server executable is owned by the unprivileged user:group
+	and has set-uid and set-gid bits set ('s' instead of 'x' for
+	user and group).  This will drop root privileges if the
+	server is started. If the permissions are wrong, try
+	something like
+
+	# chmod ug+s bin/server
+
+   var/log/server.*
+
+	These files will be used for stdout and stderr redirection of
+	the server, thus must be writable. Actually the server will
+	open these files inside the chroot-/ directory, but i've
+	placed symlinks there to have them in a more familiar
+	location.  If these files do not exist, you need to touch and
+	chown them, because the server is not allowed to write in
+	var/log without privileges.
+
+	# touch var/log/server.stderr var/log/server.stdout
+	# chown dennis:users var/log/server.stderr var/log/server.stdout
+
+   var/tmp
+
+	A globally writable temp directory is used by the server to
+	store its process ID (lock file). The permissions are the
+	standard permissions for a tmp directory.
+
+	# chmod a+rwx var/tmp
+	# chmod o+t var/tmp
+
+
+2.3 Mounting the /proc filesystem
+
+   At last you need to mount the /proc directory. This needs to be
+   accessible from within the chroot environment. You can either
+   mount it directly using something like
+
+   	# mount -t proc proc /path/to/subserver_root/proc
+
+   or you can bind it to the system /proc by
+
+   	# mount -o bind /proc /path/to/subserver_root/proc
+
+   Refer to the mount(8) manpage for details about the differences of
+   these options. After this mount, the proc directory in your chroot
+   should have almost the same files as your system /proc.
+
+   Note that in contrast to file ownership and permissions, this
+   mount is not permanent and has to be mounted again after the next
+   reboot. (If you have the root password, you hopefully know how to
+   do this and the purpose of fstab(5).)
+   	
+
+3. Running the Subserver
+
+   If all these files and their permissions are correct and proc is
+   mouned, you can run the subserver in the chroot environment. Be
+   root inside the chroot directory and try
+
+	chroot . /etc/init.d/subserver start
+	*** starting subsystem service...
+	                                 ... [ OK ]
+
+   Of course, you can do this from any directory, if you specify the
+   /path/to/subserver_root instead of '.' after the chroot command.
+   But for now just stick to this.
+
+   If you want to check the status of the subserver inside it's
+   little world, you can give the 'status' keyword to the init
+   script. The output should be quite self-explanatory, for example
+   the following states, that you forgot to mount proc/ (See Section
+   2.3) and the server is not running.
+
+	# chroot . /etc/init.d/subserver status
+	*** Subsystem Status
+	PID-file: n/a
+	Error, do this: mount -t proc proc /proc
+	Process:   not found with name "server"
+	***
+
+   Finally, if you want to shut down the server, you just do the same
+   with 'stop':
+
+	# chroot . /etc/init.d/subserver stop
+	*** stopping subsystem service... (pid 11607)
+	                                 ... [ OK ]
+
+   This will kill the server process such that it correctly deletes
+   its lock file.
+
+
+
+4. See also
+
+   For further information take a close look at the corresponding
+   manpages: tar(1), bash(1), chroot(1), chroot(2), mknod(1), chown(1),
+   path_resolution(7), mount(8)
+
+
+

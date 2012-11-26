@@ -1,0 +1,215 @@
+Data Aquisition Group                                        D. Terhorst
+Technical Note: nnn                                                 RWTH
+Category: Informational                                       March 2009
+
+                         Process Control Protocol
+
+Status of this Memo
+
+   This memo provides information for the Internet community.  This memo
+   does not specify an Internet standard of any kind.  Distribution of
+   this memo is unlimited.
+
+Table of Contents
+
+   1.   Introduction . . . . . . . . . . . . . . . . . . . . . . . .
+   2.   Constant Values  . . . . . . . . . . . . . . . . . . . . . .
+   3.   Packet types . . . . . . . . . . . . . . . . . . . . . . . .
+   3.1    Parent Info Messages
+   3.2    Child Status Messages
+   4.	References . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+
+1. Introduction
+
+   To be able to control processes on different hosts through a common
+   interface, this protocol defines the format of process status
+   information provided by a parent program. It is based on the
+   Subserver Protocol [1].
+
+
+2. Constant Values
+
+   A parent program should give information about its children to a
+   global channel, enabling multiple parents to start and stop
+   programms simultaniously.
+
+	#define SCRIPT_ABO "/process/stati"
+
+   The child-processes standard i/o is to be redirected to subserver
+   abos, which follow a common naming convention: A common prefix is
+   prepended to the "host:process" names and the streamname is
+   appended after another "/".
+
+	// processes stdio redirection prefixes
+	#define DEFAULT_IN_PREF "/process/"
+	#define DEFAULT_OUT_PREF "/process/"
+	#define DEFAULT_ERR_PREF "/process/"
+
+   As an example a process temp_mon running on hostA should be
+   connected to the following abos:
+
+	/process/hostA:temp_mon/stdin
+	/process/hostA:temp_mon/stdout
+	/process/hostA:temp_mon/stderr
+
+   Alternatively the stderr outputs of all processes can be redirected
+   to the same abo, which then gives an easy way to check the system
+   for any errors.
+
+	// common stderr redirect
+	#define DEFAULT_ERR "/process/errors"
+
+   A process should send a childs stderr either to the process
+   specific stderr (if the process is quite verbose on its stderr) or
+   to the global error console, but not both.
+
+
+3. Packet Formats
+   
+   The basic packet format specifies a timestamp, a process identifier
+   and a comma separated list of name=value pairs.
+
+   Type: PKT_DATA
+   Data: <timestamp> <id> > name1=valueA[, name2=valueB] ...
+
+	<timestamp>
+		A unix timestamp in "seconds since epoch".
+
+	<id>
+		Name and host of the process, to uniquely identify it
+		in the subsystem network.
+
+	nameN=valueN
+		Names should be without spaces and its recommended to use
+		normal characters (7bit ascii) only, to avoid charset problems.
+		Values may either be in numerical or text format. Numerical
+		values can be in floating point or integer representation, text
+		may be a single word without special chars, or multiple words
+		enclosed in single quotes (').
+
+3.1 Parent Info Messages
+
+   These packets are always sent to the common script status channel.
+
+   Type: PKT_DATA
+   Data: <timestamp> <id> > info='<message>'
+
+   A corresponding printf call would look like this:
+	me.printf("%ld %s > info='could not write to childs stdin!'",
+		  time(NULL), child.clientid );
+	me.printf("%ld %s > info='parent has %d unknown read-ready fds.'\n",
+		  time(NULL), child.clientid, readyfds );
+
+   Some messages might be:
+	'could not write to childs stdin!'
+	'parent has %d unknown read-ready fds.' (prog error)
+
+
+3.2 Child Status Packets
+
+   Signaled Packet (SIGCHLD)
+
+   Type: PKT_DATA
+   Data: <timestamp> <id> > <name=value>, <name=value>, ...
+
+   The <name=value> list may contain the following fields:
+
+   status=<STAT>
+
+	Giving the current status of the process named <id>.  The <STAT> value
+        is one of the following string constants (not enclosed in quotes):
+
+	CLD_EXITED
+	CLD_KILLED
+	CLD_DUMPED
+	CLD_TRAPPED
+	CLD_STOPPED
+	CLD_CONTINUED
+	CLD_RUNNING
+	CLD_UNKNOWN_STATUS
+	UNKNOWN_VALUE
+
+   pid=<pid>
+	Shows the id of the process running on the host
+	machine.
+   uid=<uid>
+	Shows the user id of the process
+
+   termsig=<sig>
+	(only if killed by a signal) Gives the signal
+	number which caused the process termination.
+
+   coredump=<bool>
+	(only if killed by signal and information
+	available) Gives either "true" or "false" if the
+	core has been dumped.
+
+   stopsig=<sig>
+	(only if stopped by a signal) Signal which
+	caused the process to be stopped.
+		if (WIFSTOPPED(siginfo.si_status) ) {
+			lineadd(line, ", stopsig=%d", WSTOPSIG(siginfo.si_status));
+		}
+		if (WIFEXITED(siginfo.si_status) ) {
+			lineadd(line, ", return_status=%d", WEXITSTATUS(siginfo.si_status));
+		}
+		if ( cmdflags.meptr != NULL ) {
+			(cmdflags.meptr)->printf("%ld %s\n", time(NULL), line);
+		} else {
+			printf("%s\n", line);
+		}
+
+   Periodic Child Status updates contain the following fiels:
+
+   Child Fork loop
+
+		// prevent fork-loop
+		if (time(NULL)-last_restart_time < MIN_FORK_DELTA_T ) {
+			fprintf(stderr, "%ld %s > info='child respawn too quick -- aborting.'\n", time(NULL), child.clientid);
+			// close any leftover fds
+			close( child.in[0] ); close( child.in[1] );
+			close( child.out[0] ); close( child.out[1] );
+			close( child.err[0] ); close( child.err[1] );
+			break;
+		}
+
+
+   Child activated
+			// FIXME: print command line parameters, too.
+			me.printf("%ld %s > status=CLD_STARTED, pid=%d, uid=%d\n", time(NULL), child.clientid, child.pid, getuid());
+			me.printf("%ld %s > ppid/pid=%d/%d, daemonppid/pid=%d/%d, uid=%d\n", time(NULL), child.clientid,
+				predaemon.ppid, predaemon.pid, postdaemon.ppid, postdaemon.pid, getuid());
+
+   Child periodic status update
+
+
+		// FIXME: add some stats here
+		me.printf("%ld %s > status=%s, pid=%d\n", time(NULL), child.clientid, ChildStatusString(child.status), child.pid);
+
+   Child threw exception / closed  output file descriptor
+		me.printf("%ld %s > info='exception sent on stdout file descriptor of child'\n", time(NULL), child.clientid);
+		me.printf("%ld %s > info='child closed stderr file descriptor.'\n", time(NULL), child.clientid);
+
+   Child stdout/stderr
+	   me.aprintf(child.outabo, "%s", buffer);
+
+   Type: PKT_DATA
+   Data: 
+
+
+4. Considerations
+
+   A parent process might want to limit the respawn rate of a process,
+   if a automatic restart option is used.
+
+	// minimum time between fork calls (exit if child
+	// process dies to quick and --restart option is
+	// used)
+	#define MIN_FORK_DELTA_T	10
+
+5. References
+
+   [1] Terhorst, D., "The Subserver Protocol". NOTE 001, DAQ-Group,
+       RWTH-Aachen Germany, III. phys. Institut b, November 2008.
+

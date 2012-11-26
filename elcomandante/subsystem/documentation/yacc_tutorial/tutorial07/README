@@ -1,0 +1,4 @@
+Short example, how to compile a modular parser with g++ instead of gcc.
+Care has to be taken with the yywrap, yylex and yydebug definitions used
+by the lexer and parser from the main. Also, the order of linkage is
+important.

@@ -1,0 +1,99 @@
+/**
+\page SemanticClassIndex Semantic Class Index
+
+\section sec_subsystemMain Subsystem Main Classes
+
+<UL>
+ <LI>	subserver	Subscription server main class 
+	<UL>
+	 <LI>	abo	Keeps information about one abo 
+	 <LI>	clientinfo	Keeps information about one client
+	 <LI>	logfile_t	Manages logfile handles 
+	 <LI>	command_t&lt; FUNCPTRTYPE &gt;	Store a command name together
+		with a function pointer
+	</UL>
+ <LI>	sclient	Subsystem client main class 
+	<UL>
+	 <LI>	rxcall_t&lt; ret_t &gt;	Subscription callback abstraction 
+	</UL>
+ <LI>	packet_t	Subsystem packet definiton 
+ <LI>	slist&lt; T &gt;	
+</UL>
+
+
+\subsection sec_Utils Utility Classes and Files
+<UL>
+ <LI>	cmdint	
+	<UL>
+	 <LI>	cmdcall	
+		<UL>
+		 <LI>	cmdcall0&lt; T &gt;
+		 <LI>	cmdcall1&lt; T, P &gt;
+		 <LI>	cmdcall2&lt; T, P, Q &gt;
+		 <LI>	cmdcall3&lt; T, P, Q, R &gt;
+		</UL>
+	</UL>
+ <LI>	error.h
+ <LI>	signalnames.h
+ <LI>	daemon.h
+</UL>
+
+
+<HR>
+\section sec_Application_Classes Application Classes
+<UL>
+ <LI>	dummyHV	
+ <LI>	thpc	
+	<UL>
+	 <LI>	thpc_thread
+	</UL>
+ <LI>	subscript
+	<UL>
+	 <LI>	script_info	
+	 <LI>	script_t	Child process management 
+	 <LI>	protocol_t	
+	</UL>
+ <LI>	calibrate
+	<UL>
+	 <LI>	transfer_function_t	Preliminary callibration class
+		<UL>
+		 <LI>	linear_cal	
+		</UL>
+	</UL>
+ <LI>	sublpt
+	<UL>
+	 <LI>	lpt	
+	</UL>
+</UL>
+
+
+\subsection sec_GUI_Classes GUI Classes
+<UL>
+ <LI>	submanage	
+	<UL>
+	 <LI>	sclient_qthread	
+	 <LI>	tree_t	
+	 <LI>	Ui::MainWindow	
+	 <LI>	Ui_MainWindow	
+	</UL>
+ <LI>	uni	
+	<UL>
+	 <LI>	uni_thread
+	 <LI>	log	
+	 <LI>	log_thread	
+	</UL>
+</UL>
+
+<HR>
+\section sec_TestClasses Test and Experiment Classes
+<UL>
+ <LI>	someclass	
+ <LI>	obj	TEST CLASS 
+ <LI>	super	
+	<UL>
+	 <LI>	doughter&lt; T &gt;
+	 <LI>	son	
+	</UL>
+</UL>
+
+*/

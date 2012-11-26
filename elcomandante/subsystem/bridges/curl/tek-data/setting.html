@@ -1,0 +1,48 @@
+<HTML>
+<HEAD>
+<TITLE>TDS 3000 Data Transfer</TITLE>
+</HEAD>
+<BODY BGCOLOR="#ffffff">
+<P ALIGN=CENTER>
+<FONT SIZE=+1 FACE="Arial,Helvetica,Helvetica"  COLOR="#cc0000">
+<B>&nbsp;Data:&nbsp;&nbsp;TDS 3052B&nbsp;&nbsp;tek3b02&nbsp;&nbsp;(134.61.14.156)</B>
+</FONT>
+</P>
+
+<FORM METHOD="POST" ENCTYPE="text/plain" ACTION="getwfm.isf">
+
+<FONT FACE="Arial,Helvetica">
+<B>&nbsp;Waveform&nbsp;transfer&nbsp;from&nbsp;the&nbsp;instrument:</B>
+<BR>&nbsp;Source:&nbsp;
+</FONT>
+<FONT FACE="Arial,Helvetica">
+
+	<SELECT NAME="command">
+		<OPTION VALUE="select:ch1 on" SELECTED>CH1
+		<OPTION VALUE="select:ch2 on">CH2
+		<OPTION VALUE="select:math on">MATH
+		<OPTION VALUE="select:ref1 on">REF1
+		<OPTION VALUE="select:ref2 on">REF2
+		<OPTION VALUE="select:ref3 on">REF3
+		<OPTION VALUE="select:ref4 on">REF4
+	</SELECT>
+
+</FONT>
+<FONT FACE="Arial,Helvetica">&nbsp;Format:&nbsp;</FONT>
+<FONT FACE="Arial,Helvetica">
+
+	<SELECT NAME="command">
+		<OPTION VALUE="save:waveform:fileformat internal" SELECTED>INTERNAL
+		<OPTION VALUE="save:waveform:fileformat spreadsheet">SPREADSHEET
+		<OPTION VALUE="save:waveform:fileformat mathcad">MATHCAD
+	</SELECT>
+
+</FONT>
+<FONT FACE="Arial,Helvetica">&nbsp;&nbsp;
+
+	<INPUT TYPE="submit" NAME="wfmsend" VALUE="Get">
+
+</FONT>
+</FORM>
+
+<FORM METHOD="POST" ACTION="upload.cgi" NAME="putwfm" ENCTYPE="multipart/form-data"><FONT FACE="Arial,Helvetica"><B>&nbsp;Waveform&nbsp;transfer&nbsp;to&nbsp;the&nbsp;instrument:</B><BR>&nbsp;Destination:&nbsp;</FONT><FONT FACE="Arial,Helvetica"><SELECT NAME="command"><OPTION VALUE="data:destination ref1" SELECTED>REF1<OPTION VALUE="data:destination ref2">REF2<OPTION VALUE="data:destination ref3">REF3<OPTION VALUE="data:destination ref4">REF4</SELECT></FONT><FONT FACE="Arial,Helvetica">&nbsp;File&nbsp;Name:&nbsp;</FONT><FONT FACE="Arial,Helvetica"><INPUT TYPE="FILE" NAME="files"VALUE="wfm.isf" SIZE=40 MAXLENGTH=127></FONT><FONT FACE="Arial,Helvetica">&nbsp;&nbsp;<INPUT TYPE="submit" NAME="Submit" VALUE="Put"></FONT></FORM><FORM METHOD="POST" ACTION="getsetup.set" ENCTYPE="text/plain"><FONT FACE="Arial,Helvetica"><B>&nbsp;Instrument&nbsp;setup&nbsp;transfer&nbsp;from&nbsp;the&nbsp;instrument:&nbsp;</B></FONT><INPUT TYPE="submit" NAME="setupsend" VALUE="Get"></FONT></FORM><FORM METHOD="POST" NAME="putsetting" ACTION="upload.cgi" ENCTYPE="multipart/form-data"><FONT FACE="Arial,Helvetica"><B>&nbsp;Instrument&nbsp;setup&nbsp;transfer&nbsp;to&nbsp;the&nbsp;instrument:</B><BR>&nbsp;File&nbsp;Name:&nbsp;</FONT><FONT FACE="Arial,Helvetica"><INPUT TYPE="FILE" NAME="files" VALUE="data.set" SIZE=40 MAXLENGTH=127></FONT><FONT FACE="Arial,Helvetica">&nbsp;&nbsp;<INPUT TYPE="submit" NAME="Submit" VALUE="Put"></FONT></FORM></BODY></HTML>

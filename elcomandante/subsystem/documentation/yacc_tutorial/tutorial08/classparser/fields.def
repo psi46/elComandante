@@ -1,0 +1,12 @@
+
+new packet_type fields (
+	integer timestamp
+	string	status
+	const string "mesh_voltage="
+	double	mesh_voltage
+	const string "V, driftfield="
+	double	driftfield
+	const string "V/cm\n"
+);
+
+

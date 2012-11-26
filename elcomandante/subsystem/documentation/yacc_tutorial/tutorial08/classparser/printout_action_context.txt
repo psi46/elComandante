@@ -1,0 +1,28 @@
+______________________________________________________________
+
+ACTION_CONTEXT
+______________________________________________________________
+
+std::string     name;
+
+action_context* child;
+
+action_context* parent;
+
+thread_t        mythread;
+
+typedef std::vector<thread_t> subthread_vec_t;
+subthread_vec_t subthread_vec;
+
+
+
+
+
+
+
+
+
+
+typedef std::vector<action_context*> parallel_context_vec_t;
+parallel_context_vec_t parallel_context;
+

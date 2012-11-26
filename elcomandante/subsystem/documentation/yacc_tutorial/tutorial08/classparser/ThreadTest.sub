@@ -1,0 +1,27 @@
+
+new procedure test {
+	sleep 2;
+	echo "In context of test:\n";
+	ls;
+	sleep 2;
+};
+
+test;
+echo "test done";
+ls ;
+
+new proc beta {
+	echo "in proc beta:";
+	ls;
+	echo "parallel call of function test";
+	sleep 1;
+	pcall test;
+	echo "parallel call of function test done";
+};
+
+beta;
+echo "beta done";
+ls;
+sleep 10;
+ls;
+echo "END";

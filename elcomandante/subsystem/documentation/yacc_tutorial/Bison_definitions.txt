@@ -1,0 +1,178 @@
+3.7.11 Bison Declaration Summary
+
+Here is a summary of the declarations used to define a grammar:
+
+- Directive: %union
+
+	Declare the collection of data types that semantic values may have
+	(see The Collection of Value Types). 
+
+- Directive: %token
+
+	Declare a terminal symbol (token type name) with no precedence or
+	associativity specified (see Token Type Names). 
+
+- Directive: %right
+
+	Declare a terminal symbol (token type name) that is
+	right-associative (see Operator Precedence). 
+
+- Directive: %left
+
+	Declare a terminal symbol (token type name) that is left-associative
+	(see Operator Precedence). 
+
+- Directive: %nonassoc
+
+	Declare a terminal symbol (token type name) that is nonassociative
+	(see Operator Precedence). Using it in a way that would be
+	associative is a syntax error. 
+
+- Directive: %type
+
+	Declare the type of semantic values for a nonterminal symbol (see
+	Nonterminal Symbols). 
+
+- Directive: %start
+
+	Specify the grammar's start symbol (see The Start-Symbol). 
+
+- Directive: %expect
+
+	Declare the expected number of shift-reduce conflicts (see
+	Suppressing Conflict Warnings). 
+
+	In order to change the behavior of bison, use the following
+	directives: — Directive: %debug
+
+	In the parser file, define the macro YYDEBUG to 1 if it is not
+	already defined, so that the debugging facilities are compiled. 
+
+	See Tracing Your Parser.
+
+- Directive: %defines
+
+	Write a header file containing macro definitions for the token type
+	names defined in the grammar as well as a few other declarations. If
+	the parser output file is named name.c then this file is named
+	name.h.
+
+	Unless YYSTYPE is already defined as a macro, the output header
+	declares YYSTYPE. Therefore, if you are using a %union (see More
+	Than One Value Type) with components that require other definitions,
+	or if you have defined a YYSTYPE macro (see Data Types of Semantic
+	Values), you need to arrange for these definitions to be propagated
+	to all modules, e.g., by putting them in a prerequisite header that
+	is included both by your parser and by any other module that needs
+	YYSTYPE.
+
+	Unless your parser is pure, the output header declares yylval as an
+	external variable. See A Pure (Reentrant) Parser.
+
+	If you have also used locations, the output header declares YYLTYPE
+	and yylloc using a protocol similar to that of YYSTYPE and yylval.
+	See Tracking Locations.
+
+	This output file is normally essential if you wish to put the
+	definition of yylex in a separate source file, because yylex
+	typically needs to be able to refer to the above-mentioned
+	declarations and to the token type codes. See Semantic Values of
+	Tokens. 
+
+- Directive: %destructor
+
+	Specify how the parser should reclaim the memory associated to
+	discarded symbols. See Freeing Discarded Symbols. 
+
+- Directive: %file-prefix="prefix"
+
+	Specify a prefix to use for all Bison output file names. The names
+	are chosen as if the input file were named prefix.y. 
+
+- Directive: %locations
+
+	Generate the code processing the locations (see Special Features for
+	Use in Actions). This mode is enabled as soon as the grammar uses
+	the special `@n' tokens, but if your grammar does not use it, using
+	`%locations' allows for more accurate syntax error messages. 
+
+- Directive: %name-prefix="prefix"
+
+	Rename the external symbols used in the parser so that they start
+	with prefix instead of `yy'. The precise list of symbols renamed in
+	C parsers is yyparse, yylex, yyerror, yynerrs, yylval, yychar,
+	yydebug, and (if locations are used) yylloc. For example, if you use
+	`%name-prefix="c_"', the names become c_parse, c_lex, and so on. In
+	C++ parsers, it is only the surrounding namespace which is named
+	prefix instead of `yy'. See Multiple Parsers in the Same Program. 
+
+- Directive: %no-parser
+
+	Do not include any C code in the parser file; generate tables only.
+	The parser file contains just #define directives and static variable
+	declarations.
+
+	This option also tells Bison to write the C code for the grammar
+	actions into a file named file.act, in the form of a
+	brace-surrounded body fit for a switch statement. 
+
+- Directive: %no-lines
+
+	Don't generate any #line preprocessor commands in the parser file.
+	Ordinarily Bison writes these commands in the parser file so that
+	the C compiler and debuggers will associate errors and object code
+	with your source file (the grammar file). This directive causes them
+	to associate errors with the parser file, treating it an independent
+	source file in its own right. 
+
+- Directive: %output="file"
+
+	Specify file for the parser file. 
+
+- Directive: %pure-parser
+
+	Request a pure (reentrant) parser program (see A Pure (Reentrant)
+	Parser). 
+
+- Directive: %require "version"
+
+	Require version version or higher of Bison. See Require a Version of
+	Bison. 
+
+- Directive: %token-table
+
+	Generate an array of token names in the parser file. The name of the
+	array is yytname; yytname[i] is the name of the token whose internal
+	Bison token code number is i. The first three elements of yytname
+	correspond to the predefined tokens "$end", "error", and
+	"$undefined"; after these come the symbols defined in the grammar
+	file.
+
+	The name in the table includes all the characters needed to
+	represent the token in Bison. For single-character literals and
+	literal strings, this includes the surrounding quoting characters
+	and any escape sequences. For example, the Bison single-character
+	literal '+' corresponds to a three-character name, represented in C
+	as "'+'"; and the Bison two-character literal string "\\/"
+	corresponds to a five-character name, represented in C as
+	"\"\\\\/\"".
+
+	When you specify %token-table, Bison also generates macro
+	definitions for macros YYNTOKENS, YYNNTS, and YYNRULES, and
+	YYNSTATES:
+
+	YYNTOKENS The highest token number, plus one.  YYNNTS The number of
+	nonterminal symbols.  YYNRULES The number of grammar rules,
+	YYNSTATES The number of parser states (see Parser States). 
+
+- Directive: %verbose
+
+	Write an extra output file containing verbose descriptions of the
+	parser states and what is done for each type of look-ahead token in
+	that state. See Understanding Your Parser, for more information. 
+
+- Directive: %yacc
+
+	Pretend the option --yacc was given, i.e., imitate Yacc, including
+	its naming conventions. See Bison Options, for more. 
+

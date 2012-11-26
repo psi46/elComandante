@@ -1,0 +1,28 @@
+
+Quick Installation Guide
+------------------------
+
+1.	Edit the BUILD_OPTIONS, LIBPATH and BINPATH variables in the makefile
+	according to your system setup.
+
+2.	Run
+		make
+	to compile everything. The whole system is usable now.
+
+3.	To use the library from other programs, use
+		make install
+	This will copy the libsubsystem.a and the include files to the path you
+	specified in the makefile (after creating the necessary directories).
+	Calling
+		make bin
+	will copy all binaries to the path you specified in the makefile.
+
+4.	You can find further documentation in the ./documentation directory, but
+	if you have Doxygen and Graphviz installed on your system, you might
+	want to
+		make doc
+	You will then find a nice html version pointing your favourite browser
+	to the file
+		./documentation/html/index.html
+
+

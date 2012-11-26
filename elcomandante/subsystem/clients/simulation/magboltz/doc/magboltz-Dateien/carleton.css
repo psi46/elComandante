@@ -1,0 +1,254 @@
+.searchText {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 11px;
+	font-weight: normal;
+	color: #000000;
+	padding: 0px;
+	margin: 0px;
+	width: 143px;
+}
+
+.aligncentre {
+text-align: center;
+}
+
+.alignleft {
+text-align: left;
+}
+
+.alignright {
+text-align: right
+}
+
+.finelinebgndcolor {
+background-color: #000000
+}
+
+.toplinksbgndcolor {
+background-color: #666666
+}
+
+.culinks {
+color: #ffffff;
+font-family: Arial, Helvetica, sans-serif; 
+font-weight: normal; 
+font-size: 10pt; 
+font-style: normal; 
+text-decoration: none; 
+; text-align: center
+}
+
+.sidelinks {
+color: #000000                          ;
+font-family: Arial, Helvetica, sans-serif; 
+font-weight: normal; 
+font-size: 10pt; 
+font-style: normal; 
+text-decoration: none; 
+}
+
+.sublinks {
+color: #ffffff;
+font-family: Arial, Helvetica, sans-serif; 
+font-weight: normal; 
+font-size: 10pt; 
+font-style: normal; 
+text-decoration: none; 
+}
+
+.newslink {
+color: #0000CC;
+font-family: Verdana, Arial, Helvetica, sans-serif; 
+font-weight: bold; 
+font-size: 8pt; 
+font-style: italic;  
+text-decoration: underline; 
+}
+
+.footerlinks {
+color: #000000;
+font-family: Verdana, Arial, Helvetica, sans-serif; 
+font-weight: normal; 
+font-size: 8pt; 
+font-style: normal;  
+text-decoration: none; 
+}
+
+.newstext {
+color: #000000;
+font-family: Arial, Helvetica, sans-serif; 
+font-weight: normal; 
+font-size: 10pt; 
+font-style: normal; 
+text-align: left; 
+text-decoration: none; 
+}
+
+.search {
+color: #000000;
+font-family: Arial, Helvetica, sans-serif; 
+font-weight: normal; 
+font-size: 10pt; 
+font-style: normal; 
+text-decoration: none; 
+}
+
+.explore {
+color: #000000;
+font-family: Arial, Helvetica, sans-serif; 
+font-weight: normal; 
+font-size: 10pt; 
+font-style: normal; 
+text-decoration: none; 
+}
+
+.footertext {
+color: #000000;
+font-family: Verdana, Arial, Helvetica, sans-serif; 
+font-weight: normal; 
+font-size: 8pt; 
+font-style: normal; 
+text-align: center; 
+text-decoration: none; 
+}
+
+.footerbgndcolor {
+background-color: #CCCCCC
+}
+
+.subfooterbgndcolor {
+background-color: #000000}
+
+
+.sidelink {
+color: #000000;
+font-family: Arial, Helvetica, sans-serif; 
+font-weight: normal; 
+font-size: 10pt; 
+font-style: normal; 
+text-decoration: none; 
+padding-left: 6px
+}
+
+A.sidelink:hover {
+color: #CC0033                          ;
+font-family: Arial, Helvetica, sans-serif; 
+font-weight: normal; 
+font-size: 10pt; 
+font-style: normal; 
+text-decoration: none; 
+padding-left: 6px
+}
+
+.sidelinkcurrent {  
+font-family: Arial, Helvetica, sans-serif; 
+font-size: 10pt; 
+font-style: normal; 
+font-weight: normal; 
+color: #FFFFFF; 
+text-decoration: none; 
+padding-left: 6px; 
+background-color: #000000
+}
+
+.sidelinkbgndcolor {
+background-color: #CCCCCC
+}
+
+.sublinka { font-family: Arial, Helvetica, sans-serif;
+ font-size: 10pt;
+ font-style: normal;
+ font-weight: normal;
+ color: #000000;
+ text-decoration: none;
+ padding-left: 14px
+ }
+
+A.sublinka:hover {  
+font-family: Arial, Helvetica, sans-serif; 
+font-size: 10pt; 
+font-style: normal; 
+font-weight: normal; 
+color: #CC0033; 
+text-decoration: none; 
+padding-left: 14px
+}
+
+.sublinkacurrent { 
+font-family: Arial, Helvetica, sans-serif; 
+font-size: 10pt; 
+font-style: normal; 
+font-weight: normal; 
+color: #FFFFFF; 
+text-decoration: none; 
+padding-left: 14px; 
+background-color: #000000 
+}
+
+.sublinkabgndcolor {
+background-color: #999999}
+
+.sublinkb { 
+font-family: 
+Arial, Helvetica, sans-serif; 
+font-size: 10pt; 
+font-style: normal; 
+font-weight: normal; 
+color: #FFFFFF; 
+text-decoration: none; 
+padding-left: 32px; 
+}
+
+A.sublinkb:hover {  
+font-family: Arial, Helvetica, sans-serif; 
+font-size: 10pt; 
+font-style: normal; 
+font-weight: normal; 
+color: #CC0033; 
+text-decoration: none; 
+padding-left: 32px 
+}
+
+.sublinkbcurrent { 
+font-family: Arial, Helvetica, sans-serif; 
+font-size: 10pt; 
+font-style: normal; 
+font-weight: normal; 
+color: #FFFFFF; 
+text-decoration: none; 
+padding-left: 32px; 
+background-color: #000000; 
+}
+
+.sublinkbbgndcolor {
+background-color: #666666 
+}
+.subfootertext { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; font-style: normal; font-weight: normal; color: #FFFFFF; text-decoration: none}
+.culinkfineline { background-color: #CCCCCC}
+.linkcontainer {  background-color: #FFFFFF}
+.sublinkaBold { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; font-style: normal; font-weight: bold; color: #000000; text-decoration: none; padding-left: 14px}
+.sidelinkBold { color: #000000; font-family: Arial, Helvetica, sans-serif; font-weight: bold; font-size: 10pt; font-style: normal; text-decoration: none; padding-left: 6px }
+.title {  font-family: Arial, Helvetica, sans-serif; font-size: 10pt; font-style: normal; font-weight: bold; color: #000000}
+.navSubTitle { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; font-style: normal; font-weight: normal; color: #000000 }
+.rightlinkbgnd {  background-color: #CC0033}
+.rightlink {  font-family: Arial, Helvetica, sans-serif; font-size: 10pt; font-style: normal; font-weight: 400; color: #FFFFFF; text-decoration: none}
+A.rightlink:hover { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; font-style: normal; font-weight: 400; color: #000000; text-decoration: none}
+.rightlinkbold { font-family: Arial, Helvetica, sans-serif; font-size: 11pt; font-style: normal; font-weight: bold; color: #FFFFFF }
+.whiteBgnd {  background-color: #FFFFFF}
+A.sidelinks:hover { color: #CC0033 ; font-family: Arial, Helvetica, sans-serif; font-weight: normal; font-size: 10pt; font-style: normal; text-decoration: none}
+A.subfootertext:hover { color: #CCCCCC; font-family: Arial, Helvetica, sans-serif; font-weight: normal; font-size: 10pt; font-style: normal; text-decoration: none}
+A.footerlinks:hover { color: #CC0033; font-family: Verdana, Arial, Helvetica, sans-serif; font-weight: normal; font-size: 8pt; font-style: normal; text-decoration: none}
+A.culinks:hover { color: #CCCCCC; font-family: Arial, Helvetica, sans-serif; font-weight: normal; font-size: 10pt; font-style: normal; text-decoration: none}
+A.newstext:hover { color: #CC0033 ; font-family: Arial, Helvetica, sans-serif; font-weight: normal; font-size: 10pt; font-style: normal; text-decoration: none}
+.footertextwhite { color: #FFFFFF; font-family: Verdana, Arial, Helvetica, sans-serif; font-weight: normal; font-size: 8pt; font-style: normal; text-align: center; text-decoration: none; }
+A.footerlinkswhite:hover { color: #CC0033; font-family: Verdana, Arial, Helvetica, sans-serif; font-weight: normal; font-size: 8pt; font-style: normal; text-decoration: none }
+.footerlinkswhite { color: #FFFFFF; font-family: Verdana, Arial, Helvetica, sans-serif; font-weight: normal; font-size: 8pt; font-style: normal; text-decoration: none; }
+.linkWhite { color: #ffffff; font-family: Arial, Helvetica, sans-serif; font-weight: bold; font-size: 12pt; font-style: normal; text-decoration: none; }
+A.linkWhite:hover { color: #000000; font-family: Arial, Helvetica, sans-serif; font-weight: bold; font-size: 12pt; font-style: normal; text-decoration: none}
+A.sublinks:hover { color: #CC0033 ; font-family: Arial, Helvetica, sans-serif; font-weight: normal; font-size: 10pt; font-style: normal; text-decoration: none }
+.sublinkawhite { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; font-style: normal; font-weight: normal; color: #FFFFFF; text-decoration: none; padding-left: 14px }
+.sidelinkwhite { color: #FFFFFF; font-family: Arial, Helvetica, sans-serif; font-weight: normal; font-size: 10pt; font-style: normal; text-decoration: none; padding-left: 6px }
+A.sublinkawhite:hover { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; font-style: normal; font-weight: normal; color: #CC0033; text-decoration: none; padding-left: 14px }
+A.sidelinkwhite:hover { color: #CC0033; font-family: Arial, Helvetica, sans-serif; font-weight: normal; font-size: 10pt; font-style: normal; text-decoration: none; padding-left: 6px }
+.header_red {  font-family: Arial, Helvetica, sans-serif; font-size: 10pt; font-style: normal; font-weight: bold; color: #CC0033}
+.content { color: #000000; font-family: Arial, Helvetica, sans-serif; font-weight: normal; font-size: 10pt; font-style: normal; text-align: left; text-decoration: none; }

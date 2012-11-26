@@ -1,0 +1,40 @@
+
+
+new packet_type DAQ_started (
+	integer	timestamp
+	const string "measurement"
+	string measurement
+	string chamber
+	const string "started\n"
+);
+new packet_type DAQ_done (
+	integer	timestamp
+	const string "measurement done\n"
+);
+new packet_type DAQ_adc (
+	integer timestamp
+	const string "adc"
+	string status
+	const string "\n"
+);
+new packet_type DAQ_adc_event (
+	integer timestamp
+	const string "event"
+	integer read_ok
+	const string "of"
+	integer sum
+	const string "\n"
+);
+new packet_type DAQ_file (
+	integer timestamp
+	const string "saving run in"
+	string filename
+	const string "\n"
+);
+
+#subscribe DAQ_adc_event on /control/DAQ;
+#subscribe DAQ_adc       on /control/DAQ;
+# subscribe DAQ_lastdone  on /control/DAQ;
+#subscribe DAQ_started	on /control/DAQ;
+#subscribe DAQ_file	on /control/DAQ;
+

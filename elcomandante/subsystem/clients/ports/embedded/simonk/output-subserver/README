@@ -1,0 +1,7 @@
+The smallest subclient ever.
+See http://de.klinkerstein.m-faq.de/index.php/MicroWebServer for further informationon the hardware.
+The software is an extension of the uIP stack for sending subserver packets. 
+
+This embedded server takes its 14 outputs as an String from /io on 192.168.0.100:12334.The IP of the client is 192.168.0.95. Even there is a webserver on Port 8080.
+the input packet is echoed to /oi
+All Parameters have to be adjusted via source code.

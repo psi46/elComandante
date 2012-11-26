@@ -1,0 +1,49 @@
+
+new proc HVsim {
+
+	new packet_type HVsim_setvoltage (
+		const string "set voltage"
+		double	newVset
+		const string "\n"
+	);
+
+	new packet_type HVsim (
+		const string "Vset="
+		double	Vset
+		const string ", Vmon="
+		double  Vmon
+		const string "\n"
+	);
+
+	//subscribe HVsim_internal on /script/HVsim_internal;
+	//send /script/HVsim_internal "Vset=0, Vmon=0\n";
+
+	subscribe HVsim_setvoltage on /script/HVsim;
+	//send /script/HVsim PKT_SETDATA "set voltage 0\n";
+	send /script/HVsim "set voltage 0\n";
+
+	subscribe HVsim on /script/HVsim;
+	waitfor /script/HVsim:HVsim;
+
+	while ( /script/HVsim:HVsim:Vset >= 0 ) {
+		if ( /script/HVsim:HVsim_setvoltage:newVset != /script/HVsim:HVsim:Vset ) {
+	                send /script/HVsim
+                           "Vset="
+                         . /script/HVsim:HVsim_setvoltage:newVset
+                         . ", Vmon="
+                         . /script/HVsim:HVsim:Vmon
+                         . "\n"
+                        ;
+
+		};
+		send /script/HVsim
+			   "Vset="
+			 . /script/HVsim:HVsim:Vset
+			 . ", Vmon="
+			 . (/script/HVsim:HVsim:Vmon + ( /script/HVsim:HVsim:Vset-/script/HVsim:HVsim:Vmon) / 10)
+			 . "\n"
+			;
+		sleep 1;
+	};
+	ls;
+};

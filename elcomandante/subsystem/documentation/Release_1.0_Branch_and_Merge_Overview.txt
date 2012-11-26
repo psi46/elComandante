@@ -1,0 +1,118 @@
+
+Creating a Release
+------------------
+This file documents the merging process of the first release branch
+and may be used as a HOWTO in such matters. A branch is created to
+cleanup and check the release candidate on different computers, while
+the active development of new features in the trunk continues
+uninterrupted. The valuable changes stabilizing the release are added
+to the trunk after the release, so no work is lost.
+
+As an overview, the following diagram illustrates the steps described
+below.
+
+
+ /trunk
+*-----*                                        *------*             *------*
+| 302 |   306 307 309 311 312 313 317 318 319  | 326  | (4)    (6)  | 327  |
+|trunk|--------------------------------------->| HEAD |------------>|merged|--->
+*-----* \                                      *------*     /       *------*
+         |                                                 |
+      (1)|                                                 |
+         |    /branches/subsystem-v1.0-ReleaseCandidate    |(5)
+         |   *-------*                        *-------*    |
+         |   |  303  |     304   305   308    |  315  |   /
+          \->|release|----------------------->|release|--------| (7)
+             |branch |                        *-------*   \
+             *-------*                          .          |
+                                             (2).       (3)|   /tags
+                                                .          |  *-------*
+                                                v          |  |  316  |
+                                 subsystem-1.0.tar.gz      \->|release|
+                                                              | -tag  |
+                                                              *-------*
+
+
+In the following description let REPOROOT be the root URL of the repository,
+for example:
+
+	svn+ssh://t2k@lx3btpc01/home/svn/t2k/subserver-software
+
+(1) Create a branch by copying the trunk to a branch directory:
+
+    $ svn cp <REPOROOT>/trunk <REPOROOT>/branches/subsystem-v1.0-ReleaseCandidate
+
+(2) After some cleanup revisions the release candidate has matured into
+    a portable working release without unnecessary files. Use export
+    svn command to get an unversioned copy of the branch:
+
+    $ svn export <REPOROOT>/branches/subsystem-v1.0-ReleaseCandidate subsystem-1.0
+    $ tar -cvzf subsystem-1.0.tar.gz subsystem-1.0
+    $ rm -rf subsystem-1.0
+
+(3) To be able to easily find the release revision later, tag that
+    revision into the /tags directory
+
+    $ svn cp <REPOROOT>/branches/subsystem-v1.0-ReleaseCandidate <REPOROOT>/tags/Release-1.0
+
+(4) Make sure you have a clean checkout of the /trunk at HEAD revision,
+    to combine the changes made for the release with those which occoured
+    to the /trunk meanwhile.
+
+    In the /trunk woking copy do:
+    $ svn update
+    [at revision 326]
+
+(5) Before the real merge, you might want to examine the big changes, which
+    are about to happen.
+
+    In the /trunk woking copy do:
+    $ svn log --stop-on-copy --verbose <REPOROOT>/branches/subsystem-v1.0-ReleaseCandidate
+    $ svn merge --dry-run -r -r 303:HEAD <REPOROOT>/branches/subsystem-v1.0-ReleaseCandidate
+
+(6) The actual merge is quite simple. To add all changes in the branch to those
+    done in the trunk goto your working copy of the /trunk then do:
+
+    $ svn merge -r 303:HEAD <REPOROOT>/branches/subsystem-v1.0-ReleaseCandidate
+    $ svn status
+
+    The status should list all changes seen in (4) and may also contain
+    conflicting files. Resolve all conflicts, check that everything is
+    still working and commit the merged trunk to the repository.
+
+    If we want to keep the file data_layers.txt deleted in r304 we just revert
+    it back to the trunk version:
+
+    $ svn revert data_layers.txt
+
+    The conflicting file was edited and checked
+
+    $ vim makefile makefile.working
+    $ svn resolved makefile
+
+    If everything was checked and seems propper, do the actual commit by
+
+    $ svn ci
+
+(7) The release candidate branch is of no further use. All changes therein
+    are now applied to the trunk and the release version has been tagged to
+    the /tags directory. To keep people from being confused about where to
+    checkout a copy to work on (this should alway be the /trunk now), remove
+    the branch.
+
+    $ svn delete <REPOROOT>/branches/subsystem-v1.0-ReleaseCandidate
+
+
+After performing the steps above, you should be left with a .tar.gz
+and a tag inside the repository containing the release version. You
+can alway recreate the .tar.gz by exporting the tagged version similar
+to step (2):
+
+    $ svn export <REPOROOT>/tags/Release-1.0 subsystem-1.0
+    $ tar -cvzf subsystem-1.0.tar.gz subsystem-1.0
+    $ rm -rf subsystem-1.0
+
+If enough changes in the trunk have aggregated to consider another release,
+just follow the above instructions again for a branch-clean-release-merge
+cycle. This way development of the trunk is never interrupted.
+

@@ -1,0 +1,230 @@
+Data Aquisition Group                                        D. Terhorst
+Technical Note: 002                                          RWTH Aachen
+Category: Informational                                    November 2008
+
+                             The SlowIO Protocol
+
+Status of this Memo
+
+   This memo provides information for the Internet community.  This memo
+   does not specify an Internet standard of any kind.  Distribution of
+   this memo is unlimited.
+
+Table of Contents
+
+   1.   Introduction . . . . . . . . . . . . . . . . . . . . . . . .
+   1.1  Requirements Terminology
+   2.   SlowIO Protocol  . . . . . . . . . . . . . . . . . . . . . .
+   2.1    Control Messages
+   2.2    Data Messages
+   2.3    Examples
+   3.	References . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+
+1. Introduction
+
+   This protocol is intended to be used for a subsystem service
+   providing multi-channel slow input/output. It is particularly
+   designed to control analog and digital inputs and outputs, as they
+   are used in many experimental setups (e.g. valve open/close and
+   analog sensors). Communication between the hardware controller
+    and other clients is based on The Subserver Protocol [1].
+
+
+1.1.  Requirements Terminology
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED",  "MAY", and "OPTIONAL" in this
+   document are to be interpreted as described in BCP 14 / RFC 2119.
+
+
+2. SlowIO Protocol
+
+   This protocol specifies both directions: Messages originating from
+   the hardware-controlling programm (data messages) presenting the
+   current state and changes thereof. And control messages sent from
+   clients to change the output values.
+
+   In this protocol each input and each output is represented by one
+   channel, and each channel is either an input or output. Digital
+   Ports are represented one bit per channel.
+   Set commands inappropriate to a channel a MUST be ignored
+   (like 'set output' to an input channel or 'set digital' to an
+   analog output).
+
+
+2.1.  Control Messages
+
+   To change the value of hardware outputs and to alter various
+   settings PKT_SETDATA type packets must be used. The following
+   packet type is used for both purposes.
+
+   Type: PKT_SETDATA
+   Data: set <what> <chan> <value>
+
+	<chan>	Channel number in decimal. Minimum 0 (first channel),
+		maximum depending on hardware capabilities, or the
+		keyword 'all' to affect all available channels.
+		(Exception: See keyword 'digital' in description of
+		the <what> argument.)
+   
+	<what>	Selects the setting to change for the given channel
+		number. 
+		Options not available for the given channel SHOULD be
+		ignored, or MUST be documented appropriately. Also not
+		all commands may be implemented in all hardware
+		controller programms.
+		The keyword <what> is one of the following:
+
+		output
+		   Set the new output value for that channel. Values
+		   outside the capabilities of the hardware SHOULD be
+		   clipped to the nearest possible value. For digital
+		   outputs values less than or equal to zero MUST
+		   clear the bit and values greater than or equal to
+		   one MUST set the bit. The range 0.0 < <value> < 1.0
+		   is implementation defined.
+
+		gain
+		   Change the analog input gain setting. Digital
+		   outputs SHOULD ignore this setting.
+
+		polarity
+		   Some ADCs have the possibility to chose between
+		   unipolar and bipolar conversion, or between
+		   positive and negative input voltages.
+		     <value>	Polarity
+			0	unipolar/positive
+			1	bipolar/negative
+
+		offset
+		   This option sets a voltage offset for the
+		   conversion circuits, available in some ADCs.
+
+		digital
+
+		   This option for digital outputs can be used to set
+		   many output channels simultaneously. The output
+		   channels are selected by <chan> given as a binary
+		   mask. The new values for the selected channels are
+		   read from the hexadecimal <value> given in the 
+		   format 0xHHHH.
+		   The mask and value may not be longer than 32 bits,
+		   and thus only the channels 0-31 are accessible this
+		   way. (see section Examples below)
+
+	<value>	New value of the output or setting of channel <chan>.
+		Numbers MAY be passed as integer or floating point
+		values and SHOULD be decimal values (Exception:
+		<what>='digital'). The meaning of the values is
+		implementation defined.
+		"On" "Off" shall be parsed as 1.0 and 0.0 respectively.
+
+
+2.2.  Data Messages
+
+   Setting Change Data
+
+   Channel setting changes MUST be followed by a packet confirming the
+   new setting and presenting the value actually set (e.g. due to
+   clipping) to all other programms. If the requested value was
+   already set prior the set-command, an acknowledging packet SHOULD
+   still be sent to inform others of the current status (maybe a
+   packet got lost). Settings not applicable for the given channel
+   SHOULD NOT be answered with this packet type.
+
+   Type: PKT_DATA
+   Data: <time> Ch<chan> <what> <value>
+
+	<time>	Timestamp of the message in unix seconds since epoch.
+	<chan>	Channel number used in the set command, as described
+		above. (See Examples section for details regarding the
+		'ALL' keyword.)
+
+	<what>	The keyword used in the set command described above.
+
+	<value>	New value of the digital output. In case a 'set value'
+		command was clipped to the possible output range, this
+		value MUST be the value which was actually set on the
+		device.
+
+   The meaning of input and output values strongly depends on the used
+   hardware and thus is left implementation defined. For example an
+   ADC may return the digitized value as integer number or as
+   calculated floating-point voltage. Nevertheless, it is strongly
+   RECOMMENDED to use the same representation for set-command inputs
+   as for data packet outputs.
+
+
+   Hardware Read Data
+
+   Values, which are read from the hardware inputs, are recommended to
+   be sent to the server periodically. For some purposes it might be
+   reasonable to send a new data packet each time the input changes. A
+   combination of both strategies might also be considered.
+
+   Type: PKT_DATA
+   Data: <time> <ch0val> <ch1val> <ch2val> ... <chNval>
+
+	<time>	Timestamp of the message in unix seconds since epoch.
+	<chXval> Current value of input or output channel X. Digital
+		values are recommended to be sent in integer notation,
+		analog values should be floating-point numbers.
+
+
+2.3.  Examples
+
+   The following examples illustrate the usage of this protocol. The
+   packet type shows the direction of the flow of information:
+   PKT_DATA packets originated from the hardware control program,
+   PKT_SETDATA packets are sent by the clients to change settings. The
+   remainder of the example lines displays the data-field contents.
+
+   Set all outputs to zero
+	PKT_SETDATA	set output all 0
+
+   Set input gain of all channels to 1.0
+	PKT_SETDATA	set gain all 1.0
+
+   Set a digital output bit (channel 5).
+	PKT_SETDATA	set output 5 1
+
+   Set an analog output value of 3.1415 on channel 16
+	PKT_SETDATA	set output 16 3.1415
+
+   Data packets received periodically by a client from an examplarily
+   eight digital and four analog channel device controller
+	PKT_DATA	1237984722 0 1 1 0 1 0 1 0 3.14 0.03 1.23 645.0
+
+   Response packets from the hardware control programm to some
+   received 'set'-command packets might be
+   	PKT_DATA	1237984722 ChALL gain 1.0
+   	PKT_DATA	1237984722 Ch05 output 1
+
+   The special keyword 'digital' to a set command is equivalent to a
+   number of individual 'set output' commands. Channels to be set are
+   selected via the mask (bit set), all channels with a cleared mask
+   bit will not be affected.
+
+	PKT_SETDATA	set digital 0x00F0 0x0033
+
+   The binary representations are:
+	00F0:	0000 0000 1111 0000	(mask)
+	0033:	0000 0000 0011 0011	(value)
+
+   The above 'set digital' command is equivalent to
+	PKT_SETDATA	set digital 0xF0 0x33
+   and is equivalent to
+	PKT_SETDATA	set output 4 1
+	PKT_SETDATA	set output 5 1
+	PKT_SETDATA	set output 6 0
+	PKT_SETDATA	set output 7 0
+   Only channels 4-7 are affected due to the <chan> mask. The <value>
+   for these channels are set, all other channels remain constant.
+
+
+4. References
+
+   [1] Terhorst, D., "The Subserver Protocol". NOTE 001,
+       DAQ-Group, RWTH-Aachen Germany, November 2008.
+

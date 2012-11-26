@@ -1,0 +1,208 @@
+/**
+\page BasicUsageHOWTO Subsystem Basic Usage HOWTO
+
+\section secIndex Index
+
+\ref secSystem \n
+\ref secStartServer \n
+\ref secStopping \n
+\ref secConnecting \n
+\ref secShellClient \n
+\ref secQTclient \n
+\ref secMechanisms \n
+\ref secLogging \n
+\ref secSubscript \n
+\ref secStateMachine \n
+\ref secBridging \n
+<HR>
+
+\section secSystem 1. System Description
+
+The subsystem architecture has a classic server client layout. The server
+listens for connections on a network socket and clients connect to supply or
+subscribe the desired information. Using the existing IP network, the actual
+locations of the clients and the server do not matter very much. (<small>
+Network admins do not like UDP packets flying around in their
+networks very much, so you should try to keep packets local. But because there
+are no broadcast packets sent by the subsystem, this will be only a very
+small disturbance in the force.</small>)
+
+\section secStartServer 2. Starting the Subserver
+
+After downloading and compiling the subserver repository (\ref
+InstallingHOWTO) you can start a subserver on the local machine by executing
+the <TT>server</TT> binary.
+
+The server binds to the address given in the <TT>SUBSERVER</TT> environment
+variable. If this is not set, or isn't set to a valid <EM>IP:port</EM> pair,
+the subserver resorts to the library default &quot;127.0.0.1:12334&quot;. The
+library default address is a local-only address and it is not possible to
+connect from other hosts, so you probably want to set the <TT>SUBSERVER</TT>
+environment variable first.
+
+\code
+subserver $ make
+// ...
+subserver $ export SUBSERVER="192.168.0.10:12334";
+subserver $ ./server
+subserver $ 
+\endcode
+
+Replace &quot;192.168.0.10&quot; by the IP of the machine you are running the
+subserver on. For convenience it is very useful to add the <TT>export
+SUBSERVER=&quot;192.168.0.10:12334&quot;</TT> line to your <TT>~/.bashrc</TT>,
+then you do not need to type it each time you log in. In this example we will
+continue using the library default address.
+
+Having started the server there are some things to check if everything went
+good. First look at some files created by the subserver:
+\code
+subserver $ ls server.std* /var/tmp/subserver.pid
+/var/tmp/subserver.pid  server.stderr  server.stdout
+subserver $
+\endcode
+These are the reconnected standard and error outputs, which contain status and
+debug information, and the lock file containing the server process id (PID) of
+the server.
+
+\code
+subserver $ cat server.stderr
+*** server started as pid 4528
+  creating socket...
+  building struct sockaddr_in...
+  successfully bound to address 127.0.0.1:12334
+subserver $ cat server.stderr	# should be an empty file
+subserver $ cat /var/tmp/subserver.pid
+4528subserver $
+\endcode
+
+Everything seems to work well. (Note that the pid file does not contain a
+trailing newline character, so the command prompt apears on the same line.)
+Further you can check for the server process with the  <TT>ps(1)</TT> command:
+
+\code
+subserver $ ps aux | grep server
+dennis    4528  0.0  0.1   2740   476 ?        Ss   17:14   0:00 ./server
+subserver $
+\endcode
+
+\subsection secStopping 3. Shutting down the Subserver
+The subserver can either be shut down internally by sending a \c
+PKT_SERVERTERM packet, or by sending a signal with the \c kill(1) command. 
+
+\code
+subserver $ kill 4528  # pid from ps command above
+\endcode
+
+Using the bash back-quote syntax you can read the procss id of the server and
+send a \c TERM signal with one command
+
+\code
+subserver $ kill `cat /var/log/subserver.pid`
+\endcode
+
+
+\section secConnecting 4. Connecting to a Subserver
+\subsection secShellClient 4.1. Shell Client
+
+To connect to the server the client uses the same environment variable as the
+server, so if you use the same shell, everything works fine by default.
+Remember that setting the \c SUBSERVER variable manually has to be done in
+each shell you open, unless you added the \c export line to your \c ~/.bashrc.
+
+
+You connect to the server using the \c client program. Depending on the
+version you use, you need to give the name of the abo you want to subscribe as
+a parameter. The client then sends every line read from stdin to the server.
+Start the \c client and just type some random text. Nothing seems to happen,
+because the server does not send data to the client it originates from. 
+
+\code
+subserver $ ./client /test/abo
+Hallo welt!
+\endcode
+
+Open a second shell and start another \c client program giving the same abo
+name you used before as parameter. If you type something now, you see that the
+first client receives the data.
+
+\code
+subserver $ ./client /test/abo          # subserver $ ./client /test/abo
+Hallo welt!                             # Dies ist ein Test.
+Dies ist ein Test.
+\endcode
+
+Quit the client you can use \c Ctrl-C or type a single &quot;x&quot; and press
+enter.
+
+In normal usage you rarely type text messages yourself, but instead connect
+the stdin
+
+\subsection secQTclient 4.2. QT4-based sclient (GUI)
+\todo sclient GUI usage (no description jet, sorry)
+
+
+
+\section secMechanisms 5. Extended Mechanisms
+
+\subsection secLogging 5.1. Logging
+
+There are many ways to log data. Some schemes are presented here, but as most of
+this is not subserver specific, logging is very flexible. You may find a
+combination of these logging mechods to be a good choice
+
+\li <B>Server Logging</B><BR> This is a feature build into the subserver process,
+which writes the data of abos with the \c AF_LOG flag to a file. This is
+independant of any other process and is thus a good choice for long term
+monitoring and data collection (ambient conditions). To prevent logfiles from
+growing indefinitely a log-rotation is done periodically. The default value is
+one file per day, but this can be changed at server compile time.
+
+\li <B>Logging Process</B><BR> The most easy way of logging is the normal use
+of the standard subclient program, redirecting its output to a file. This way
+you can choose which abos to log at which times to which file manually, and
+create your own logs for each run. If many abos need to be logged in each run,
+you could write a shell script to start the disk writes you want.
+
+\li <B>Logmarker</B><BR> To refrain heavy load from the server, or to have a
+faster, more reliable and precise DAQ, you can send packets to the data-taking
+processes informing them to start to write data to disk, or to stop logging
+the data. This is more like a run-control application, than a slow-control
+monitoring.
+
+
+\subsection secSubscript 5.2. Subscript
+
+If you look at the different mechanisms possible with the subserver, you see
+that there are a lot of processes to be started at runtime. Provided, that you
+start the server and one process per PC, all processes can be started from
+your central run-control software using normal abos. This greatly helps in
+keeping the overview of the processes running, because you can easily subscribe
+status information about those processes started by the system.
+
+
+\subsection secStateMachine 5.3. State Machine / Subprotocol
+
+For a detailed run-control, or just as a convenient way of starting the
+complete system or shutting it down, a state machine could manage processes or
+wait for specific events. The combination of a state machine defining which
+processes need to run, and the Subscript described above, gives manifold
+possibilities of system automation and control.
+
+
+\subsection secBridging 5.4. Bridging
+
+If the system grows more and more, it might be advisable to split the abos
+among different servers. The first idea that comes to mind in this case is,
+that one specific process will connect to both servers and exchange the abos
+needed on each other side. This is a manual, but very simple setup, and is
+likely to be the first bridging mechanism implemented. Nevertheless,
+communication between servers in not limited in any way. One can easily think
+of mechanisms which automatically build bridges between abos of different
+servers upon request, do load-balancing or other funny things. -- To start
+writing your own nice bridging process, i suggest you read some docs about the
+<em>Spanning Tree Protocol (STP)</em> and some of the routing/multicast RFCs
+given in the \ref pageReferences.
+
+
+*/

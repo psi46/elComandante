@@ -1,0 +1,17 @@
+// 1 second, using 2 sigma interval late timer and 2 sigma rate early timer
+1236613977: valid ----, lastint=1.001860, deltaT=(1.002219+-0.000388)sec == rate=(0.997786+-0.000386)Hz, N=500, Late=52, 0.104000%, Early=9, 0.018000%
+
+// 100000 usec, using 2 sigma interval late timer and 2 sigma rate early timer
+1236614113: valid ----, lastint=0.101985, deltaT=(0.101983+-0.000033)sec == rate=(9.805597+-0.003215)Hz, N=500, Late=29, 0.058000%, Early=49, 0.098000%
+
+
+// 300000 usec, using 2 sigma interval late timer and 2 sigma rate early timer
+1236614315: valid ----, lastint=0.301955, deltaT=(0.301958+-0.000004)sec == rate=(3.311719+-0.000039)Hz, N=500, Late=31, 0.062000%, Early=35, 0.070000%
+
+// 10000 usec, using 2 sigma interval late timer and 2 sigma rate early timer
+1236614471: valid ----, lastint=0.012109, deltaT=(0.012443+-0.000688)sec == rate=(80.365527+-4.442434)Hz, N=5000, Late=595, 0.119000%, Early=64, 0.012800%
+
+
+// 1000000 usec, using 2 sigma interval late timer and 2 sigma rate early timer
+1236614672: valid ----, lastint=1.001859, deltaT=(1.001857+-0.000034)sec == rate=(0.998147+-0.000034)Hz, N=100, Late=2, 0.020000%, Early=4, 0.040000%
+1236615072: valid ----, lastint=1.002129, deltaT=(1.002016+-0.000255)sec == rate=(0.997988+-0.000254)Hz, N=500, Late=48, 0.096000%, Early=7, 0.014000%

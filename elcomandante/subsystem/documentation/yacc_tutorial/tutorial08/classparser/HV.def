@@ -1,0 +1,29 @@
+if (isdef(HVchannel)) { break; };
+new packet_type HVchannel (
+	integer timestamp
+	string status
+	string mode
+	string condition
+	double vset
+	const string "Vset"
+	double vmon
+	const string "Vmon"
+	double iset
+	const string "uAset"
+	double imon
+	const string "uAmon\n"
+);
+
+if (isdef(HVvoltages)) { break; };
+new packet_type HVvoltages (
+	integer timestamp
+	double v1
+	const string "V"
+	double v2
+	const string "V"
+	double v3
+	const string "V"
+	double v4
+	const string "V\n"
+);
+

@@ -1,0 +1,5 @@
+This code is a miniature version parser of the subservers 'SlowIO Protocol'.
+It is strongly based on tutorial01, and the limitations of yytype become apparent
+for the INTEGER/FLOAT type parameters.
+
+Nevertheless, it's a good idea, to understand this first before going to tut03.

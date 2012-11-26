@@ -1,0 +1,6 @@
+This code is a complete parser for the subserver 'SlowIO Protocol'.
+(except the 'ALL' keyword for channel) The structure was changed to
+return from yyparse() call after each command was parsed. The value
+argument for 'set' now takes int and float args. 'exit' and 'debug'
+commands where added for testing purposes.
+

@@ -1,0 +1,100 @@
+Data Aquisition Group                                        D. Terhorst
+Technical Note: nnn                                                 RWTH
+Category: Informational                                    December 2008
+
+                           Generic Event Types
+
+Status of this Memo
+
+   This memo provides information for the Internet community.  This memo
+   does not specify an Internet standard of any kind.  Distribution of
+   this memo is unlimited.
+
+Table of Contents
+
+   1.   Introduction . . . . . . . . . . . . . . . . . . . . . . . .
+   2.   Event Functions  . . . . . . . . . . . . . . . . . . . . . .
+   3.   Sigma Filter . . . . . . . . . . . . . . . . . . . . . . . . 
+   3.1    Floating Average
+   4.	References . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+
+1. Introduction
+
+
+2. Event Functions
+
+   There are different kinds of events that can be recognized by the
+   system. Generally a monitoring processes will receive (time, value)
+   pairs, which can be extended to a tripple (time, value, stddev), if
+   needed.
+
+   Extrapolation	Function	Parameters
+   ------------------------------------------------------------------
+   const	t -> c			c
+   linear	t -> m*t + b		t_0, m, b
+   exp<+>	t -> a*exp(lambda*t)+c	t_0, a, lambda, c
+   exp<->	t -> a*exp(-lambda*t)+c	t_0, a, -lambda, c
+   step		t -> a + c*theta(t)	t_0, a, c
+   fermi	t -> 			t_0, a, T, c
+   poly<n>	t -> sum(a_i*x^i, i=0..n)
+					t_0, a_0 .. a_n
+   sinus	t -> c+ a*sin(omega*t +phi)
+					t_0, a, omega, phi, c
+   sin*exp<>	t -> sinus*exp		t_0, a, lambda, omega, phi, c
+   sqrt		t -> c+ a*sqrt(t)	t_0, a, c
+   log		t -> c+ a*log(t)	t_0, a, c
+   1/x		t -> c+ a/t		t_0, a, c
+
+   The output of extrapolation functions can be an endpoint which can
+   be of special interest, or the time approximation to break a
+   threshold.  The exponential functions with positive and negative
+   lambda are intuitive examples: exp(-lambda*t) may break a threshold
+   defining the full or empty state of a pressureized buffer. The the
+   extrapolation will asymptotically approach a final endpoint, which
+   may be useful to know before reaching it. The exp(lambda*t)
+   function does not have a meaningfull endpoint, but will certainly
+   break a threshold at some point in time. This information might be
+   used to issue a warning or take appropiate action. In contrast to
+   these functions the prediction of a step function is quite useless.
+   Either a threshold has been broken or not, but the time at which
+   the step was encountered, or even the mere fact that there was a
+   step, can be a useful for later analysis purposes.
+
+
+
+3. Sigma-Filter
+
+3.1 Floating Average
+
+   Calculating an average value as a reference for a newly received
+   value, has to be done in a timely or count-restriced way. It is
+   nither feasable nor useful to average all input values since the
+   beginning of the universe. A more reasonable aproach is to strive
+   for a quick algorithm with low, or at least constant, memory usage.
+   Floating average algorithms are easy to implement, are quick and
+   often do not need a large amount of memory.
+
+
+3.1.1 Average of the last N values
+
+   avg(0) = 0;	// or initialized value
+   sigma(0) = 0;
+
+   add a new value X by
+
+   avg(n+1) = ( N*avg(n) + X ) / (N+1)
+
+   sigma(n+1) = FIXME
+
+
+
+3.1.2 Average of the last T seconds
+
+   FIXME
+
+
+4. References
+
+   [1] 
+

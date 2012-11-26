@@ -1,0 +1,36 @@
+#!/bin/sh
+
+ABO=/equip/mvme/temperature
+
+COMMAND='while true; do echo "`date +%s` $((`cat /sys/bus/i2c/devices/0-0048/temp1_input`/10)).$((`cat /sys/bus/i2c/devices/0-0048/temp1_input`%10))"; sleep 10; done'
+NAME="mvme_temperature monitoring"
+
+case $1 in
+start)
+	echo "*** starting $NAME ..."
+	source setup_environment
+	nohup sh -c "$COMMAND | $CLIENT $ABO" &
+	sleep 1; #nohup output.
+	;;
+stop)
+	echo "*** stopping $NAME ..."
+	for i in 1 2; do 
+		PID=`ps -eo pid,command | grep "0-0048/temp1_input" | grep -v "grep"`;
+		PID=`echo $PID | cut -f1 -d" "`
+		if [[ ! -z "$PID" ]]; then
+			echo "*** killing $NAME (pid $PID)";
+			kill -term $PID || echo "ERROR: Could not send this signal! Check permissions!";
+		else
+			echo "*** could not find pid of process";
+		fi
+	done
+	;;
+status)
+	ps aux | grep "0-0048/temp1_input" | grep -v "grep" && echo "*** $NAME running" || echo "*** $NAME NOT running!";
+	;;
+*)
+	echo "usage: $0 {start|stop|status}";
+	;;
+esac;
+
+

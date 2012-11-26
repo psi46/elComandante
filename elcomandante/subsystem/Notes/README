@@ -1,0 +1,77 @@
+
+
+Technical Notes
+---------------
+   This directory contains technical notes on the networking
+   environment and protocols used for and with the subsystem library.
+   The structure of the documents is based on the layout of the
+   Internet Request For Comments (RFC) standards documents
+   (www.faqs.org), of which especially the following have to be
+   mentioned:
+
+   Postel, J. and J. Reynolds, "Instructions to RFC Authors", RFC
+        2223, October 1997.
+
+   Bradner, S., "Key words for use in RFCs to Indicate Requirement
+	Levels", BCP 14, RFC 2119, March 1997.
+
+   Bradner, S., "The Internet Standards Process -- Revision 3",
+	BCP 9, RFC 2026, October 1996.
+
+   Postel, J., "Internet Official Protocol Standards", STD 1, RFC
+        1540, Internet Architecture Board, October 1993.
+
+
+Contents
+--------
+   Following index lists all available notes in numerical order, in a
+   format suitable for use in a 'References' section.
+
+   [x] Terhorst, D., "The Subserver Protocol". NOTE 001, DAQ-Group,
+       RWTH-Aachen Germany, III. phys. Institut b, November 2008.
+
+   [x] Terhorst, D., "Running a Subserver Inside a Chroot Environment".
+       NOTE 002, DAQ-Group, RWTH-Aachen Germany, III. phys. Institut b,
+       January 2009.
+
+   [x] Terhorst, D., "NTP Status Protocol". NOTE 003, DAQ-Group,
+       RWTH-Aachen Germany, III. phys. Institut b, March 2009.
+
+
+Open Issues
+-----------
+   This is a non-comprehensive list of open issues and possible
+   extensions. Most points are ideas of new concepts which have been
+   thought about in the core development team. All topics definitely
+   need more discussion.
+
+   -Unique supply/subscribe packets
+      Many problems concerning double receipt of packets, erroneous
+      packets and control value security can be solved by the
+      introduction of a uniqueness abo flag in the server. 
+   -Server-Server Bridging
+      Establish inter-server connections to facilitate load balancing
+      features and partial system shutdown options. Open problems are
+      packet routing and distribution algorithms and forwarding of
+      PKT_SUBSCRIBE type packets.
+   -Server PKT_SERVERTERM reaction
+      This packet type is intended to shut down the server, but an
+      immediate complete system shutdown upon receipt of a single
+      packet from unknown origin is quite unsatisfactory. This
+      definitly is an open issue, if not disabled in the server.
+
+   The Subserver Protocol has several unspecified locations leaving
+   room for extensions. Except for the introduction of a new packet
+   type, there are some unused or unspecified protocol extension
+   interfaces, which may be assigned new usages.
+
+   -PKT_SUBSCRIBE packet data fields
+   -packet extension by namelen field greater than strlen(name) + 1
+
+
+Printing Notes
+--------------
+	a2ps -2 -M a4 -l74 --borders no
+		 -b"III. phys. Institut, RWTH Aachen"
+		 --footer="" -o Note.ps
+		 NOTEnnn--High_Voltage_Protocol.txt

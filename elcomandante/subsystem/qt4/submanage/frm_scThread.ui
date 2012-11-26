@@ -1,0 +1,53 @@
+<ui version="4.0" >
+ <class>frm_scThread</class>
+ <widget class="QWidget" name="frm_scThread" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>151</width>
+    <height>181</height>
+   </rect>
+  </property>
+  <property name="sizePolicy" >
+   <sizepolicy vsizetype="Fixed" hsizetype="Fixed" >
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle" >
+   <string>sclient Thread Status</string>
+  </property>
+  <widget class="QPushButton" name="btnGO" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>150</y>
+     <width>131</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="text" >
+    <string>GO!</string>
+   </property>
+  </widget>
+  <widget class="QDial" name="dial" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>10</y>
+     <width>131</width>
+     <height>131</height>
+    </rect>
+   </property>
+   <property name="wrapping" >
+    <bool>true</bool>
+   </property>
+   <property name="notchesVisible" >
+    <bool>true</bool>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

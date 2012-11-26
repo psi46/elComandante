@@ -1,0 +1,59 @@
+#!/bin/bash
+
+# subserver system abo
+ABO=/system/ntp_stati
+
+# find the correct ntpdc binary
+NTPDC=`find /usr/sbin/ /usr/bin/ /bin/ /sbin -name ntpdc | head -n 1`
+if [ ! -x $NTPDC ]; then
+	echo "Could not find correct NTP binary: \"$NTPDC\"";
+	exit 1;
+fi
+export NTPDC;
+
+# function to generate periodic status messages
+function monitor_NTP_status () {
+	stratum="N/A"
+	systempeer="unknown"
+	INTERVAL_SEC=60;
+	while true; do
+		eval `$NTPDC -c sysinfo | sed -e 's/ //g' -e 's/:/="/' -e 's/$/"/'`
+		echo "`date +%s` `hostname | cut -f1 -d'.'` $stratum svr='$systempeer'" 
+		sleep $INTERVAL_SEC;
+	done
+}
+export -f monitor_NTP_status;
+
+COMMAND="monitor_NTP_status"
+NAME="ntpd monitoring"
+SEARCH=$COMMAND
+
+case $1 in
+start)
+	echo "*** starting $NAME ..."
+	source setup_environment
+	nohup bash -c "$COMMAND | $CLIENT $ABO" & # RUN THE COMMAND IN BACKGROUND
+	sleep 1; #nohup output.
+	;;
+stop)
+	echo "*** stopping $NAME ..."
+	for i in 1 2; do 
+		PID=`ps -eo pid,command | grep "$SEARCH" | grep -v "grep while true;"`;
+		PID=`echo $PID | cut -f1 -d" "`
+		if [[ ! -z "$PID" ]]; then
+			echo "*** killing $NAME (pid $PID)";
+			kill -term $PID || echo "ERROR: Could not send this signal! Check permissions!";
+		else
+			echo "*** could not find pid of process";
+		fi
+	done
+	;;
+status)
+	ps aux | grep "$SEARCH" | grep -v "grep" && echo "*** $NAME running" || echo "*** $NAME NOT running!";
+	;;
+*)
+	echo "usage: $0 {start|stop|status}";
+	;;
+esac;
+
+

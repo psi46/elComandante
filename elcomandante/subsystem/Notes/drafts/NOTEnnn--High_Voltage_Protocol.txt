@@ -1,0 +1,120 @@
+Data Aquisition Group                                      D. Terhorst
+Technical Note: nnn                                               RWTH
+Category: Informational                                  November 2008
+
+                           High Voltage Protocol
+
+Status of this Memo
+
+   This memo provides information for the Internet community.  This
+   memo does not specify an Internet standard of any kind.
+   Distribution of this memo is unlimited.
+
+Table of Contents
+
+   1.   Introduction . . . . . . . . . . . . . . . . . . . . . . . .
+   1.1  Requirements Terminology
+   2.   Subserver Architecture . . . . . . . . . . . . . . . . . . .
+   3.   Subserver Packets  . . . . . . . . . . . . . . . . . . . . . 
+   3.1    Packet Types
+   3.2    Usual Packet Transmissions
+
+
+1. Introduction
+
+   The protocol described in this document is intended to be used for
+   communication with power supplies of any kind. It is based on the
+   Subserver Protocol [1] to send data and control messages to the
+   networked system components and describes the moitoring data
+   received from them.
+   
+
+2. Subserver Architecture
+
+
+3. Protocol Packets
+
+   Type: PKT_DATA
+   Name: */channel_<NN>
+   Data: <timestamp> <statlist> <Vset>Vset <Vmon>V <Iset>uA <Imon>uA
+        periodical, and on activity (change)
+
+   Example:
+      1227607753 ON U 1000.0Vset 999.8Vmon 10.0uAset 3.0uAmon
+
+      <NN>
+         Two digit channel number (leading zero for NN<10)
+      <statlist> with at least one each of the following:
+	<status>
+		one of "ON", "OFF"
+	<control>
+		"U" for voltage controlled
+		"I" for current controlled
+	<event> optional 
+		one of "TRIPPED", "KILLED", "INTERLOCK"
+	
+      <timestamp>
+         Decimal unix timestamp (like "1227607753")
+
+      <Vset>, <Vmon>, <Iset>, <Imon>
+         Set and monitoring voltages and currents.
+
+         Unit for Voltage is V
+         Unit for Current is µA
+
+   Type: PKT_SETDATA
+   Name: * any supplied abo
+   Data: set <what> <chan> <value>
+
+	<chan>	Channel number in decimal. Minimum 0 (first channel),
+		maximum depending on hardware capabilities, or the
+		keyword 'all' to affect all available channels.
+
+        <what>
+         voltage
+		value in V, floating point
+         current
+		value in uA, floating point
+
+         on  value ignored
+         off value ignored
+
+         option  <parameter>
+		given value specific to <parameter>
+
+   Type: PKT_SETDATA
+   Name: * any supplied abo
+   Data: kill <chan>
+
+optional aliases {
+   Type: PKT_SETDATA
+   Name: * any supplied abo
+   Data: off           (de-facto)
+	= set off all
+
+   Type: PKT_SETDATA
+   Name: * any supplied abo
+   Data: on
+	= set on all
+}
+
+   Type: PKT_DATA
+   Name: */voltages
+   Data: <timestamp> <Vmon1> <Vmon2> ... <VmonN>
+        periodical, optional
+
+   Type: PKT_DATA
+   Name: */status
+   Data: <timestamp> <Nchan> <status>
+        periodical
+      <status>
+         "ON"  when at least one channel is ON
+         "OFF" when all channels are OFF
+
+
+5. References
+
+   [1] Terhorst, D., "The Subserver Protocol". NOTE 001,  DAQ-Group
+       RWTH-Aachen, November 2008
+
+

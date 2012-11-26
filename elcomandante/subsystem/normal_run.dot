@@ -1,0 +1,66 @@
+digraph subservices {
+
+	// list of abos
+	node [shape=ellipse, color=cornsilk3, style=filled];
+	abo000 [label=</flowbus/BH1<BR/><FONT POINT-SIZE="10">L-- 1/1 +2</FONT>>];
+	abo001 [label=</thpc/data<BR/><FONT POINT-SIZE="10">L-- 1/1 +1</FONT>>];
+	abo002 [label=</vhs4060n/status<BR/><FONT POINT-SIZE="10">-T- 1/4 +2</FONT>>];
+	abo003 [label=</control<BR/><FONT POINT-SIZE="10">--- 2/9 +8</FONT>>];
+	abo004 [label=</log<BR/><FONT POINT-SIZE="10">-T- 1/1 +6066</FONT>>];
+	abo005 [label=</vfadc/data<BR/><FONT POINT-SIZE="10">--- 0/3 +1221820581</FONT>>];
+
+	// list of clients and connections
+	node [ shape=box, color=dodgerblue2, style=solid ];
+	edge [len=2];   // stretch the drawing a bit for neato
+
+	client000 [label=<thpc_main<BR/><FONT POINT-SIZE="10">134.61.14.174:1032</FONT>>]
+		client000 -> abo001
+		abo001 -> client000
+
+	client001 [label=<../../subserver/software/client<BR/><FONT POINT-SIZE="10">134.61.14.174:1031</FONT>>]
+		client001 -> abo000
+		abo000 -> client001
+
+	client002 [label=<t2k_vfadc<BR/><FONT POINT-SIZE="10">134.61.14.186:32778</FONT>>]
+		client002 -> abo003
+		client002 -> abo004
+		client002 -> abo002
+
+	client003 [label=<client_logchange<BR/><FONT POINT-SIZE="10">134.61.14.171:1524</FONT>>]
+		abo003 -> client003
+
+	client004 [label=<client_logchange<BR/><FONT POINT-SIZE="10">134.61.14.171:1525</FONT>>]
+		abo002 -> client004
+		abo003 -> client004
+
+	client005 [label=<client_logchange<BR/><FONT POINT-SIZE="10">134.61.14.171:1534</FONT>>]
+		abo002 -> client005
+		abo003 -> client005
+
+	client006 [label=<client_logchange<BR/><FONT POINT-SIZE="10">134.61.14.171:1530</FONT>>]
+		abo002 -> client006
+		abo003 -> client006
+
+	client007 [label=<client_logchange<BR/><FONT POINT-SIZE="10">134.61.14.171:1532</FONT>>]
+		abo005 -> client007
+		abo003 -> client007
+
+	client008 [label=<client_logchange<BR/><FONT POINT-SIZE="10">134.61.14.171:1533</FONT>>]
+		abo005 -> client008
+		abo003 -> client008
+
+	client009 [label=<client_logchange<BR/><FONT POINT-SIZE="10">134.61.14.171:1535</FONT>>]
+		abo002 -> client009
+		abo003 -> client009
+
+	client010 [label=<client_logchange<BR/><FONT POINT-SIZE="10">134.61.14.171:1536</FONT>>]
+		abo005 -> client010
+		abo003 -> client010
+
+	client011 [label=<client<BR/><FONT POINT-SIZE="10">134.61.14.171:1537</FONT>>]
+		client011 -> abo003
+		abo003 -> client011
+
+	client012 [label=<./client<BR/><FONT POINT-SIZE="10">134.61.15.163:34143</FONT>>]
+		abo004 -> client012
+}

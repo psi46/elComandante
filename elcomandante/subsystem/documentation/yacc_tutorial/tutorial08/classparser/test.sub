@@ -1,0 +1,14 @@
+load "DAQ.def";
+
+echo "Waiting for first packets...";
+waitfor /control/DAQ:DAQ_adc_event;
+echo "received /control/DAQ:DAQ_adc_event";
+waitfor /control/DAQ:DAQ_adc;
+echo "received /control/DAQ:DAQ_adc";
+waitfor /control/DAQ:DAQ_file;
+echo "received /control/DAQ:DAQ_file";
+waitfor /control/DAQ:DAQ_lastdone;
+echo "received /control/DAQ:DAQ_lastdone";
+waitfor /control/DAQ:DAQ_started;
+echo "received /control/DAQ:DAQ_started";
+

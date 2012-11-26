@@ -1,0 +1,268 @@
+
+Data Aquisition Group                                        D. Terhorst
+Technical Note: nnn                                          RWTH Aachen
+Category: Informational                                       March 2009
+
+                      Subserver Management Commands
+
+Status of this Memo
+
+   This memo provides information for the Internet community.  This memo
+   does not specify an Internet standard of any kind.  Distribution of
+   this memo is unlimited.
+
+Table of Contents
+
+   1.   Introduction . . . . . . . . . . . . . . . . . . . . . . . .
+   2.   Management Commands. . . . . . . . . . . . . . . . . . . . .
+   2.1    Help / Command List
+   2.2    Set Identifier
+   2.3    List Clients
+   2.4    List Abos
+   2.5    Remove Clients
+   2.6    Remove Abos
+   2.7    Abo Flags (log, time, unique)
+   3.	References . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+
+1. Introduction
+
+   This document describes the current implementation of the subservers
+   management interface via the Subserver Protocol [1]. The server
+   status can be requested and altered by commands sent in management
+   type packets.
+
+
+2.  Management Commands
+
+   Packets send to the server with the type field set to PKT_MANAGEMENT
+   (see [1]), will never be forwarded to another client. Instead they
+   will be parsed by the server. A response is returned from the server
+   only to the requesting client. If the response has multiple lines,
+   the server may send a single packet per line, or multiple lines per
+   packet.
+
+   The following list of available commands is based on the current
+   version of the subserver (as of March 2009).
+
+   In the following sections the syntax description shows optional
+   parameters in sqare brackets.
+
+2.1 Help / Command List
+
+   The server sends a list of understood commands in human readable form
+   upon reception of the command "help". The following list is shown by
+   the time of this writing.
+
+        help            show this help
+        setid <name>    set identifier <name> for current client
+        lc [-l]         list clients [and their subsciptions]
+        la [-l]         list abos [and their suppliers]
+        rmc <name>      remove client with id=<name> or addr=<name>
+        rma <name>      remove abo with name <name>
+        rma unsupplied  remove abos which are not supplied by any client
+        [no]log <name>  decrement or increment loglevel of abo <name>
+        [no]time <name> set/clear 'add time' flag of abo <name>
+        [no]unique <name>   set/clear 'unique supply' flag of abo <name>
+
+
+2.2 Set Identifier
+
+   Syntax:
+	PKT_MANAGEMENT	setid <clientid>
+
+   The clients name shown by the server in any listing (lc or la, see
+   below) can be set with this command. A client should pass a
+   meaningful name, which can be used to aid in identification of the
+   client process. Usualy the command name of the program or script will
+   suffice, if it is not a generic program name like "./main" or
+   "./a.out".
+
+   Example:
+	PKT_MANAGEMENT	setid temperature_control
+
+   This will set the clientid of the current client to "temperature_
+   control".
+
+
+2.3 List Clients
+
+   Syntax:
+	PKT_MANAGEMENT  ls [-l]
+   or
+	PKT_MANAGEMENT  lc [-l]
+
+   To see a list of clients connected to the server use the "lc" or
+   "ls" command, which is an alias for "lc". Without any parameter the
+   response of the server might look like the following (Note: All
+   IPs have been obscured):
+
+   Example:
+	3 clients:
+	manager                 134.61.xxx.xxx:60895     0   1 +0
+	client                  134.61.xxx.xxx:38455     0   1 +1739453
+	thpc                    134.61.xxx.xxx:17100     1   0 +9
+
+   The lines are a whitespace separated list, wherein the kind of
+   whitespace, any number of tabs or space, may vary.
+
+	<clientid> <sourceip>:<sourceport> <#subm> <#subsc> +<lastrx>
+
+   The <clientid> field shows the name set by the client with the "setid"
+   command as described above. The <sourceip>:<sourceport> show the IP
+   connection to the client. The following fileds show the numbers of
+   supplied and subscribed abos of the client and the time in seconds
+   since the server last received a packet from this client <lastrx>.
+
+   The <clientid> field of a client might change while the client is
+   active, if the client issues a "setid" command. More than one client
+   may have the same name, but the <sourceip>:<sourceport> field will
+   always be unique among all clients at a given time.
+
+   The <lastrx> field may not be meaningful, if the client does not
+   supply any abo, or if the client has not jet sent a packet. In this
+   case the server may substitute the time by the string "unsupplied".
+
+   A more detailed listing can be seen when giving the parameter "-l",
+   the server will then also list the names of the supplied and
+   subscribed abos for each client.
+
+   Example:
+	4 clients:
+	manager                 134.61.xxx.xxx:60895      0   1 +0
+	     subscribed /manage
+	client                  134.61.xxx.xxx:1027      1   1 +16
+	     supplies   /system/ntp_stati
+	     subscribed /system/ntp_stati
+	client                  134.61.xxx.xxx:38455     0   1 +1739139
+	     subscribed /equip/mvme/temperature
+	thpc                    134.61.xxx.xxx:17100     1   0 +3
+	     supplies   /thpc/data
+
+
+2.4 List Abos
+
+   Syntax:
+	PKT_MANAGEMENT	la [-l]
+
+   A complete list of available abos can be requested with the "la"
+   command. The server will respond with multiple lines of the format
+
+	<flags> <aboname> <#suppliers> <#subscriptions> +<lastrx>
+
+   If no flags are set for an abo the <flags> field will just be "---".
+   Any flag set will change one of the '-' to a letter indicating the
+   kind of flag
+	l--	logged by the server
+	-t-	a timestamp is prepended by the server
+	--u	the server permitts only one supplier ("unique" flag)
+   or any combinations of these ("lt-" = logged, timestamped, not
+   unique). All flags are case sensitive. The number, order and kind of
+   flags may change and will be documented in the subservers
+   documentation.
+
+   The <aboname> can be any string not containing the "\0" escape
+   character according to the Subserver Protocol [1], nevertheless all
+   users are strongly encouraged not to use whitespace in their
+   abonames, as it will make this output hard to parse. Programs do not
+   need to be able to parse whitespace containing abonames.
+
+   The number of suppliers and subscriptions for the specified abo and
+   the time since the last packet for this abo has been received, are
+   given in the remaining fields.
+   
+   Example:
+	9 current submissions:
+	l-- /thpc/data                       3   1 +3
+	l-- /system/ntp_stati                5   5 +12
+	--- /equip/vx1720/diode_info         7   0 +1725997
+	--- /manage                          0   1 +1634067
+	--- /equip/mvme/temperature          1   2 +7
+	--- /control                         0   0 +677100
+	--- /system/ntp_status               0   0 unsupplied
+	--- /equip/HV/status                 0   1 unsupplied
+	--- /equip/diode/status              0   1 unsupplied
+
+   Analog to the "-l" parameter for the "ls" command described above,
+   this command will also give a more detailed listing giving the "-l"
+   parameter. Following truncated output should clarify the structure:
+
+   Example:
+	9 current submissions:
+	l-- /thpc/data                       1   1 +7
+	     supplied by   thpc                    (134.61.xx.xxx:17100)
+	     subscribed by client                  (134.61.xx.xxx:55298)
+	--- /equip/vx1720/diode_info         0   0 +1735495
+	--- /manage                          0   1 +1643565
+	     subscribed by manager                 (134.61.xx.xxx:60895)
+	--- /equip/mvme/temperature          1   2 +1
+	     supplied by   client                  (134.61.xx.xxx:32770)
+	     subscribed by client                  (134.61.xx.xxx:38455)
+	     subscribed by client                  (134.61.xx.xxx:32770)
+	--- /control                         0   0 +686598
+	--- /system/ntp_status               0   0 unsupplied
+	
+
+   NOTE: As you can see in the above example, a more meaningful name for
+         the clients would be very helpful to distinguish between the
+         different functions provided by the clients.
+
+
+2.5 Remove Clients
+
+   Syntax:
+	rmc <which>
+
+   The use of this command should not be necessary in normal operation.
+
+   Clients can be removed from the servers list of clients with the
+   "rmc" command. The server will then unsubscribe all abos for the
+   client, unregister any supplies and remove the client without any
+   notification of the client. This is helpful if a client program
+   terminated without sending a PKT_CLIENTTERM type packet. Using this
+   command with an active client as a parameter will cause the server
+   to stop sending any packets to it, effectively making the client
+   useless. A packet recieved from the removed client will then register
+   a new connection to the server without any subscriptions.
+
+   The <which> parameter is matched against the clientid and ip:port
+   fields of the client list and all matching clients are removed.
+
+
+2.6 Remove Abos
+
+   Syntax:
+	rma <which>
+   or   rma unsupplied
+
+   The use of this command should not be necessary in normal operation.
+
+   The <which> parameter is matched against the aboname fields of the
+   servers internal abo list and all matching abos are removed. The
+   special keyword "unsupplied" will remove any abos with zero
+   registered suppliers. Any clients with a subscription of the deleted
+   abos will be unsubscribed without any notification. This will make
+   all these clients effectively useless.
+
+
+2.7 Abo Flags (log, time, unique)
+
+   Syntax:
+	time <aboname>
+	notime <aboname>
+	log <aboname>
+	nolog <aboname>
+	unique <aboname>
+	nounique <aboname>
+
+   These commands set or clear the respective flag for the given abo. As
+   described in Section 'List Abos' above, the number and kind of flags
+   supported by the server may change.
+
+
+3. References
+
+   [1] Terhorst, D., "The Subserver Protocol". NOTE 001, DAQ-Group,
+       RWTH-Aachen Germany, III. phys. Institut b, November 2008.
+
+

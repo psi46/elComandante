@@ -1,0 +1,161 @@
+Data Aquisition Group                                        D. Terhorst
+Technical Note: nnn                                                 RWTH
+Category: Informational                                    February 2010
+
+                             Event Data Protocol
+
+Status of this Memo
+
+   This memo provides information for the Internet community.  This memo
+   does not specify an Internet standard of any kind.  Distribution of
+   this memo is unlimited.
+
+Table of Contents
+
+   1.   Introduction . . . . . . . . . . . . . . . . . . . . . . . .
+   2.   Packet Layout  . . . . . . . . . . . . . . . . . . . . . . .
+   2.1  QDC/TDC Control Packets
+   2.1.1	Device Setup Commands
+   2.1.2	Run Control Commands
+   3.   Examples . . . . . . . . . . . . . . . . . . . . . . . . . .
+   4.	References . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+
+1. Introduction
+
+   This protocol specifies a partially binary data transfer protocol
+   aimed to be used with high data rate applications, such as FADC
+   readout or multi event TDC or QDC packets.
+   
+   The basis of this protocol is the Subserver Protocol [1], which
+   will be used to submit lines of ASCII text. 
+
+
+2. Packet Layout
+   
+   FIXME: define abo-names?
+
+
+2.1 QDC/TDC Control Packets
+
+   Following command structure is used to control data readout of
+   TDC/QDC device processes. Strings are usually lower case, but the
+   protocol may be implemented case insensitive by the device process.
+
+
+2.1.1 Device Setup Commands
+
+   To setup the device for the measurement, these commands may be
+   used. After a 
+
+   Type: PKT_SETDATA
+   Data: enable <feature>
+   Data: disable <feature>
+
+   <feature>
+   	'single-shot'
+	take a single event only 
+	'zero-suppression'
+
+   Type: PKT_SETDATA
+   Data: enable channel <n>
+   Data: disable channel <n>
+
+
+   Type: PKT_SETDATA
+   Data: reset
+
+
+2.1.2 Run Control Commands
+
+   These commands start or stop the actual data taking.
+
+   Type: PKT_SETDATA
+   Data: start
+   Data: stop
+
+   The 'start' command enables data taking of the device. Unless this
+   command has been given, there shall be no data stored in device
+   buffers, or the buffers must be cleared on reception. The device
+   process shall not send data to the subsystem taken by the device
+   prior reception of this command. The 'start' command may -- for
+   this reason -- results in multiple commands being sent to the
+   device (e.g. clear buffer and start run) and thus is not to be used
+   for timing the start of data taking if event synchronisation is
+   critical; use hardware inhibits for this.
+
+   If a 'stop' command is received the device process must stop to
+   send further data as soon as possible. This command may be received
+   asynchronously. It is unspecified if this command causes the
+   underlaying hardware to stop taking data.
+
+
+   Type: PKT_SETDATA
+   Data: set <option> <parameter>
+
+   The following options may be implemented:
+   <option>
+	'nevents' <n>
+	Set the number of events to take.
+
+	'run' <n>
+	Set the next run number
+
+
+   Additional Commands
+
+   Type: PKT_SETDATA
+   Data: clear buffer
+
+   FIXME: more generic needed?
+
+
+2.2 QDC/TDC Event Data Packets
+
+   These packets are sent by the QDC/TDC device process to transmit
+   event data to the subsystem. Each line represents data from one
+   event and is terminated by a newline character. Multiple lines may
+   be sent in a single packet.
+
+   Type: PKT_DATA
+   Data: <timestamp> <run> <eventnumber> <n> <LISTOFDECIMALS> '\n'
+
+   timestamp
+   	unix timestamp, seconds since epoche
+
+   run
+   	The run number in decimal representation without leading
+	zeros. If run numbers are not used, zero '0'
+
+   eventnumber
+	Number from the event data read from the device data
+	(integer). if there is additional integer data (e.g. a trigger
+	word), this data may be added as the fractional part.
+
+   <n>	Number of entries in the following list. (decimal
+	representation). This number may be zero, if the list is empty
+	(e.g. as result of zero suppression)
+
+   <LISTOFDECIMALS>
+	The data is transmitted as a single space separated list of
+	numbers in decimal notation. Numbers may be integers or simple
+	floats. It is left to the implementation of the device
+	process, if this is just ADC readout values or transformed
+	data with a known unit (e.g. coulomb for QDC, nanoseconds for
+	TDC,... )
+
+	FIXME: need channel number? like 4:3.2, or placeholder '0'?
+
+
+3. Examples
+   
+
+   enable single-shot
+
+
+4. References
+
+   [1] Terhorst, D., "The Subserver Protocol". NOTE 001, DAQ-Group,
+       RWTH-Aachen Germany, III. Phys. Institut b, November 2008.
+
+

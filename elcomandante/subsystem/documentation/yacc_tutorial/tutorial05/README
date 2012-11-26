@@ -1,0 +1,3 @@
+A small parport access library is added and the appropriate function
+calls are inserted into the corresponding grammar actions.
+Initialization is done in the grammar.y main() function.

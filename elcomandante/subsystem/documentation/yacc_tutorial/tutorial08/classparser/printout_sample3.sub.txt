@@ -1,0 +1,29 @@
+
+
+	new packet_type protoB ( real number  ... );
+	subscribe protoB on /test/B;
+
+	new proc ptest {
+		waitfor /test/B:protoB;
+		if ( /test/B:protoB:number < 6 ) {
+			new proc testB {
+				waitfor /test/B:protoB;
+				while ( /test/B:protoB:number < 42 ){
+					send /script/out "low B\n";
+					sleep 2;
+				}
+			};
+			pcall testB;
+		}
+	};	
+	
+	ptest;
+
+
+Rationale
+-The subthreads */ptest/if/testB context will loose it's parent scope when if-scope exits
+-context locks would break management of parent context. parent can not delete
+child context and subthread does not know about which contexts to delete.
+
+-egal wer es wegräumt, hauptsache er ist der letzte. solange mehrere threads
+den context brauchen, ist keiner dafür verantwortlich.

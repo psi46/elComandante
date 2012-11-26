@@ -1,0 +1,5 @@
+
+load "fields.def";
+subscribe fields on /control/field_A;
+subscribe fields on /control/field_B;
+

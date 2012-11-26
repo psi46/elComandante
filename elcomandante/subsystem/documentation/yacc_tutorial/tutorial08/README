@@ -1,0 +1,19 @@
+
+Lex/Flex	Tokenizer
+	returns tokens with semantic values for read regular expressions
+Yacc/Bison	LALR(1) Grammar Parser
+	recognizes defined combinations of tokens as grammatic constructions
+
+
+Good starting point is
+	http://tldp.org/HOWTO/Lex-YACC-HOWTO.html
+and
+	http://epaperpress.com/lexandyacc/index.html
+
+Bison Manual can be found at
+	http://www.gnu.org/software/bison/manual/html_node/index.html
+
+Reentrant (pure) Parser
+	http://www.phpcompiler.org/articles/reentrantparser.html
+
+

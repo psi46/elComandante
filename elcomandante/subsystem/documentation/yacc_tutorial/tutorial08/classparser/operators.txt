@@ -1,0 +1,33 @@
+Precedence of operators
+=======================
+
+Level	Operator		Description	Grouping
+1	::			scope		Left-to-right
+2	() [] . -> ++ --
+	 dynamic_cast static_cast
+	 reinterpret_cast
+	 const_cast typeid	postfix		Left-to-right
+3	++ -- ~ ! sizeof new
+	delete			unary (prefix)	Right-to-left
+	* &			indirection and
+				 reference (pointers)
+	+ -			unary sign operator
+4	(type)			type casting	Right-to-left
+5	.* ->*			pointer-to-
+				 member		Left-to-right
+6	* / %			multiplicative	Left-to-right
+7	+ -			additive	Left-to-right
+8	<< >>			shift		Left-to-right
+9	< > <= >=		relational	Left-to-right
+10	== !=			equality	Left-to-right
+11	&			bitwise AND	Left-to-right
+12	^			bitwise XOR	Left-to-right
+13	|			bitwise OR	Left-to-right
+14	&&			logical AND	Left-to-right
+15	||			logical OR	Left-to-right
+16	?:			conditional	Right-to-left
+17	= *= /= %= += -=
+	>>= <<= &= ^= |=	assignment	Right-to-left
+18	,			comma		Left-to-right
+
+() [] . -> ++ -- ~ ! * / % + - << >> & ^ | && || 

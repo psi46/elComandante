@@ -1,0 +1,4 @@
+This code is for a very simple lex/yacc parser as described in
+http://tldp.org/HOWTO/Lex-YACC-HOWTO-4.html
+
+It already does the parameter assignment.

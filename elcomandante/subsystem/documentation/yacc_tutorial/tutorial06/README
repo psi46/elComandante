@@ -1,0 +1,7 @@
+This example code shows how to create a parser, which is to be loaded
+into a main program at runtime. It uses the dlopen() and dlsym()
+functions to open a shared object library and load the parser found
+therein. Note that the parser has no links to the main program, except
+for the loaded symbol name (here it is 'yyparse') and may be compiled
+separately without any knowledge of the main.
+

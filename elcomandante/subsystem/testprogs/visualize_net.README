@@ -1,0 +1,17 @@
+
+The visualisation of network structures can be done with the graphviz
+package which can be found at
+
+	http://www.graphviz.org/
+
+The input to this programm is just a "node-edge" graph description in a
+c-like syntax, the output can be in various forms.
+
+As an example look at the visualize_net.png file, it has been produced by
+
+	neato -Tpng visualize_net.dot >visualize_net.png
+
+
+The subserver could provide the .dot file for quick network overviews by
+just giving them to the client with a "ls"-like management command.
+

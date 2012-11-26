@@ -1,0 +1,45 @@
+#!/bin/sh
+
+START=$1;
+STOP=$2;
+NAME=$3;
+
+DATAPATH=/home/dennis/sdvlp/subserver/DATA
+
+TINTERVAL=`which tinterval` || TINTERVAL=/home/dennis/DA/Tools/bin/tinterval;
+
+if [ -z "$NAME" ]; then
+	echo "no name given!";
+	exit;
+fi
+
+NAME="$NAME";
+
+echo "# time interval [$START .. $STOP]"
+
+# create/copy dir tree
+if echo $NAME | grep -E "^/"; then
+	echo "absolute path given: $NAME"
+else
+	echo "relative path given: $NAME"
+	NAME="`pwd`/$NAME";
+	echo "absolute path is:    $NAME"
+fi
+
+echo -e "\ncreating directory tree"
+cd $DATAPATH
+find . -type d | while read dir; do
+	dir=`echo $dir | sed -e 's%^\./%%'`;
+	dir=`echo $dir | sed -e 's%^\.%%'`;
+	echo "        $NAME/$dir";
+	mkdir $NAME/$dir;
+done;
+
+echo -e "\ncopying wanted data"
+find . -type f | while read file; do
+	file=`echo $file | sed -e 's%^\./%%'`;
+	echo -en "        $NAME/$file\n\t\t";
+	cat $file | $TINTERVAL $START $STOP >$NAME/$file;
+done
+
+

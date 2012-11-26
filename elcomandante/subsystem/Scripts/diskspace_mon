@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# subserver system abo
+ABO="/system/diskspace";
+
+CMD_NAME="df";
+NAME="diskspace monitoring";
+COMMAND="monitor_status"
+SEARCH=$COMMAND
+
+export CLIENTID="`hostname -s`:`basename $0`";
+export INTERVAL_SEC=60;
+
+# find the correct binary for CMD_NAME
+BIN=`find /bin /usr/bin/ /usr/sbin/ /sbin -name $CMD_NAME | head -n 1`
+if [ ! -x $BIN ]; then
+	echo "Could not find correct binary: \"$BIN\"";
+	exit 1;
+fi
+export BIN;
+
+function subserver_setid () {
+	echo "m";
+	echo "setid $CLIENTID";
+	echo "d";
+}
+export -f subserver_setid;
+
+# function to generate periodic status messages
+function monitor_status () {
+	subserver_setid;
+	while true; do
+		$BIN | grep -v "Filesystem";
+		sleep $INTERVAL_SEC;
+	done
+}
+export -f monitor_status;
+
+case $1 in
+start)
+	echo "*** starting $NAME ..."
+	source setup_environment
+	nohup bash -c "$COMMAND | $CLIENT $ABO >/dev/null 2>&1" & # RUN THE COMMAND IN BACKGROUND
+	sleep 1; #nohup output.
+	;;
+stop)
+	echo "*** stopping $NAME ..."
+	for i in 1 2; do 
+		PID=`ps -eo pid,command | grep "$SEARCH" | grep -v "grep while true;"`;
+		PID=`echo $PID | cut -f1 -d" "`
+		if [[ ! -z "$PID" ]]; then
+			echo "*** killing $NAME (pid $PID)";
+			kill -term $PID || echo "ERROR: Could not send this signal! Check permissions!";
+		else
+			echo "*** could not find pid of process";
+		fi
+	done
+	;;
+status)
+	ps aux | grep "$SEARCH" | grep -v "grep" && echo "*** $NAME running" || echo "*** $NAME NOT running!";
+	;;
+*)
+	echo "usage: $0 {start|stop|status}";
+	;;
+esac;
+
+

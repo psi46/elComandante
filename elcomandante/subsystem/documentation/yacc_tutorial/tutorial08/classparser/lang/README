@@ -1,0 +1,6 @@
+Use this little parser to get a quick overview over
+a yacc generated parser language structure.
+
+Usage:
+	cat ../action.y | ./grammar
+

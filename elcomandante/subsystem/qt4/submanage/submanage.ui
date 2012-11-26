@@ -1,0 +1,194 @@
+<ui version="4.0" >
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>328</width>
+    <height>436</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget" >
+   <layout class="QVBoxLayout" >
+    <item>
+     <widget class="QPushButton" name="btn_scStatus" >
+      <property name="text" >
+       <string>scThread Status Display</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QTreeView" name="treeAbos" />
+    </item>
+    <item>
+     <widget class="QFrame" name="frame_2" >
+      <property name="minimumSize" >
+       <size>
+        <width>16</width>
+        <height>69</height>
+       </size>
+      </property>
+      <property name="frameShape" >
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow" >
+       <enum>QFrame::Raised</enum>
+      </property>
+      <layout class="QGridLayout" >
+       <item row="0" column="0" >
+        <widget class="QLabel" name="label_2" >
+         <property name="sizePolicy" >
+          <sizepolicy vsizetype="Preferred" hsizetype="Fixed" >
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text" >
+          <string>packet.type</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1" >
+        <widget class="QComboBox" name="cmbType" >
+         <property name="currentIndex" >
+          <number>1</number>
+         </property>
+         <item>
+          <property name="text" >
+           <string>MANAGEMENT</string>
+          </property>
+         </item>
+         <item>
+          <property name="text" >
+           <string>DATA</string>
+          </property>
+         </item>
+         <item>
+          <property name="text" >
+           <string>SUBSCRIBE</string>
+          </property>
+         </item>
+         <item>
+          <property name="text" >
+           <string>UNSUBSCRIBE</string>
+          </property>
+         </item>
+         <item>
+          <property name="text" >
+           <string>SUPPLY</string>
+          </property>
+         </item>
+         <item>
+          <property name="text" >
+           <string>UNSUPPLY</string>
+          </property>
+         </item>
+         <item>
+          <property name="text" >
+           <string>CLIENTTERM</string>
+          </property>
+         </item>
+         <item>
+          <property name="text" >
+           <string>SERVERTERM</string>
+          </property>
+         </item>
+         <item>
+          <property name="text" >
+           <string>SETDATA</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item row="1" column="0" >
+        <widget class="QLabel" name="label_3" >
+         <property name="text" >
+          <string>packet.name</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1" >
+        <widget class="QLineEdit" name="txtName" />
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLineEdit" name="txtData" >
+      <property name="text" >
+       <string>... no packet ...</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="btnSubscribe" >
+      <property name="text" >
+       <string>subscribe packet.name</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="btnSend" >
+      <property name="text" >
+       <string>send a test packet...</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar" >
+   <property name="geometry" >
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>328</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu_File" >
+    <property name="title" >
+     <string>&amp;File</string>
+    </property>
+    <addaction name="action_Save_setup" />
+    <addaction name="actionRest_ore_setup" />
+    <addaction name="separator" />
+    <addaction name="actionE_xit" />
+   </widget>
+   <widget class="QMenu" name="menuView" >
+    <property name="title" >
+     <string>View</string>
+    </property>
+    <addaction name="actionScThread_Status" />
+   </widget>
+   <addaction name="menu_File" />
+   <addaction name="menuView" />
+  </widget>
+  <widget class="QStatusBar" name="statusbar" />
+  <action name="action_Save_setup" >
+   <property name="text" >
+    <string>&amp;Save setup...</string>
+   </property>
+  </action>
+  <action name="actionRest_ore_setup" >
+   <property name="text" >
+    <string>Rest&amp;ore setup...</string>
+   </property>
+  </action>
+  <action name="actionE_xit" >
+   <property name="text" >
+    <string>E&amp;xit</string>
+   </property>
+  </action>
+  <action name="actionScThread_Status" >
+   <property name="text" >
+    <string>scThread Status</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
