@@ -22,7 +22,7 @@ parser.add_argument("-c", "--config", dest="configDir",
                        default="../config/")
 
 args = parser.parse_args()
-print args.configDir
+#print args.configDir
 configDir= args.configDir
 try: 
     os.access(configDir,os.R_OK)
@@ -52,7 +52,7 @@ Directories['jumoDir']=config.get('Directories','jumoDir')
 for dir in Directories:
     #if "$configDir$" in Directories[dir]:
     Directories[dir] = os.path.abspath(Directories[dir].replace("$configDir$",configDir))
-print Directories
+#print Directories
 try:
     os.stat(Directories['dataDir'])
 except:
@@ -162,7 +162,7 @@ def stablizeTemperature(temp):
                     stable = True
                 elif coms[0][0:4] == 'PROG' and coms[1][0:4] == 'STAT' and typ == 'a':
                     if not i%10:
-                        Logger '\t--> Jumo is in status %s'%(msg)
+                        Logger << '\t--> Jumo is in status %s'%(msg)
                     if 'waiting' in msg.lower():
                         client.send(coolingBoxSubscription,':prog:start\n')
                         client.send(coolingBoxSubscription,':PROG:TEMP %s\n'%temp)
