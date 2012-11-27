@@ -5,13 +5,16 @@ from decode import *
 from time import strftime, gmtime
 import time
 from shutil import copytree
-from printcolor import printi, printv, printn, printc, printw
 from testboardclass import Testboard as Testboarddefinition
 import os,sys
 import subprocess
 import argparse
+from colorprinter import printer
 
 #------------some configuration--------------
+Logger = printer()
+Logger.set_logfile('el_log.txt')
+
 parser = argparse.ArgumentParser()
 
 parser.add_argument("-c", "--config", dest="configDir",
@@ -84,7 +87,7 @@ for subscription in subscriptionList:
 def handler(signum, frame):
     for subscription in subscriptionList:
         client.send(subscription,':prog:exit\n')
-    printi('','Close Connection')
+    Logger << 'Close Connection'
     sleep(1)
     ##try:
     #    jumoChild.send_signal(SIGINT)
@@ -93,15 +96,15 @@ def handler(signum, frame):
     #except:
     #    pass
     client.closeConnection()
-    printi('','Signal handler called with signal %s'%signum)
+    Logger << 'Signal handler called with signal %s'%signum
     sys.exit(0)
 signal.signal(signal.SIGINT, handler)
 #get timestamp
 timestamp = int(time.time())
 #directory config
-printw() #welcome message
-printi('blue','I found the following Testboards with Modules:')
-printn()
+Logger.printw() #welcome message
+Logger << 'blue','I found the following Testboards with Modules:'
+logger.printn()
 #get list of tests to do:
 testlist=init.get('Tests','Test')
 testlist= testlist.split(',')
@@ -111,10 +114,10 @@ testlist= testlist.split(',')
 
 #-----------setup Test directory function-------
 def setupdir(Testboard):
-    printn()
-    printi('blue','I setup the directories:')
-    printi('','\t- %s'%Testboard.testdir)
-    printi('','\t  with default Parameters from %s'%Testboard.defparamdir)
+    Logger.printn()
+    Logger << 'I setup the directories:'
+    Logger << '\t- %s'%Testboard.testdir
+    Logger << '\t  with default Parameters from %s'%Testboard.defparamdir
     #copy directory
     try:
         copytree(Testboard.defparamdir, Testboard.testdir)
@@ -126,9 +129,9 @@ def setupdir(Testboard):
         f.write(''.join(lines))
         f.close()
     except IOError as e:
-        print "I/O error({0}): {1}".format(e.errno, e.strerror)
+        Logger.warning("I/O error({0}): {1}".format(e.errno, e.strerror))
     except OSError as e: 
-        print "OS error({0}): {1}".format(e.errno, e.strerror)
+        Logger.warning("OS error({0}): {1}".format(e.errno, e.strerror))
     #change address
 #------------------------------------------------
 
@@ -137,7 +140,7 @@ def setupdir(Testboard):
 def stablizeTemperature(temp):
 #-------------set temp----------------
     stable = False
-    printi('','\t Stablize CoolingBox Temperature @ %s degrees'%temp)
+    Logger << '\t Stablize CoolingBox Temperature @ %s degrees'%temp
     client.clearPackets(coolingBoxSubscription)
     client.send(coolingBoxSubscription,':prog:start\n')
     client.send(coolingBoxSubscription,':PROG:TEMP %s\n'%temp)
@@ -154,12 +157,12 @@ def stablizeTemperature(temp):
             Time,coms,typ,msg = decode(data)[:4]
             if len(coms) > 1:
                 if coms[0].find('PROG')>=0 and coms[1].find('STAT')>=0 and typ == 'a' and (msg == 'stable' or msg =='STABLE'):
-                    printi('','\t--> Got information to be stable at %s from packet @ %s'%(int(time.time()),Time))
-                    printi('','\t--> Temp is stable now. I begin with the %s'%(whichtest))
+                    Logger << '\t--> Got information to be stable at %s from packet @ %s'%(int(time.time()),Time)
+                    Logger << '\t--> Temp is stable now. I begin with the %s'%(whichtest)
                     stable = True
                 elif coms[0][0:4] == 'PROG' and coms[1][0:4] == 'STAT' and typ == 'a':
                     if not i%10:
-                        printi('','\t--> Jumo is in status %s'%(msg))
+                        Logger '\t--> Jumo is in status %s'%(msg)
                     if 'waiting' in msg.lower():
                         client.send(coolingBoxSubscription,':prog:start\n')
                         client.send(coolingBoxSubscription,':PROG:TEMP %s\n'%temp)
@@ -179,7 +182,7 @@ def doCycle():
         client.send(coolingBoxSubscription,':prog:cycle:highTemp %s\n'%highCycleTemp)
         client.send(coolingBoxSubscription,':prog:cycle:lowTemp %s\n'%lowCycleTemp)
         client.send(coolingBoxSubscription,':prog:cycle %s\n'%nCycles)
-        printi('blue','Temperature cycling with %s cycles between %s and %s'%(nCycles,lowCycleTemp,highCycleTemp))
+        Logger << 'Temperature cycling with %s cycles between %s and %s'%(nCycles,lowCycleTemp,highCycleTemp)
         cycleDone = False
         while client.anzahl_threads >0 and not cycleDone:
             sleep(.5)
@@ -190,7 +193,7 @@ def doCycle():
                 Time,coms,typ,msg = decode(data)[:4]
                 if len(coms) > 1:
                     if coms[0].find('PROG')>=0 and coms[1].find('CYCLE')>=0 and typ == 'a' and (msg == 'FINISHED'):
-                        printi('','\t--> Cycle FINISHED')
+                        Logger << '\t--> Cycle FINISHED'
                         cycleDone = True
                     else:
                         pass
@@ -223,8 +226,8 @@ def doPSI46Test(whichtest):
         Testboard.busy=True
         #client.send(psiSubscription,':prog:TB1:start Pretest,~/supervisor/singleRocTest_TB1,commanderPretest')
         client.send(psiSubscription,':prog:TB%s:start %s,%s,commander_%s\n'%(Testboard.slot,Directories['testdefDir']+'/'+ whichtest,Testboard.testdir,whichtest))
-        printn()
-        printi('blue','psi46 at Testboard %s is now started'%Testboard.slot)
+        Logger.printn()
+        Logger << 'psi46 at Testboard %s is now started'%Testboard.slot
 
     #wait for finishing
     busy = True
@@ -251,12 +254,12 @@ def doPSI46Test(whichtest):
             Time,coms,typ,msg = decode(data)[:4]
             #nnprint "MESSAGE: %s %s %s %s "%(Time,typ,coms,msg.upper()) 
             if coms[0].find('STAT')==0 and typ == 'a' and 'ERROR' in msg[0].upper():
-                printi('red','FUCK! jumo has error!')
-                printi('red','\t--> I will abort the tests...')
-                printn()
+                Logger.warning('jumo has error!')
+                Logger.warning('\t--> I will abort the tests...')
+                Logger.printn()
                 for Testboard in Testboards:
                     client.send(psiSubscription,':prog:TB%s:kill\n'%Testboard.slot)
-                    printi('red','\t Killing psi46 at Testboard %s'%Testboard.slot)
+                    Logger.warning('\t Killing psi46 at Testboard %s'%Testboard.slot)
                     index=[Testboard.slot==int(coms[1][2]) for Testboard in Testboards].index(True)
                     Testboard.failed()
                     Testboard.busy=False
@@ -265,7 +268,7 @@ def doPSI46Test(whichtest):
     
     
     #---------------Test summary--------------
-    printv()
+    Logger.printv()
     for Testboard in Testboards:
             client.send(psiSubscription,':stat:TB%s?\n'%Testboard.slot)
             received=False
@@ -278,18 +281,14 @@ def doPSI46Test(whichtest):
                     if coms[0][0:4] == 'STAT' and coms[1][0:3] == 'TB%s'%Testboard.slot and typ == 'a':
                         received=True
                         if msg == 'test:failed':
-                            printn()
-                            printi('red','\tTest in Testboard %s failed! :('%Testboard.slot)
+                            Logger.warning('\tTest in Testboard %s failed! :('%Testboard.slot)
                         elif msg == 'test:finished':
-                            printn()
-                            printi('green','\tTest in Testboard %s successful! :)'%Testboard.slot)
+                            Logger << '\tTest in Testboard %s successful! :)'%Testboard.slot
                         else:
-                            printi('%s %s %s %s @ %s'%(Time,coms,typ,msg,int(time.time())))
-                            printn()
-                            printi('red','\tStatus of Testboard %s unknown...! :/'%Testboard.slot)
-    printn()
-    printv()
-    printn()
+                            Logger << '%s %s %s %s @ %s'%(Time,coms,typ,msg,int(time.time()))
+                            Logger.printn()
+                            Logger.warning('\tStatus of Testboard %s unknown...! :/'%Testboard.slot)
+    Logger.printv()
     #---------------iterate in Testloop--------------
     
 #
@@ -301,7 +300,7 @@ def doIVCurve():
         parentDir=setupParentDir(timestamp,Testboard)
         Testboard.testdir=parentDir+'/%s_IV_%s'%(timestamp, Testboard.module)
         setupdir(Testboard)
-        printi('blue', 'DO IV CURVE for Testboard slot no %s'%Testboard.slot)
+        Logger << 'DO IV CURVE for Testboard slot no %s'%Testboard.slot
         #%(Testboard.address,Testboard.module,Testboard.slot),Testboard
         ivStart = float(init.get('IV','Start'))
         ivStop  = float(init.get('IV','Stop'))
@@ -322,7 +321,7 @@ def doIVCurve():
                     Time,coms,typ,msg,fullComand = decode(data)
                     if len(coms) > 1:
                         if coms[0].find('PROG')>=0 and coms[1].find('IV')>=0 and typ == 'a' and (msg == 'FINISHED'):
-                            printi('','\t--> IV-Curve FINISHED')
+                            Logger << '\t--> IV-Curve FINISHED'
                             ivDone = True
                         elif coms[0].find('IV')==0 and typ == 'q':
                             #print fullComand                            
@@ -333,7 +332,7 @@ def doIVCurve():
                 else:
                     pass
 
-	printi('', 'try to close TB')
+	Logger << 'try to close TB'
 	client.send(psiSubscription,':prog:TB%s:close %s,commander_%s\n'%(Testboard.slot,Testboard.testdir,whichtest))
 def preexec():#Don't forward Signals.
     os.setpgrp()
@@ -357,7 +356,7 @@ for subscription in subscriptionList:
     if not client.checkSubscription(subscription):
         raise Exception("Cannot read from %s subscription"%subscription)
     else:
-        printi("green","%s is answering"%subscription)
+        Logger << "%s is answering"%subscription
     
 #-------------SETUP TESTBOARDS----------------
 Testboards=[]
@@ -367,20 +366,17 @@ for tb, module in init.items('Modules'):
         Testboards[-1].tests=testlist
         Testboards[-1].defparamdir=Directories['defaultDir']+'/'+config.get('defaultParameters',Testboards[-1].type)
         #print Testboards[-1].defparamdir
-        printi('','\t- Testboard %s at address %s with Module %s'%(Testboards[-1].slot,Testboards[-1].address,Testboards[-1].module))
-printn()        
-printv()
-printn()
-printi('blue','I found the following Tests to be executed:')
-printn()
+        Logger << '\t- Testboard %s at address %s with Module %s'%(Testboards[-1].slot,Testboards[-1].address,Testboards[-1].module)
+Logger.printv()
+Logger << 'I found the following Tests to be executed:'
+Logger.printn()
 for item in testlist:
     if item.find('@')>=0:
         whichtest, temp = item.split('@')
     else:
         whichtest = item
         temp = 17.0
-    printi('','\t- %s at %s degrees'%(whichtest, temp))
-printn()
+    Logger << '\t- %s at %s degrees'%(whichtest, temp)
 #------------------------------------------
 
 
@@ -401,10 +397,9 @@ for item in testlist:
         else:
             whichtest = item
             temp =17.0
-        printv()
-        printn()
-        printi('blue','I do now the following Test:')
-        printi('','\t%s at %s degrees'%(whichtest, temp))
+        Logger.printv()
+        Logger << 'blue','I do now the following Test:'
+        Logger << '\t%s at %s degrees'%(whichtest, temp)
         
         stablizeTemperature(temp)
         if whichtest == 'IV':
@@ -415,16 +410,14 @@ for item in testlist:
 
 #-------------Heat up---------------
 client.send(psiSubscription,':prog:exit\n')    
-printi('blue','heating up coolingbox...')
-client.send(coolingBoxSubscription,':prog:next\n')    
+Logger << 'heating up coolingbox...'
+client.send(coolingBoxSubscription,':prog:next\n')
 client.closeConnection()
-printi('blue','I am done for now!')
+Logger << 'I am done for now!'
 
 
 #-------------EXIT----------------
 while client.anzahl_threads > 0: 
     pass
-printn()
-printv()
-printi('blue','ciao!')
-printv()
+Logger.printv()
+Logger << 'ciao!'
