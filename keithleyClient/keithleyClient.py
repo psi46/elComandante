@@ -1,7 +1,7 @@
 #!/usr/bin/python 
 from sclient import *
 from decode import *
-from printcolor import printc
+from colorprinter import printer
 from threading import Thread
 import subprocess
 import time
@@ -12,8 +12,7 @@ import sys
 ON = 1
 OFF = 0
 End = False
-
-
+Logger = printer()
 #sweep parameters TODO anpassen
 startValue = -100
 stopValue = -200
@@ -31,6 +30,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--device", dest="serialPort",
                        help="serial Port address e.g. /dev/ttyF0",
                        default=defSerialPort)
+parser.add_argument("-dir","--directory", dest='dataDir',
+                       help='directory where LogFilse is Stored',
+                       default='.')
+parser.add_argument('-ts','--timestamp', dest='timestamp',
+                       help='Timestamp for creation of file',
+                       default=0)
 #                       type=string,
 #                        type=file,
 #                       action='store_const',
@@ -39,23 +44,29 @@ parser.add_argument("-d", "--device", dest="serialPort",
 #                       action='store_const',
 #                       metavar="SERIALPORT")
 args = parser.parse_args()
-print args.serialPort
 serialPort= args.serialPort
+try:
+    os.stat(args.dataDir)
+except:
+    os.mkdir(args.dataDir)
+#Setup Logger 
+Logger.timestamp = float(args.timestamp)
+Logger.set_logfile('%s/Keithley.log'%(args.dataDir))
+Logger.set_prefix('')
 if not os.access(serialPort,os.R_OK):
-    print 'serialPort \'%s\' is not accessible'%serialPort
+    Logger.warning('serialPort \'%s\' is not accessible'%serialPort)
     sys.exit()
     raise SystemExit
-print serialPort
+Logger<<'SerialPort: %s'% serialPort
 
 def handler(signum, frame):
-    print 'Close Connection'
+    Logger << 'Close Connection'
     client.closeConnection()
-    print 'Signal handler called with signal', signum
+    Logger << 'Signal handler called with signal %s'%signum
     if client.isClosed == True:
-        print 'client connection closed: kill all'
+        Logger << 'client connection closed: kill all'
         End=True
-        End=True
-        print End
+        Logger << 'End: %s'%End
     
 signal.signal(signal.SIGINT, handler)
 
@@ -72,9 +83,9 @@ client.subscribe(aboName)
 client.send(aboName,'Connecting Keithley Client with Subsystem\n')
 keithley=keithleyInterface.keithleyInterface(serialPort)
 keithley.setOutput(ON)
-print 'status:%s'%keithley.getOutputStatus()
+Logger << 'status:%s'%keithley.getOutputStatus()
 keithley.setOutput(OFF)
-print 'status:%s'%keithley.getOutputStatus()
+Logger << 'status:%s'%keithley.getOutputStatus()
 
 def readCurrentIV():
     if keithley.getOutputStatus():
@@ -85,14 +96,14 @@ def readCurrentIV():
                 voltage = float(data[0])
                 current = float(data[1])
                 resistance = float(data[2])
-                print '%s: %s V - %s A'%(timestamp,data[0],data[1])
+                Logger << '%s: %s V - %s A'%(timestamp,data[0],data[1])
                 client.send(voltageAbo,'%s\n'%voltage)
                 client.send(currentAbo,'%s\n'%current)
                 client.send(resistanceAbo,'%s\n'%resistance)
         else:
-            print ' could somehow not read data correctly',data
+            Logger << ' could somehow not read data correctly: %s'%data
     else:
-        print 'output is off'
+        Logger << 'output is off'
         
 def sweep():
     global doingSweep
@@ -102,14 +113,14 @@ def sweep():
     ntries = 0
     while True:
         retVal = keithley.doLinearSweep(startValue, stopValue, stepValue, nSweeps, delay)
-        print 'keithley RetVal: %s'%retVal
+        Logger << 'keithley RetVal: %s'%retVal
         ntries+=1
         if retVal!=0 or ntries>=maxSweepTries:
-            print 'exit while loop'
+            Logger << 'exit while loop'
             break
         voltage = keithley.getLastVoltage()
         msg='Keithley Tripped %s of %s times @ %s\n'%(ntries,maxSweepTries,voltage)
-        print msg
+        Logger << msg
         client.send(aboName,msg)
         client.send(IVAbo,msg) 
     client.send(aboName,'Results of Linear Sweep:\n')
@@ -163,7 +174,7 @@ def printHelp():
     data +='\t:PROG:IV:MAXTRIPS XX\tto set maximum tries if keithley is tripping\n'
     data +='\t:PROG:RESISTANCE  XX\tto enable/disable 4-Wire Resistance Measurement\n'
     data += '************************************************************************\n'
-    print data
+    Logger << data
     client.sendData(aboName,data)
     
 def  analyseIV(coms,typ,msg):
@@ -173,65 +184,65 @@ def  analyseIV(coms,typ,msg):
     global stepValue
     global maxSwepTries
     global nSweeps
-    print'analyse :IV'
+    Logger <<'analyse :IV'
     if len(coms)==0:
         if msg.find('MEAS')>=0 and typ=='c':
             outMsg= 'Do Sweep from %.2f V to %.2f'%(startValue,stopValue)
             outMsg+=' in steps of %.2fV with a delay of %.f\n'%(stepValue,delay)
-            print outMsg
+            Logger << outMsg
             client.send(aboName,outMsg)
             sweep()
         else:
-            print 'error'
-            printHelp()
+            Logger << 'error'
+            print Help()
     elif len(coms)==1:
-        print 'iv len >0'
+        Logger << 'iv len >0'
         outMsg = 'not Valid Input'
         if coms[0].find('START')>=0:
             if typ =='c' and is_float(msg):
                 startValue=float(msg)
-                print 'prog-iv-start=%s'%msg
+                Logger << 'prog-iv-start=%s'%msg
             elif typ =='q':
-                print 'prog-iv-start?'
+                Logger << 'prog-iv-start?'
             outMsg = ':PROG:IV:START! %s'%startValue
         elif coms[0].find('STOP')>=0:
             if typ =='c'and is_float(msg):
                 stopValue = float(msg)
-                print 'prog-iv-stop=%s'%msg
+                Logger << 'prog-iv-stop=%s'%msg
             elif typ =='q':
-                print 'prog-iv-stop?'
+                Logger << 'prog-iv-stop?'
             outMsg = ':PROG:IV:STOP! %s'%stopValue
         elif coms[0].find('STEP')>=0:
             if typ =='c'and is_float(msg):
                 stepValue=float(msg)
-                print 'prog-iv-step=%s'%msg
+                Logger << 'prog-iv-step=%s'%msg
             elif typ =='q':
-                print 'prog-iv-step?'
+                Logger << 'prog-iv-step?'
             outMsg = ':PROG:IV:STEP! %s'%stepValue
         elif coms[0].find('DEL')>=0:           
             if typ =='c'and is_float(msg):
                 delay=float(msg)
-                print 'prog-iv-delay=%s'%msg
+                Logger << 'prog-iv-delay=%s'%msg
             elif typ =='q':
-                print 'prog-iv-delay?'
+                Logger << 'prog-iv-delay?'
             outMsg = ':PROG:IV:DELAY! %s'%delay
         elif coms[0].find('MAXTRIPS')>=0:           
             if typ =='c' and is_float(msg):
                 maxSweepTries=float(msg)
-                print 'prog-iv-trip=%s'%msg
+                Logger << 'prog-iv-trip=%s'%msg
             elif typ =='q':
-                print 'prog-iv-trip?'
+                Logger << 'prog-iv-trip?'
             outMsg = ':PROG:IV:TRIP! %s'%delay
         outMsg+='\n'
         client.send(aboName,outMsg)
     else:
-        print 'error prog iv len to long'
-        printHelp()
+        Logger << 'error prog iv len to long'
+        print Help()
     pass
         
 def analyseProg(coms,typ,msg):
-    print 'analyse :PROG'
-    print coms
+    Logger << 'analyse :PROG'
+    Logger << coms
     if coms[0].find('IV')>=0:
         analyseIV(coms[1:],typ,msg)
         pass
@@ -241,26 +252,26 @@ def analyseProg(coms,typ,msg):
         elif msg in ['OFF','FALSE','0']:
             keithley.initKeithley()
     elif coms[0].find('EXIT')>=0 and typ =='c':
-        print 'end program'
+        Logger << 'end program'
         client.closeConnection();
         
     else:
-        printHelp()
+        Logger <<Help()
     pass
 
 def analyseOutp(coms,typ,msg): #pretty much ok
-    print 'analyse Output'
+    #Logger << 'analyse Output'
     if len(coms)>0:
-        print 'not valid command: ',coms, typ, msg
-        printHelp()
+        Logger << 'not valid command: %s %s %s '%(coms, typ, msg)
+        print Help()
     else:
         if typ=='q':
-            print 'Query for output status'
+            Logger << 'Query for output status'
             status = keithley.getOutputStatus()
             outMsg = ':OUTP! '
             outMsg+= 'ON' if status else 'OFF'
             outMsg+='\n'
-            print outMsg
+            Logger << outMsg
             client.send(aboName,outMsg)
         elif typ=='c':
             if msg in ['1','ON','True']:
@@ -268,11 +279,11 @@ def analyseOutp(coms,typ,msg): #pretty much ok
             elif msg in ['0','OFF','False']:
                 keithley.setOutput(OFF)
             else: 
-                print 'message of :OUTP not valid: %s, valid messages are \'ON\',\'OFF\''%msg
-                printHelp()
+                Logger << 'message of :OUTP not valid: %s, valid messages are \'ON\',\'OFF\''%msg
+                print Help()
         else:
-            print 'this a non valid typ'
-            printHelp()
+            Logger << 'this a non valid typ'
+            print Help()
     pass
 
 def analysePacket(coms,typ,msg):
@@ -280,20 +291,20 @@ def analysePacket(coms,typ,msg):
         if len(coms[1:])>0:
             analyseProg(coms[1:],typ,msg)
         else:
-            print 'not valid packet: ',coms
-            printHelp()
+            Logger << 'not valid packet: %s'%coms
+            print Help()
         pass
     elif coms[0].find('OUTP')>=0:
         analyseOutp(coms[1:],typ,msg)
         pass
     elif coms[0].find('HELP')>=0:
-        printHelp()
+        print Help()
     elif coms[0]=='K':
         command = ":".join(map(str, coms[1:]))+' '+msg
-        print 'send command to keithley: '
+        Logger << 'send command to keithley: '
         keithley.write(command)
     else:
-        print 'not Valid Packet'
+        Logger << 'not Valid Packet'
         
 
 
@@ -312,12 +323,11 @@ while client.anzahl_threads > 0 and End == False and client.isClosed == False:
     
     if not packet.isEmpty():
 
-        #print 'read a new packet from abo', packet.aboName,':'
-        print 'got Packet:', packet.Print()
+        Logger << 'got Packet: %s'%packet.Print()
         data = packet.data
         timeStamp,coms,typ,msg,command = decode(data)
-        print 'T:',timeStamp, 'Comand:',command
-        print '%s: %s, %s, %s'%(timeStamp,len(coms),typ,msg)
+        # 'T:',timeStamp, 'Comand:',command
+        #Logger << '%s: %s, %s, %s'%(timeStamp,len(coms),typ,msg)
         dataOut = '%s\n'%packet.Print()
         if command.find(':DOSWEEP')!=-1:
             sweep()
@@ -328,7 +338,7 @@ while client.anzahl_threads > 0 and End == False and client.isClosed == False:
             client.send(aboName,dataOut)
         #string retVal = keithley.setOutput(ON)
     else:
-       # print client.getNumberOfPackets(),' packets are left in queue'
+       # Logger << client.getNumberOfPackets(),' packets are left in queue'
        pass
     if counter%10 == 0:      
         if not doingSweep:
@@ -338,12 +348,12 @@ while client.anzahl_threads > 0 and End == False and client.isClosed == False:
         
 
 client.send(aboName,':prog:stat! exit\n')    
-print 'exiting...'
+Logger << 'exiting...'
 client.closeConnection()
 
 #END
 while client.anzahl_threads > 0:
     sleep(1)
     pass            
-print 'ciao!'
+Logger << 'ciao!'
 

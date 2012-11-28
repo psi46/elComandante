@@ -12,7 +12,8 @@ class Testboard:
         self.defparamdir=''
         self.powerdup=False
         self.busy=False
-        self.timestamp=''
+        self.timestamp=0
+        self.parentdir=''
         
     def dotest(self,test):
         self.currenttest=test

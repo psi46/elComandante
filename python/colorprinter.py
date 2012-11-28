@@ -8,7 +8,8 @@ class printer:
         self.loglevel=1
         self.f = None
         self.timestamp = time()
-    def __lshift__(self,x):
+    def __lshift__(self,*arg):
+        x = ' '.join(str(i) for i in arg)
         print self.prefix + self.A + x + self.B
         if self.f and self.loglevel > 0: self.f.write(x+'\n')
     def printcolor(self,x,color=''):
@@ -83,17 +84,17 @@ class printer:
 
 
 # ---example---
-
-Logger = printer()
-Logger.printw()
-Logger.set_logfile('test.txt')
-Logger << 'hello'
-Logger.printcolor('I am green','green')
-Logger.printcolor('I am blue','blue')
-Logger << 'we make a horizontal line now'
-Logger.printv()
-Logger.warning('ouch! this is how a warning message looks like')
-Logger << 'plain text'
-Logger << 'plain text'
-Logger << 'plain text'
-Logger << 'plain text'
+#
+#Logger = printer()
+#Logger.printw()
+#Logger.set_logfile('test.txt')
+#Logger << 'hello'+' Philipp '+ 'Eller'
+#Logger.printcolor('I am green','green')
+#Logger.printcolor('I am blue','blue')
+#Logger << 'we make a horizontal line now'
+#Logger.printv()
+#Logger.warning('ouch! this is how a warning message looks like')
+#Logger << 'plain text'
+#Logger << 'plain text'
+#Logger << 'plain text'
+#Logger << 'plain text'
