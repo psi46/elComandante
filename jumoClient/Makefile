@@ -15,7 +15,7 @@ CPP         	:= g++
 CPPFLAGS    	:= -O -Wall -fPIC\
 					$(LLABCPPFLAGS) $(ROOTCFLAGS)
 
-CXXFLAGS =	-O2 -g -Wall -fmessage-length=0 -I$(HOME)/sdvlp/libmodbus-3.0.1/src -I/home/veloxid/lib $(CPPFLAGS)
+CXXFLAGS =	-O2 -g -Wall -fmessage-length=0 -I$(HOME)/sdvlp/libmodbus-3.0.3/src -I/home/veloxid/lib $(CPPFLAGS)
 
 OBJS =		jumoClient.o jumoInterface.o scpiInterpreter.o jumoSubClientHandler.o
 

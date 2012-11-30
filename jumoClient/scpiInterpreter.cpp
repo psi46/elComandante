@@ -38,6 +38,7 @@ scpiInterpreter::scpiInterpreter() {
 	directory.insert("CYCLE");
 	directory.insert("LOWTEMP");
 	directory.insert("HIGHTEMP");
+	directory.insert("HEAT");
 	verbosity=false;
 }
 

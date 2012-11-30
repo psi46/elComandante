@@ -111,6 +111,7 @@ void jumoSubClientHandler::analyseCycleCommands(){
 			cout<<"CYCLE"<<endl;
 			nCycles = extractProgramNumber(interpret.getComand());
 			startCycle(nCycles);
+			cout<<"startstart"<<endl;
 	}
 	else if (interpret.hasCommandOnPlace("HIGHTEMP",2) && interpret.commandLength()==3){
 		cout<<"HIGHTEMP"<<endl;
@@ -125,6 +126,7 @@ void jumoSubClientHandler::analyseCycleCommands(){
 				setCycleHighTemp(highTemp);
 			else
 				cout<<"HighTemp string could not be converted to float: "<<endl;
+			cout<<"highhigh"<<endl;
 		}
 		sendCycleHighTemp();
 
@@ -139,8 +141,9 @@ void jumoSubClientHandler::analyseCycleCommands(){
 			if(interpret.getFloat(lowTemp))
 				setCycleLowTemp(lowTemp);
 			else
-				cout<<"HighTemp string could not be converted to float"<<endl;
+				cout<<"LowTemp string could not be converted to float"<<endl;
 			sendCycleLowTemp();
+			cout<<"lowlow"<<endl;
 		}
 	}
 }
@@ -175,10 +178,16 @@ void jumoSubClientHandler::analyseProgram(){
 		if(interpret.isCommand()){
 			float temp;
 			if(interpret.getFloat(temp)){
-				setPointTemp=temp;
+				setSetPointTemperature(temp);
 			}
 		}
 		sendTargetTemp();
+	}
+	else if(interpret.hasCommandOnPlace("EXIT",1)){
+		if(interpret.isCommand()){
+			stopAllMeasurments();
+		}
+		this->killClient();
 	}
 	/*else{
 		int programNumber=extractProgramNumber(interpret.getComand());
@@ -198,15 +207,8 @@ void jumoSubClientHandler::analyseProgram(){
 		jumo.stopProgram();
 	}
 	else if(interpret.hasCommandOnPlace("CANCEL",1)){
-		jumo.stopProgram();
+		this->stopAllMeasurments();
 	}
-    else if(interpret.hasCommandOnPlace("EXIT",1)){
-        cout<<"Close JumoClient."<<endl;
-        jumo.stopProgram();
-        cout<<"Close connection...."<<endl;
-
-        killClient();
-    }
 	else if(interpret.currentType(scpiInterpreter::CMD_QUESTION)){
 		if (interpret.hasCommandOnPlace("STAT",1)){
 			if(interpret.hasCommandOnPlace("TARGETTEMP",2))
@@ -219,6 +221,9 @@ void jumoSubClientHandler::analyseProgram(){
 		else if(interpret.hasCommandOnPlace("NUM",1)){
 			sendProgramNumber();
 		}
+	}
+	else if(interpret.hasCommandOnPlace("HEAT",1)){
+		this->startHeating();
 	}
 
 }
@@ -355,7 +360,7 @@ void jumoSubClientHandler::checkIfTempStable(float temp){
 						changeStatus(CYCLE_HEATING);
 					break;
 		default://COOLING,UNSTABLE
-		std::cout<<"coolin/unstable: "<<deltaTime<<" "<<temp<<"- "<<targetTemp<<"="<<deltaT<<" "<<deltaTMax<<std::endl;
+		std::cout<<"cooling/unstable: "<<(float)deltaTime<<" "<<temp<<"- "<<targetTemp<<"="<<deltaT<<" "<<deltaTMax<<std::endl;
 			if(deltaT<deltaTMax){ //dry and deltaT<deltaTMax =>stableSince now/stillstable
 				if(deltaTime<0||stableSince==-1){
 					stableSince=now;
@@ -430,12 +435,7 @@ void jumoSubClientHandler::sendHumidity(){
 }
 
 void jumoSubClientHandler::stopAllMeasurments(){
-	stringstream output;
-	this->sendError("JUMO: conditions are not stable anymore! HEATING UP AGAIN!!!");
 	changeStatus(HEATING);
-	output<<":STAT! ERROR humidity to high, stop Cooling,stop Measurement, currentHumidity:"<<currentHum<<", maxAllowed:"<<maxHum;
-	sendToServer(sendAboName,output.str());
-
 }
 
 void jumoSubClientHandler::setCycleHighTemp(float highTemp){
@@ -467,6 +467,7 @@ void jumoSubClientHandler::sendCycleLowTemp(){
 void jumoSubClientHandler::sendSetPointTemp(){
 	sendTargetTemp();
 }
+
 void jumoSubClientHandler::checkStatus(){
 	if(isCycleStatus(status)){
 		targetTemp=cycleLowTemp;
@@ -476,7 +477,7 @@ void jumoSubClientHandler::checkStatus(){
 		targetTemp=setPointTemp;
 		cout<<getStatusString(status)<<" is a  normal Status!"<<targetTemp<<endl;
 	}
-	if(status==COOLING||status==STABLE||status==CYCLE_COOLING){
+	if(status==COOLING||status==STABLE||status==CYCLE_COOLING||status==UNSTABLE){
 		jumo.setTargetTemperature(targetTemp);
 		cout<<"Set new Temperature in Box to "<<targetTemp<<endl;
 	}
@@ -484,8 +485,6 @@ void jumoSubClientHandler::checkStatus(){
 	float jumoSetTemp;
 	jumo.readTargetTemp(&jumoSetTemp);
 	if(jumoSetTemp!=this->targetTemp){
-//		this->targetTemp=jumoSetTemp;
-//		sendTargetTemp();
 		sendError("TargetTemp does not fit with jumo Set Temp");
 	}
 	int programNo;
@@ -546,6 +545,19 @@ void jumoSubClientHandler::startHeating(){
 		jumo.nextStep();
 		sleep(1);
 	}
+}
+
+void jumoSubClientHandler::setSetPointTemperature(float temp){
+
+	if (setPointTemp-temp!=0){
+		stableSince=-1;
+		this->setPointTemp=temp;
+		if(isCycleStatus(status))
+			changeStatus(CYCLE_RESTART);
+		else
+			changeStatus(COOLING);
+	}
+	sendSetPointTemp();
 }
 void jumoSubClientHandler::sendTargetTemp(){
 	stringstream out;

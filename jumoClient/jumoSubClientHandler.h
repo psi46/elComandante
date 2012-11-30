@@ -59,6 +59,7 @@ private:
 	void analyseProgram();
 	void startHeating();
 	void startCycle(int nCylce);
+	void setSetPointTemperature(float setPointTemp);
 private:
 	void setCycleHighTemp(float highTemp);
 	void sendCycleHighTemp();
