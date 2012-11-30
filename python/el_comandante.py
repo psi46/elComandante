@@ -34,6 +34,8 @@ def killChildren():
     try:
         jumoChild.kill()
     except:
+        print "couldn't kill jumoChild"
+        print Exception
         pass
 
 def handler(signum, frame):
@@ -198,8 +200,9 @@ try:
         client.clearPackets(coolingBoxSubscription)
         client.send(coolingBoxSubscription,':prog:start\n')
         client.send(coolingBoxSubscription,':PROG:TEMP %s\n'%temp)
+        client.send(coolingBoxSubscription,':prog:stat?\n')
         #client.receiveThread() 
-        sleep(1.0)
+        sleep(3.0)
         client.clearPackets(coolingBoxSubscription)
         client.send(coolingBoxSubscription,':prog:stat?\n')
         i = 0
@@ -407,12 +410,12 @@ try:
                 Time,coms,typ,msg = decode(data)[:4]
                 if coms[0].find('STAT')==0 and coms[1].find('TB')==0 and typ == 'a' and msg=='test:finished':
                     index=[Testboard.slot==int(coms[1][2]) for Testboard in Testboards].index(True)
-                    Testboards[index].finished()
+                    #Testboards[index].finished()
                     Testboards[index].busy=False
                     rmtree(Testboard.parentDir+'/tmp/')
                 if coms[0][0:4] == 'STAT' and coms[1][0:2] == 'TB' and typ == 'a' and msg=='test:failed':
                     index=[Testboard.slot==int(coms[1][2]) for Testboard in Testboards].index(True)
-                    Testboards[index].failed()
+                    #Testboards[index].failed()
                     Testboards[index].busy=False
                     rmtree(Testboard.parentDir+'/tmp/')
                     raise Exception('Could not open Testboard at %s.'%Testboard.slot)
@@ -506,7 +509,35 @@ try:
 #-------------Heat up---------------
     client.send(psiSubscription,':prog:exit\n')    
     Logger << 'heating up coolingbox...'
-    client.send(coolingBoxSubscription,':prog:heat\n'
+    client.send(coolingBoxSubscription,':prog:heat\n')
+    sleep(3.0)
+    client.clearPackets(coolingBoxSubscription)
+    client.send(coolingBoxSubscription,':prog:stat?\n')
+    i = 0
+    isWarm = False
+    while client.anzahl_threads > 0 and not isWarm:
+        sleep(.5)
+        packet = client.getFirstPacket(coolingBoxSubscription)
+        if not packet.isEmpty() and not "pong" in packet.data.lower():
+            data = packet.data
+            Time,coms,typ,msg = decode(data)[:4]
+            if len(coms) > 1:
+                if coms[0].find('PROG')>=0 and coms[1].find('STAT')>=0 and typ == 'a' and (msg.lower() == 'waiting'):
+                    Logger << '\t--> Got information to be done at %s from packet @ %s'%(int(time.time()),Time)
+                    Logger << '\t--> Cooling Box is heated up now.'
+                    isWarm = True
+                elif coms[0][0:4] == 'PROG' and coms[1][0:4] == 'STAT' and typ == 'a':
+                    if not i%10:
+                        Logger << '\t--> Jumo is in status %s'%(msg)
+                    if not 'heating' in msg.lower() and not 'waiting' in msg.lower():
+                        client.send(coolingBoxSubscription,':prog:heat\n')
+                    i+=1
+            else:
+                pass
+        else:
+            client.send(coolingBoxSubscription,':prog:stat?\n')
+            pass
+
     client.closeConnection()
     Logger << 'I am done for now!'
 
@@ -523,6 +554,7 @@ try:
         os.stat(Directories['logDir'])
     except:
         raise Exception("Couldn't find logDir %s"%Directories['logDir'])
+    killChildren();
 
     for Testboard in Testboards:
             try:
