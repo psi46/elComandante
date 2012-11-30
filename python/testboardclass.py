@@ -13,7 +13,7 @@ class Testboard:
         self.powerdup=False
         self.busy=False
         self.timestamp=0
-        self.parentdir=''
+        self.parentDir='.'
         
     def dotest(self,test):
         self.currenttest=test

@@ -260,12 +260,12 @@ try:
 
 
     def setupParentDir(timestamp,Testboard):
-            Testboard.parentdir=Directories['dataDir']+'/%s_%s_%s/'%(Testboard.module,strftime("%Y-%m-%d_%Hh%Mm",gmtime(timestamp)),timestamp)
+            Testboard.parentDir=Directories['dataDir']+'/%s_%s_%s/'%(Testboard.module,strftime("%Y-%m-%d_%Hh%Mm",gmtime(timestamp)),timestamp)
             try:
-                os.stat(Testboard.parentdir)
+                os.stat(Testboard.parentDir)
             except:
-                os.mkdir(Testboard.parentdir)
-            return Testboard.parentdir
+                os.mkdir(Testboard.parentDir)
+            return Testboard.parentDir
 #
     def doPSI46Test(whichtest):
 #-------------start test-----------------
@@ -273,7 +273,7 @@ try:
             #Setup Test Directory
             Testboard.timestamp=timestamp
             Testboard.currenttest=item
-            Testboard.testdir=Testboard.parentdir+'/%s_%s/'%(int(time.time()),Testboard.currenttest)
+            Testboard.testdir=Testboard.parentDir+'/%s_%s/'%(int(time.time()),Testboard.currenttest)
             setupdir(Testboard)
             #Start PSI
             Testboard.busy=True
@@ -413,7 +413,7 @@ try:
 
 
 #open jumo handler
-    jumoChild = subprocess.Popen("xterm +sb -geometry 80x25+1200+0 -fs 10 -fa 'Mono' -e %s/jumoClient -d %s"%(Directories['jumoDir'],config.get("jumoClient","port")), shell=True,preexec_fn = preexec)
+    jumoChild = subprocess.Popen("xterm +sb -geometry 80x25+1200+0 -fs 10 -fa 'Mono' -e %s/jumoClient -d %s |tee %s/jumo.log"%(Directories['jumoDir'],config.get("jumoClient","port"),Directories['logDir']), shell=True,preexec_fn = preexec)
 #open Keithley handler
     keithleyChild = subprocess.Popen("xterm +sb -geometry 80x25+1200+1300 -fs 10 -fa 'Mono' -e %s/keithleyClient.py -d %s -dir %s -ts %s"%(Directories['keithleyDir'],config.get("keithleyClient","port"),Directories['logDir'],timestamp), shell=True,preexec_fn = preexec)
 #check subscriptions?
@@ -437,7 +437,7 @@ try:
             #print Testboards[-1].defparamdir
             Logger << '\t- Testboard %s at address %s with Module %s'%(Testboards[-1].slot,Testboards[-1].address,Testboards[-1].module)
             parentDir=setupParentDir(timestamp,Testboards[-1])
-    
+            
             Logger << 'try to powercycle Testboard...'
             powercycle(Testboards[-1])
 
@@ -485,7 +485,7 @@ try:
 #-------------Heat up---------------
     client.send(psiSubscription,':prog:exit\n')    
     Logger << 'heating up coolingbox...'
-    client.send(coolingBoxSubscription,':prog:next\n')
+    client.send(coolingBoxSubscription,':prog:heat\n'
     client.closeConnection()
     Logger << 'I am done for now!'
 
@@ -505,7 +505,7 @@ try:
 
     for Testboard in Testboards:
             try:
-                copytree(Directories['logDir'],Testboard.parentdir+'logfiles')
+                copytree(Directories['logDir'],Testboard.parentDir+'logfiles')
             except:
                 raise
                 #raise Exception('Could not copy Logfiles into testDirectory of Module %s\n%s ---> %s'%(Testboard.module,Directories['logDir'],Testboard.parentdir))
