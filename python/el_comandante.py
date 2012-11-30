@@ -391,15 +391,36 @@ try:
 
     def powercycle(Testboard):
         Testboard.timestamp=timestamp
-        Testboard.currenttest='powercycle'
-        whichtest=powercycle
+        whichtest='powercycle'
         Testboard.testdir=Testboard.parentDir+'/tmp/'
         setupdir(Testboard)
         Logger << 'Powercycle Testboard at slot no %s'%Testboard.slot
-        client.send(psiSubscription,':prog:TB%s:open %s,commander_%s\n'%(Testboard.slot,Testboard.testdir,whichtest))
-        sleep(1.0)	
-        Logger << 'try to close TB'
-        client.send(psiSubscription,':prog:TB%s:close %s,commander_%s\n'%(Testboard.slot,Testboard.testdir,whichtest))
+        Testboard.busy=True
+        client.send(psiSubscription,':prog:TB%s:start %s,%s,commander_%s\n'%(Testboard.slot,Directories['testdefDir']+'/'+ whichtest,Testboard.testdir,whichtest))
+        #wait for finishing
+        busy = True
+        while client.anzahl_threads > 0 and busy:
+            sleep(.5)
+            packet = client.getFirstPacket(psiSubscription)
+            if not packet.isEmpty() and not "pong" in packet.data.lower():
+                data = packet.data
+                Time,coms,typ,msg = decode(data)[:4]
+                if coms[0].find('STAT')==0 and coms[1].find('TB')==0 and typ == 'a' and msg=='test:finished':
+                    index=[Testboard.slot==int(coms[1][2]) for Testboard in Testboards].index(True)
+                    Testboards[index].finished()
+                    Testboards[index].busy=False
+                    rmtree(Testboard.parentDir+'/tmp/')
+                if coms[0][0:4] == 'STAT' and coms[1][0:2] == 'TB' and typ == 'a' and msg=='test:failed':
+                    index=[Testboard.slot==int(coms[1][2]) for Testboard in Testboards].index(True)
+                    Testboards[index].failed()
+                    Testboards[index].busy=False
+                    rmtree(Testboard.parentDir+'/tmp/')
+                    raise Exception('Could not open Testboard at %s.'%Testboard.slot)
+                else:
+                    pass
+            busy=Testboard.busy
+        #-------------test finished----------------
+        
 
     def preexec():#Don't forward Signals.
         os.setpgrp()
@@ -511,6 +532,11 @@ try:
                 #raise Exception('Could not copy Logfiles into testDirectory of Module %s\n%s ---> %s'%(Testboard.module,Directories['logDir'],Testboard.parentdir))
 
     rmtree(Directories['logDir'])
+
+    #cleanup
+    for Testboard in Testboards:
+        try: rmtree(Testboard.parentDir+'/tmp/')
+        except: pass
 except:
     print 'kill Children'
     killChildren()
