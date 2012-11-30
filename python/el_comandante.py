@@ -335,12 +335,14 @@ try:
                             received=True
                             if msg == 'test:failed':
                                 Logger.warning('\tTest in Testboard %s failed! :('%Testboard.slot)
+                                powercycle(Textboard)                                
                             elif msg == 'test:finished':
                                 Logger << '\tTest in Testboard %s successful! :)'%Testboard.slot
                             else:
                                 Logger << '%s %s %s %s @ %s'%(Time,coms,typ,msg,int(time.time()))
                                 Logger.printn()
                                 Logger.warning('\tStatus of Testboard %s unknown...! :/'%Testboard.slot)
+                                powercycle(Testboard)
         Logger.printv()
         #---------------iterate in Testloop--------------
         
@@ -386,6 +388,19 @@ try:
 
         Logger << 'try to close TB'
         client.send(psiSubscription,':prog:TB%s:close %s,commander_%s\n'%(Testboard.slot,Testboard.testdir,whichtest))
+
+    def powercycle(Testboard):
+        Testboard.timestamp=timestamp
+        Testboard.currenttest='powercycle'
+        whichtest=powercycle
+        Testboard.testdir=Testboard.parentDir+'/tmp/'
+        setupdir(Testboard)
+        Logger << 'Powercycle Testboard at slot no %s'%Testboard.slot
+        client.send(psiSubscription,':prog:TB%s:open %s,commander_%s\n'%(Testboard.slot,Testboard.testdir,whichtest))
+        sleep(1.0)	
+        Logger << 'try to close TB'
+        client.send(psiSubscription,':prog:TB%s:close %s,commander_%s\n'%(Testboard.slot,Testboard.testdir,whichtest))
+
     def preexec():#Don't forward Signals.
         os.setpgrp()
                 
@@ -422,6 +437,10 @@ try:
             #print Testboards[-1].defparamdir
             Logger << '\t- Testboard %s at address %s with Module %s'%(Testboards[-1].slot,Testboards[-1].address,Testboards[-1].module)
             parentDir=setupParentDir(timestamp,Testboards[-1])
+    
+            Logger << 'try to powercycle Testboard...'
+            powercycle(Testboards[-1])
+
     Logger.printv()
     Logger << 'I found the following Tests to be executed:'
     Logger.printn()
