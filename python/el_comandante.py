@@ -270,13 +270,13 @@ try:
                 os.mkdir(Testboard.parentDir)
             return Testboard.parentDir
 #
-    def doPSI46Test(whichtest):
+    def doPSI46Test(whichtest,temp):
 #-------------start test-----------------
         for Testboard in Testboards:
             #Setup Test Directory
             Testboard.timestamp=timestamp
             Testboard.currenttest=item
-            Testboard.testdir=Testboard.parentDir+'/%s_%s/'%(int(time.time()),Testboard.currenttest)
+            Testboard.testdir=Testboard.parentDir+'/%s_%s_%s/'%(int(time.time()),Testboard.currenttest,temp)
             setupdir(Testboard)
             #Start PSI
             Testboard.busy=True
@@ -338,7 +338,7 @@ try:
                             received=True
                             if msg == 'test:failed':
                                 Logger.warning('\tTest in Testboard %s failed! :('%Testboard.slot)
-                                powercycle(Textboard)                                
+                                powercycle(Testboard)                                
                             elif msg == 'test:finished':
                                 Logger << '\tTest in Testboard %s successful! :)'%Testboard.slot
                             else:
@@ -351,21 +351,25 @@ try:
         
 #
 #-----------IV function-----------------------
-    def doIVCurve():
+    def doIVCurve(temp):
         for Testboard in Testboards:
             Testboard.timestamp=timestamp
             Testboard.currenttest=item
-            Testboard.testdir=Testboard.parentDir+'/%s_IV_%s'%(timestamp, Testboard.module)
+            Testboard.testdir=Testboard.parentDir+'/%s_IV_%s'%(int(time.time()),temp)
             setupdir(Testboard)
             Logger << 'DO IV CURVE for Testboard slot no %s'%Testboard.slot
             #%(Testboard.address,Testboard.module,Testboard.slot),Testboard
             ivStart = float(init.get('IV','Start'))
             ivStop  = float(init.get('IV','Stop'))
             ivStep  = float(init.get('IV','Step'))
+            ivDelay = float(init.get('IV','Delay'))
             ivDone = False
             client.send(keithleySubscription,':PROG:IV:START %s'%ivStart)
             client.send(keithleySubscription,':PROG:IV:STOP %s'%ivStop)
             client.send(keithleySubscription,':PROG:IV:STEP %s'%ivStep) 
+            client.send(keithleySubscription,':PROG:IV:DELA Y%s'%ivDelay) 
+            client.send(keithleySubscription,':PROG:IV:TESTDIR %s'%Testboard.testdir)
+#todo check if testdir exists...
             client.send(psiSubscription,':prog:TB%s:open %s,commander_%s\n'%(Testboard.slot,Testboard.testdir,whichtest))
             sleep(2.0)	
             client.send(keithleySubscription,':PROG:IV MEAS\n')
@@ -391,6 +395,8 @@ try:
 
         Logger << 'try to close TB'
         client.send(psiSubscription,':prog:TB%s:close %s,commander_%s\n'%(Testboard.slot,Testboard.testdir,whichtest))
+        sleep(5)
+        powercycle(Testboard)
 
     def powercycle(Testboard):
         Testboard.timestamp=timestamp
@@ -501,9 +507,9 @@ try:
             
             stablizeTemperature(temp)
             if whichtest == 'IV':
-                doIVCurve()
+                doIVCurve(temp)
             else:
-                doPSI46Test(whichtest)
+                doPSI46Test(whichtest,temp)
         client.send(keithleySubscription,':OUTP OFF\n')        
 
 #-------------Heat up---------------

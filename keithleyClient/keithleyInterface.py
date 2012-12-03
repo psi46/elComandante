@@ -365,11 +365,11 @@ class keithleyInterface:
         return False
     
     
-    def getAnswerForQuery(self,data):
+    def getAnswerForQuery(self,data,minlength =1):
         print 'getAnswer for query: %s'%data
         self.write(data)
         time.sleep(self.readSleepTime)
-        data = self.read()
+        data = self.read(minlength)
         print 'length is %s'%len(data)
         return self.clearString(data)
     

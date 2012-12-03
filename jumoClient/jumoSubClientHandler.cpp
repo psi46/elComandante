@@ -328,6 +328,8 @@ void jumoSubClientHandler::checkIfTempStable(float temp){
 		targetTemp=cycleLowTemp;
 	else
 		targetTemp=setPointTemp;
+    if(status==HEATING||status == CYCLE_HEATING||status==DRYING||status==CYCLE_DRYING)
+        targetTemp = +40;
 	float deltaT =  fabs(temp-targetTemp);
 	if(stableSince<0)deltaTime=0;
 	switch(status){

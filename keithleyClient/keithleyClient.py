@@ -13,6 +13,7 @@ ON = 1
 OFF = 0
 End = False
 Logger = printer()
+IVLogger = printer()
 #sweep parameters TODO anpassen
 startValue = -100
 stopValue = -200
@@ -53,6 +54,11 @@ except:
 Logger.timestamp = float(args.timestamp)
 Logger.set_logfile('%s/Keithley.log'%(args.dataDir))
 Logger.set_prefix('')
+#default testDir, should be set (by elComandante)  when doing IV curve
+testDir = '%s/ivCurve.log'%(args.dataDir)
+IVLogger.set_logfile('%s/IV.log'%(args.dataDir))
+IVLogger.set_prefix('')
+IVLogger.timestamp = float(args.timestamp)
 if not os.access(serialPort,os.R_OK):
     Logger.warning('serialPort \'%s\' is not accessible'%serialPort)
     sys.exit()
@@ -89,7 +95,7 @@ Logger << 'status:%s'%keithley.getOutputStatus()
 
 def readCurrentIV():
     if keithley.getOutputStatus():
-        data= keithley.getAnswerForQuery(':READ?').split(' ')
+        data= keithley.getAnswerForQuery(':READ?',69).split(' ')
         timestamp = time.time()
         if len(data)==5:
             if is_float(data[0]) and is_float(data[1]) and is_float(data[2]):
@@ -97,6 +103,7 @@ def readCurrentIV():
                 current = float(data[1])
                 resistance = float(data[2])
                 Logger << '%s: %s V - %s A'%(timestamp,data[0],data[1])
+                IVLogger << '%s: %s V - %s A'%(timestamp,data[0],data[1])
                 client.send(voltageAbo,'%s\n'%voltage)
                 client.send(currentAbo,'%s\n'%current)
                 client.send(resistanceAbo,'%s\n'%resistance)
@@ -107,9 +114,11 @@ def readCurrentIV():
         
 def sweep():
     global doingSweep
+    global testDir
     doingSweep = True
     outputStatus = keithley.getOutputStatus()
     client.send(aboName,'Start with Linear Sweep from %sV to %sV in %sV steps\n'%(startValue,stopValue,stepValue))
+    Logger << "TestDirectory is: %s"%testDir
     ntries = 0
     while True:
         retVal = keithley.doLinearSweep(startValue, stopValue, stepValue, nSweeps, delay)
@@ -131,6 +140,11 @@ def sweep():
     client.send(aboName,':PROG:IV! RESULTS\n')
     npoint = 0
     nPoints = len(keithley.measurments)
+    ivCurveLogger = printer()
+    ivCurveLogger.timestamp = float(args.timestamp)
+    ivCurveLogger.set_prefix('')
+    ivCurveLogger.set_logfile('%s/ivCurve.log'%testDir)
+    ivCurveLogger << '#timestamp\tvoltage(V)\tcurrent(A)'
     while len(keithley.measurments)>0:
         npoint +=1
         measurement = keithley.measurments.popleft()
@@ -143,12 +157,15 @@ def sweep():
         client.sendData(IVAbo," ".join(map(str, measurement[:3]))+'\n')
         client.sendData(voltageAbo,'%s %s\n'%(timestamp,voltage))
         client.sendData(currentAbo,'%s %s\n'%(timestamp,current))
+        ivCurveLogger << '%s\t%s\t%s'%(timestamp,voltage,current)
+        IVLogger << '%s\t%s\t%s'%(timestamp,voltage,current)
 #        client.sendData(resistanceAbo,'%s %s\n'%(timestamp,resistance))
     client.send(IVAbo,'Results End\n')
     client.send(aboName,':PROG:IV! FINISHED\n')
     client.send(voltageAbo,'Sweep Data Done\n')
     client.send(currentAbo,'Sweep Data Done\n')
     client.send(resistanceAbo,'Sweep Data Done\n')
+    del ivCurveLogger
     sleep(1)
     keithley.initKeithley()
     keithley.setOutput(outputStatus)
@@ -167,12 +184,14 @@ def printHelp():
     data +='\t:HELP                \tto show this Help\n'
     data +='\t:OUTPut ON/OFF       \tto switch the Output of the Keithley ON/OFF\n'
     data +='\t:OUTPut?             \tto query the current status of the Output of the Keithley\n'
-    data +='\t:PROG:IV MEASURE    \tto make an IV Curve for the current device\n'
-    data +='\t:PROG:IV:START    XX\tto make an IV Curve for the current device\n'
-    data +='\t:PROG:IV:STOP     XX\tto make an IV Curve for the current device\n'
-    data +='\t:PROG:IV:STEP     XX\tto make an IV Curve for the current device\n'
-    data +='\t:PROG:IV:MAXTRIPS XX\tto set maximum tries if keithley is tripping\n'
-    data +='\t:PROG:RESISTANCE  XX\tto enable/disable 4-Wire Resistance Measurement\n'
+    data +='\t:PROG:IV MEASURE     \tto make an IV Curve for the current device\n'
+    data +='\t:PROG:IV:TESTDIR   XX\tSetPArentDir to Save the IV Data\n'
+    data +='\t:PROG:IV:START     XX\tto make an IV Curve for the current device\n'
+    data +='\t:PROG:IV:STOP      XX\tto make an IV Curve for the current device\n'
+    data +='\t:PROG:IV:STEP      XX\tto make an IV Curve for the current device\n'
+    data +='\t:PROG:IV:DELay     XX\tto make an IV Curve for the current device\n'
+    data +='\t:PROG:IV:MAXTRIPS  XX\tto set maximum tries if keithley is tripping\n'
+    data +='\t:PROG:RESISTANCE   XX\tto enable/disable 4-Wire Resistance Measurement\n'
     data += '************************************************************************\n'
     Logger << data
     client.sendData(aboName,data)
@@ -184,20 +203,34 @@ def  analyseIV(coms,typ,msg):
     global stepValue
     global maxSwepTries
     global nSweeps
+    global testDir
     Logger <<'analyse :IV'
     if len(coms)==0:
-        if msg.find('MEAS')>=0 and typ=='c':
+        if msg.lower().find('meas')>=0 and typ=='c':
             outMsg= 'Do Sweep from %.2f V to %.2f'%(startValue,stopValue)
             outMsg+=' in steps of %.2fV with a delay of %.f\n'%(stepValue,delay)
+            outMsg+='TestDirectory is "%s"'%testDir
             Logger << outMsg
             client.send(aboName,outMsg)
             sweep()
         else:
             Logger << 'error'
-            print Help()
+            printHelp()
     elif len(coms)==1:
         Logger << 'iv len >0'
         outMsg = 'not Valid Input'
+        if coms[0].lower().find('testdir')>=0:
+            if typ =='c':
+                Logger << '%s: "%s"'%(coms[0],msg)
+                testDir = msg
+                try:
+                    os.stat(testDir)
+                    Logger << 'checked Directory'
+                except:
+                    outMsg = ':IV:TESTDIR! %s: directory does not exist. Error!'%testDir
+                else:
+                    outMsg = ':IV:TESTDIR! %s'%testDir
+
         if coms[0].find('START')>=0:
             if typ =='c' and is_float(msg):
                 startValue=float(msg)
@@ -233,11 +266,12 @@ def  analyseIV(coms,typ,msg):
             elif typ =='q':
                 Logger << 'prog-iv-trip?'
             outMsg = ':PROG:IV:TRIP! %s'%delay
+        Logger << outMsg
         outMsg+='\n'
         client.send(aboName,outMsg)
     else:
         Logger << 'error prog iv len to long'
-        print Help()
+        printHelp()
     pass
         
 def analyseProg(coms,typ,msg):
@@ -263,7 +297,7 @@ def analyseOutp(coms,typ,msg): #pretty much ok
     #Logger << 'analyse Output'
     if len(coms)>0:
         Logger << 'not valid command: %s %s %s '%(coms, typ, msg)
-        print Help()
+        printHelp()
     else:
         if typ=='q':
             Logger << 'Query for output status'
@@ -280,10 +314,10 @@ def analyseOutp(coms,typ,msg): #pretty much ok
                 keithley.setOutput(OFF)
             else: 
                 Logger << 'message of :OUTP not valid: %s, valid messages are \'ON\',\'OFF\''%msg
-                print Help()
+                printHelp()
         else:
             Logger << 'this a non valid typ'
-            print Help()
+            printHelp()
     pass
 
 def analysePacket(coms,typ,msg):
@@ -292,13 +326,13 @@ def analysePacket(coms,typ,msg):
             analyseProg(coms[1:],typ,msg)
         else:
             Logger << 'not valid packet: %s'%coms
-            print Help()
+            printHelp()
         pass
     elif coms[0].find('OUTP')>=0:
         analyseOutp(coms[1:],typ,msg)
         pass
     elif coms[0].find('HELP')>=0:
-        print Help()
+        printHelp()
     elif coms[0]=='K':
         command = ":".join(map(str, coms[1:]))+' '+msg
         Logger << 'send command to keithley: '

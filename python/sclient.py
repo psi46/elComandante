@@ -156,15 +156,18 @@ class sClient:
         self.sendTSData(aboName,":Pong! %s\n"%self.clientName)
     def checkSubscription(self,aboName):
         #print 'ping? %s'%aboName
-        self.sendTSData(aboName,":Ping?\n")
-        sleep(1);
-        sleep(self.sleepTime)
-        for pkt in self.receivedPackets:
-            #print pkt.Print()
-            if 'pong' in pkt.data.lower():
-                self.receivedPackets.pop(self.receivedPackets.index(pkt))
-                return True
-        return False
+        nTested = 0;
+        retVal = False
+        while nTested<3 and retVal == False:
+            nTested += 1
+            self.sendTSData(aboName,":Ping?\n")
+            sleep(1);
+            sleep(self.sleepTime)
+            for pkt in self.receivedPackets:
+                if 'pong' in pkt.data.lower():
+                    self.receivedPackets.pop(self.receivedPackets.index(pkt))
+                    retVal = True
+        return retVal
     def receivePacket(self):
         try:    
             data, addr =self.udp_sock.recvfrom( self.MAXLENGTH ) 
