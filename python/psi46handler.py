@@ -258,6 +258,13 @@ def openTB(dir,fname,TB,client):
         pass
     Logger << 'CLOSE HERE'
     proc.communicate(input='exit\n')[0] 
+    proc.poll()
+    if (None == proc.returncode):
+        try:
+            proc.send_signal(signal.SIGINT)
+        except:
+            Logger<< 'Process already killed'
+
     if failed[TB]:
         client.send(psiSubscription,':STAT:TB%s! test:failed\n'%TB)
     else:
