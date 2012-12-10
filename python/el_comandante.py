@@ -271,12 +271,13 @@ try:
             return Testboard.parentDir
 #
     def doPSI46Test(whichtest,temp):
+        client.clearPackets(psiSubscription)
 #-------------start test-----------------
         for Testboard in Testboards:
             #Setup Test Directory
             Testboard.timestamp=timestamp
             Testboard.currenttest=item
-            Testboard.testdir=Testboard.parentDir+'/%s_%s_%s/'%(int(time.time()),Testboard.currenttest,temp)
+            Testboard.testdir=Testboard.parentDir+'/%s_%s_%s/'%(int(time.time()),whichtest,temp)
             setupdir(Testboard)
             #Start PSI
             Testboard.busy=True
@@ -352,6 +353,7 @@ try:
 #
 #-----------IV function-----------------------
     def doIVCurve(temp):
+        client.clearPackets(psiSubscription)
         for Testboard in Testboards:
             Testboard.timestamp=timestamp
             Testboard.currenttest=item
@@ -393,12 +395,13 @@ try:
                     else:
                         pass
 
-        Logger << 'try to close TB'
+        Logger << 'try to close TB, sleep for 5 seconds'
         client.send(psiSubscription,':prog:TB%s:close %s,commander_%s\n'%(Testboard.slot,Testboard.testdir,whichtest))
         sleep(5)
         powercycle(Testboard)
 
     def powercycle(Testboard):
+        client.clearPackets(psiSubscription)
         Testboard.timestamp=timestamp
         whichtest='powercycle'
         Testboard.testdir=Testboard.parentDir+'/tmp/'
@@ -418,12 +421,22 @@ try:
                     index=[Testboard.slot==int(coms[1][2]) for Testboard in Testboards].index(True)
                     #Testboards[index].finished()
                     Testboards[index].busy=False
-                    rmtree(Testboard.parentDir+'/tmp/')
+                    sleep(1)
+                    try:
+                        rmtree(Testboard.parentDir+'/tmp/')
+                    except:
+                        Logger.warning("Couldn't delete temp Dir")
+                        pass
                 if coms[0][0:4] == 'STAT' and coms[1][0:2] == 'TB' and typ == 'a' and msg=='test:failed':
                     index=[Testboard.slot==int(coms[1][2]) for Testboard in Testboards].index(True)
                     #Testboards[index].failed()
+                    sleep(1)
                     Testboards[index].busy=False
-                    rmtree(Testboard.parentDir+'/tmp/')
+                    try:
+                        rmtree(Testboard.parentDir+'/tmp/')
+                    except:
+                        Logger.warning("Couldn't delete temp Dir")
+                        pass
                     raise Exception('Could not open Testboard at %s.'%Testboard.slot)
                 else:
                     pass
@@ -438,7 +451,7 @@ try:
         if not os.system("ps aux |grep -v grep| grep -v vim|grep -v emacs|grep %s"%clientName):
             raise Exception("another %s is already running. Please Close client first"%clientName)
 #open psi46handler in annother terminal
-    psiChild = subprocess.Popen("xterm +sb -geometry 120x20+0+900 -fs 10 -fa 'Mono' -e python psi46handler.py ", shell=True,preexec_fn = preexec)
+    psiChild = subprocess.Popen("xterm +sb -geometry 120x20+0+900 -fs 10 -fa 'Mono' -e 'python psi46handler.py -dir %s'"%(Directories['logDir']), shell=True,preexec_fn = preexec)
 #psiChild = subprocess.Popen("xterm +sb -geometry 160x20+0+00 -fs 10 -fa 'Mono' -e python psi46handler.py ", shell=True)
 
 

@@ -16,9 +16,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-c", "--config", dest="configDir",
                        help="specify directory containing config files e.g. ../config/",
                        default="../config/")
+parser.add_argument("-dir","--directory", dest="loggingDir",
+                        help="specify directory containing all logging files e.g. ../DATA/logfiles/",
+                        default="../DATA/logfiles")
 
 args = parser.parse_args()
-Logger << args.configDir
+Logger.set_logfile('%s/psi46Handler.log'%(args.loggingDir))
+Logger <<'ConfigDir: "%s"'%args.configDir
 configDir= args.configDir
 
 #load config
@@ -199,32 +203,36 @@ def readout(proc,TB,client):
 #    return failed
 
 
+global busy
+global failed
+global TestEnd
+global DoTest
+global ClosePSI
+global Abort
+End=False
 #MAINLOOP
 numTB = 4
-
-global busy
-busy = [False]*numTB
-global failed
-failed = [False]*numTB
-global TestEnd
-TestEnd = [False]*numTB
-global DoTest
-DoTest=[False]*numTB
-global ClosePSI
-ClosePSI=[False]*numTB
-
-global Abort
-#Abort.lock = threading.Lock()
-#Abort.lock.aquire()
-Abort=[False]*numTB
-#Abort.lock.release()
-
-
-End=False
+def initVariables(): 
+    global busy
+    global failed
+    global TestEnd
+    global DoTest
+    global ClosePSI
+    global Abort
+    busy = [False]*numTB
+    failed = [False]*numTB
+    TestEnd = [False]*numTB
+    DoTest=[False]*numTB
+    ClosePSI=[False]*numTB
+    #Abort.lock = threading.Lock()
+    #Abort.lock.aquire()
+    Abort=[False]*numTB
+    #Abort.lock.release()
 
 
 
 def executeTest(whichTest,dir,fname,TB,client):
+    initVariables()
     Logger << 'psi46 %s in TB%s'%(whichTest,TB)
     failed[TB] = False
     TestEnd[TB] = False
@@ -241,7 +249,7 @@ def executeTest(whichTest,dir,fname,TB,client):
         client.send(psiSubscription,':STAT:TB%s! test:finished\n'%TB)
 
 def openTB(dir,fname,TB,client):
-
+    initVariables()
     #ON_POSIX = 'posix' in sys.builtin_module_names
     Logger << 'open TB%s'%(TB)
     failed[TB] = False
@@ -256,7 +264,7 @@ def openTB(dir,fname,TB,client):
     #busy[TB] = False
     while not ClosePSI[TB]:
         pass
-    Logger << 'CLOSE HERE'
+    Logger << 'CLOSE TB %s HERE'%(TB)
     proc.communicate(input='exit\n')[0] 
     proc.poll()
     if (None == proc.returncode):
@@ -267,13 +275,16 @@ def openTB(dir,fname,TB,client):
 
     if failed[TB]:
         client.send(psiSubscription,':STAT:TB%s! test:failed\n'%TB)
+        Logger << ':STAT:TB%s! test:failed'%TB
     else:
         client.send(psiSubscription,':STAT:TB%s! test:finished\n'%TB)
+        Logger << ':STAT:TB%s! test:finished'%TB
 
 
 
 
 Logger << 'Hello\n'
+initVariables()
 #RECEIVE COMMANDS:
 while client.anzahl_threads > 0 and not End:
     sleep(.5)
