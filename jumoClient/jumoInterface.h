@@ -22,6 +22,8 @@
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
+
 
 class jumoInterface {
 public:
@@ -57,6 +59,7 @@ public:
 	int readLastSectionNo(int *lastSectionNo);
 	int startSection(int sectionNo);
 	int setTargetTemperature(float temp);
+	float calculateDewPoint(float temp, float relHum);
 private:
 	int read(int address,int length,uint16_t *dest);
 	int write(int address,uint32_t value);

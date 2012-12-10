@@ -292,8 +292,9 @@ void jumoSubClientHandler::repeatedActions(){
 }
 
 void jumoSubClientHandler::measureConditions(){
-	float temp,hum;
+	float temp,hum,dewPoint;
 	jumo.measure(temp,hum);
+	dewPoint = jumo.calculateDewPoint(temp,hum);
 	std::ostringstream out;
 	out << temp;
 	this->sendToServer("/temperature/jumo",out.str());
@@ -302,6 +303,10 @@ void jumoSubClientHandler::measureConditions(){
 	out<<hum;
 	currentHum = hum;
 	this->sendToServer("/humidity",out.str());
+	out.clear();
+	out.str("");
+	out<<dewPoint;
+	this->sendToServer("/dewPoint",out.str());
 	checkIfTempStable(temp);
 	checkHumidity(hum);
 	checkStatus();

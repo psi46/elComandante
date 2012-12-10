@@ -286,6 +286,28 @@ int jumoInterface::write(int address,int value){
 	unlock();
 	return output;
 }
+
+/**
+ * @brief function to calculate dew point out of temperature and relative humidity
+ * Formula from http://ag.arizona.edu/azmet/dewpoint.html
+ * B = (ln(RH / 100) + ((17.27 * T) / (237.3 + T))) / 17.27
+ * D = (237.3 * B) / (1 - B)
+ *
+ * where:
+ *             T = Air Temperature (Dry Bulb) in Centigrade (C) degrees
+ *             RH = Relative Humidity in percent (%)
+ *             B = intermediate value (no units)
+ *             D = Dewpoint in Centigrade (C) degrees
+ * @param T Air Temperature in deg C
+ * @param RH Relative Humidity in percent
+ * @retVal Dew Point in Deg C
+ */
+float jumoInterface::calculateDewPoint(float T, float RH) {
+	float B =(log(RH / 100) + ((17.27 * T) / (237.3 + T))) / 17.27;
+	float D = (237.3 * B) / (1 - B);
+	return D;
+}
+
 int jumoInterface::write(int address,float value){
 	std::cout<<"\n\n\n"<<std::endl;
 	std::cout<<"write float to "<<hex<<address<<" \tval:"<<(float)value<<" "<<std::endl;
