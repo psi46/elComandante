@@ -1,0 +1,395 @@
+#--------LOG from Thu 01 Jan 1970 at 00h:00m:00s ---------
+Fe target at position 0
+Cu target at position 25320
+Mo target at position 50640
+Ag target at position 75960
+Sn target at position 101280
+Ba target at position 126600
+----------------
+Opening id3003 xray device at /dev/ttyF0 ...
+Xray device is open.
+Communication with xray device is OK.
+----------------
+Opening zaber fluorescence device at /dev/ttyF1 ...
+Fluorescence device is open.
+Communication with fluorescence device is OK.
+Sleeping 0.5 seconds ...
+Moving device to home position ...
+Home position reached.
+Initialization finished.
+----------------
+Waiting for commands ...
+Received packet from /xray: :SET:HV ON
+Turning high voltage on ...
+High voltage on and stable.
+Received packet from /xray: :SET:HV OFF
+Turning high voltage off ...
+High voltage off.
+Received packet from /xray: :SET:HV ON
+Turning high voltage on ...
+High voltage on and stable.
+Received packet from /xray: :SET:HV OFF
+Turning high voltage off ...
+High voltage off.
+Received packet from /xray: :SET:HV ON
+Turning high voltage on ...
+High voltage on and stable.
+Received packet from /xray: :SET:HV OFF
+Turning high voltage off ...
+High voltage off.
+----------------
+Received signal 2.
+Closing connection ...
+Client connection closed.
+----------------
+Closing connection ...
+Client connection closed.
+Exit.
+#---------------------------------------------------------
+
+#--------LOG from Thu 01 Jan 1970 at 00h:00m:00s ---------
+Fe target at position 0
+Cu target at position 25320
+Mo target at position 50640
+Ag target at position 75960
+Sn target at position 101280
+Ba target at position 126600
+----------------
+Opening id3003 xray device at /dev/ttyF0 ...
+Xray device is open.
+Communication with xray device is OK.
+----------------
+Opening zaber fluorescence device at /dev/ttyF1 ...
+Fluorescence device is open.
+Communication with fluorescence device is OK.
+Sleeping 0.5 seconds ...
+Moving device to home position ...
+Home position reached.
+Initialization finished.
+----------------
+Waiting for commands ...
+Received packet from /xray: :SET:HV ON
+Turning high voltage on ...
+High voltage on and stable.
+Received packet from /xray: :SET:HV OFF
+Turning high voltage off ...
+High voltage off.
+----------------
+Received signal 2.
+Closing connection ...
+Client connection closed.
+----------------
+Closing connection ...
+Client connection closed.
+Exit.
+#---------------------------------------------------------
+
+#--------LOG from Thu 01 Jan 1970 at 00h:00m:00s ---------
+Fe target at position 0
+Cu target at position 25320
+Mo target at position 50640
+Ag target at position 75960
+Sn target at position 101280
+Ba target at position 126600
+----------------
+Opening id3003 xray device at /dev/ttyF0 ...
+Xray device is open.
+Communication with xray device is OK.
+----------------
+Opening zaber fluorescence device at /dev/ttyF1 ...
+Fluorescence device is open.
+Communication with fluorescence device is OK.
+Sleeping 0.5 seconds ...
+Moving device to home position ...
+Home position reached.
+Initialization finished.
+----------------
+Waiting for commands ...
+Received packet from /xray: :SET:HV ON
+Turning high voltage on ...
+High voltage on and stable.
+Received packet from /xray: :SET:HV OFF
+Turning high voltage off ...
+High voltage off.
+----------------
+Received signal 2.
+Closing connection ...
+Client connection closed.
+----------------
+Closing connection ...
+Client connection closed.
+Exit.
+#---------------------------------------------------------
+
+#--------LOG from Thu 01 Jan 1970 at 00h:00m:00s ---------
+Fe target at position 0
+Cu target at position 25320
+Mo target at position 50640
+Ag target at position 75960
+Sn target at position 101280
+Ba target at position 126600
+----------------
+Opening id3003 xray device at /dev/ttyF0 ...
+Xray device is open.
+Communication with xray device is OK.
+----------------
+Opening zaber fluorescence device at /dev/ttyF1 ...
+Fluorescence device is open.
+Communication with fluorescence device is OK.
+Sleeping 0.5 seconds ...
+Moving device to home position ...
+Home position reached.
+Initialization finished.
+----------------
+Waiting for commands ...
+Received packet from /xray: :SET:HV ON
+Turning high voltage on ...
+High voltage on and stable.
+Received packet from /xray: :SET:HV OFF
+Turning high voltage off ...
+High voltage off.
+Received packet from /xray: :SET:HV ON
+Turning high voltage on ...
+High voltage on and stable.
+Received packet from /xray: :SET:HV OFF
+Turning high voltage off ...
+High voltage off.
+----------------
+Received signal 2.
+Closing connection ...
+Client connection closed.
+----------------
+Closing connection ...
+Client connection closed.
+Exit.
+#---------------------------------------------------------
+
+#--------LOG from Thu 01 Jan 1970 at 00h:00m:00s ---------
+Fe target at position 0
+Cu target at position 25320
+Mo target at position 50640
+Ag target at position 75960
+Sn target at position 101280
+Ba target at position 126600
+----------------
+Opening id3003 xray device at /dev/ttyF0 ...
+Xray device is open.
+Communication with xray device is OK.
+----------------
+Opening zaber fluorescence device at /dev/ttyF1 ...
+Fluorescence device is open.
+Communication with fluorescence device is OK.
+Sleeping 0.5 seconds ...
+Moving device to home position ...
+Home position reached.
+Initialization finished.
+----------------
+Waiting for commands ...
+Received packet from /xray: :SET:HV ON
+Turning high voltage on ...
+High voltage on and stable.
+Received packet from /xray: :SET:HV OFF
+Turning high voltage off ...
+High voltage off.
+----------------
+Received signal 2.
+Closing connection ...
+Client connection closed.
+----------------
+Closing connection ...
+Client connection closed.
+Exit.
+#---------------------------------------------------------
+
+#--------LOG from Thu 01 Jan 1970 at 00h:00m:00s ---------
+Fe target at position 0
+Cu target at position 25320
+Mo target at position 50640
+Ag target at position 75960
+Sn target at position 101280
+Ba target at position 126600
+----------------
+Opening id3003 xray device at /dev/ttyF0 ...
+Xray device is open.
+Communication with xray device is OK.
+----------------
+Opening zaber fluorescence device at /dev/ttyF1 ...
+Fluorescence device is open.
+Communication with fluorescence device is OK.
+Sleeping 0.5 seconds ...
+Moving device to home position ...
+Home position reached.
+Initialization finished.
+----------------
+Waiting for commands ...
+----------------
+Received signal 2.
+Closing connection ...
+Client connection closed.
+----------------
+Closing connection ...
+Client connection closed.
+Exit.
+#---------------------------------------------------------
+
+#---------------------------------------------------------
+
+#---------------------------------------------------------
+
+#---------------------------------------------------------
+
+#--------LOG from Thu 01 Jan 1970 at 06h:30m:23s ---------
+Fe target at position 0
+Cu target at position 25320
+Mo target at position 50640
+Ag target at position 75960
+Sn target at position 101280
+Ba target at position 126600
+----------------
+Opening id3003 xray device at /dev/ttyF0 ...
+Xray device is open.
+Communication with xray device is OK.
+----------------
+Opening zaber fluorescence device at /dev/ttyF1 ...
+Fluorescence device is open.
+Communication with fluorescence device is OK.
+Sleeping 0.5 seconds ...
+Moving device to home position ...
+Home position reached.
+Initialization finished.
+----------------
+Waiting for commands ...
+----------------
+Received signal 2.
+Closing connection ...
+Client connection closed.
+----------------
+Closing connection ...
+Client connection closed.
+Exit.
+#---------------------------------------------------------
+
+#--------LOG from Thu 01 Jan 1970 at 06h:30m:23s ---------
+Fe target at position 0
+Cu target at position 25320
+Mo target at position 50640
+Ag target at position 75960
+Sn target at position 101280
+Ba target at position 126600
+----------------
+Opening id3003 xray device at /dev/ttyF0 ...
+Xray device is open.
+Communication with xray device is OK.
+----------------
+Opening zaber fluorescence device at /dev/ttyF1 ...
+Fluorescence device is open.
+Communication with fluorescence device is OK.
+Sleeping 0.5 seconds ...
+Moving device to home position ...
+Home position reached.
+Initialization finished.
+----------------
+Waiting for commands ...
+Received packet from /xray: :SET:BEAM OFF
+Turning beam off ...
+Beam off.
+Received packet from /xray: :SET:TARGET None
+Received packet from /xray: :SET:BEAM OFF
+Turning beam off ...
+Beam off.
+Received packet from /xray: :SET:BEAM ON
+Turning beam on ...
+Beam on.
+Received packet from /xray: :SET:BEAM OFF
+Turning beam off ...
+Beam off.
+Received packet from /xray: :SET:TARGET Fe
+Moving to target Fe ...
+Current target is now Fe.
+Received packet from /xray: :SET:BEAM OFF
+Turning beam off ...
+Beam off.
+Received packet from /xray: :SET:BEAM ON
+Turning beam on ...
+Beam on.
+Received packet from /xray: :SET:BEAM OFF
+Turning beam off ...
+Beam off.
+Received packet from /xray: 1355405165 Connecting xrayClient with Subsystem
+Received packet from /xray: 1355405168 :Pong! xrayClient
+Received packet from /xray: 1355405175 :SET:VOLTAGE 40
+Setting voltage to 40 kV ...
+Voltage set.
+Received packet from /xray: 1355405175 :SET:CURRENT 45
+Setting current to 45 mA ...
+Current set.
+Received packet from /xray: 1355405175 :SET:TARGET Mo
+Moving to target Mo ...
+Current target is now Mo.
+Received packet from /xray: 1355405175 :SET:HV ON
+Turning high voltage on ...
+High voltage on and stable.
+Received packet from /xray: 1355405175 :SET:BEAM ON
+Turning beam on ...
+Beam on.
+Received packet from /xray: 1355405175 :FINISHED
+Received packet from /xray: 1355405193 :FINISHED
+Received packet from /xray: 1355405222 :SET:BEAM OFF
+Turning beam off ...
+Beam off.
+Received packet from /xray: 1355405222 :FINISHED
+Received packet from /xray: 1355405225 :FINISHED
+Received packet from /xray: 1355405225 :SET:TARGET Ag
+Moving to target Ag ...
+Current target is now Ag.
+Received packet from /xray: 1355405225 :SET:BEAM ON
+Turning beam on ...
+Beam on.
+Received packet from /xray: 1355405225 :FINISHED
+Received packet from /xray: 1355405289 :prog:exit
+Received packet from /xray: 1355405289 :prog:exit
+Received packet from /xray: 1355405291 :prog:exit
+Received packet from /xray: 1355405326 Connecting xrayClient with Subsystem
+Received packet from /xray: 1355405329 :Pong! xrayClient
+Received packet from /xray: 1355405335 :SET:VOLTAGE 40
+Setting voltage to 40 kV ...
+Voltage set.
+Received packet from /xray: 1355405335 :SET:CURRENT 45
+Setting current to 45 mA ...
+Current set.
+Received packet from /xray: 1355405335 :SET:TARGET Mo
+Moving to target Mo ...
+Current target is now Mo.
+Received packet from /xray: 1355405335 :SET:HV ON
+Turning high voltage on ...
+High voltage on and stable.
+Received packet from /xray: 1355405335 :SET:BEAM ON
+Turning beam on ...
+Beam on.
+Received packet from /xray: 1355405335 :FINISHED
+Received packet from /xray: 1355405354 :FINISHED
+Received packet from /xray: 1355405577 :SET:BEAM OFF
+Turning beam off ...
+Beam off.
+Received packet from /xray: 1355405577 :FINISHED
+Received packet from /xray: 1355405580 :FINISHED
+Received packet from /xray: 1355405580 :SET:TARGET Ag
+Moving to target Ag ...
+Current target is now Ag.
+Received packet from /xray: 1355405580 :SET:BEAM ON
+Turning beam on ...
+Beam on.
+Received packet from /xray: 1355405580 :FINISHED
+Received packet from /xray: 1355405678 :prog:exit
+Received packet from /xray: 1355405678 :prog:exit
+Received packet from /xray: 1355405680 :prog:exit
+----------------
+Received signal 2.
+Closing connection ...
+Client connection closed.
+----------------
+Closing connection ...
+Client connection closed.
+Exit.
+#---------------------------------------------------------
+
