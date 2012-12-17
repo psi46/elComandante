@@ -15,6 +15,7 @@
 def decode(data):
     #type: (q)uestion, (a)nswer or (c)ommand
     dataArray=data.split(' ')
+#    print dataArray
     if len(dataArray)==0 or (len(dataArray)==1 and dataArray[0]==''):
         time = -1
         coms =[]
@@ -23,7 +24,7 @@ def decode(data):
         msg = ''
         command = ''
     elif len(dataArray)>0:
-        if isinstance(dataArray[0],(int,float)):
+        if is_number(dataArray[0]):
             time = dataArray[0] 
             if len(data.split(' ',1))>1:
                 command = data.split(' ',1)[1]
@@ -58,3 +59,17 @@ def decode(data):
     if len(coms)>0:
         coms=coms[1:].split(':')#don't take the first :
     return time, coms, typ, msg, command
+
+def is_number(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
+
+def is_float(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
