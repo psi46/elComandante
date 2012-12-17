@@ -1,15 +1,17 @@
+#
+# This program controls the PSI46-Testboards using the standard psi46expert software and executes Tests or opens and closes the TB
+# it should work for N Testboards
+# 
+
 from sclient import *
 from decode import *
 from colorprinter import printer
-#from printcolor import printc
 from threading import Thread
 import subprocess
 from BetterConfigParser import BetterConfigParser
 import sys
 import argparse
-#setup client /psi46
-Logger = printer()
-Logger.set_prefix('')
+
 #------------some configuration--------------
 parser = argparse.ArgumentParser()
 
@@ -19,12 +21,13 @@ parser.add_argument("-c", "--config", dest="configDir",
 parser.add_argument("-dir","--directory", dest="loggingDir",
                         help="specify directory containing all logging files e.g. ../DATA/logfiles/",
                         default="../DATA/logfiles")
-
+#parse args and setup logdir
 args = parser.parse_args()
+Logger = printer()
+Logger.set_prefix('')
 Logger.set_logfile('%s/psi46Handler.log'%(args.loggingDir))
-Logger <<'ConfigDir: "%s"'%args.configDir
+#Logger <<'ConfigDir: "%s"'%args.configDir
 configDir= args.configDir
-
 #load config
 config = BetterConfigParser()
 config.read(configDir+'/elComandante.conf')
@@ -37,295 +40,188 @@ psiSubscription = config.get('subsystem','psiSubscription')
 client = sClient(serverZiel,serverPort,"psi46")
 #subscribe
 client.subscribe(psiSubscription)
+#----------------------------------------------------
+
 #handler
 def handler(signum, frame):
     Logger << 'Close Connection'
     client.closeConnection()
-    Logger << 'Signal handler called with signal', signum
+    #Logger << 'Signal handler called with signal', signum
 signal.signal(signal.SIGINT, handler)
 
-color=['green','red','blue','magenta']
+#color gadget
+def colorGenerator():
+    list=['green','blue','magenta','cyan']
+    i=0
+    while True:
+        yield list[i]
+        i = (i+1)%len(list)
 
+class TBmaster(object):
+    def __init__(self, TB, client, psiSubscription, Logger, color='black'):
+        self.TB = TB
+        self.client = client
+        self.psiSubscription = psiSubscription
+        self.color = color
+        self.Logger = Logger
+        self.TBSubscription = '/TB%s'%self.TB
+        self.client.subscribe(self.TBSubscription)
 
+    def _spawn(self,executestr):
+        self.proc = subprocess.Popen([executestr,''], shell = True, stdout = subprocess.PIPE, stdin = subprocess.PIPE)
+        busy[self.TB] = True
 
+    def _kill(self):
+        try:
+            self.proc.kill()
+            self.Logger.warning("PSI%s KILLED"%self.TB)
+        except:
+            self.Logger.warning("nothing to be killed")
 
+    def _abort(self):
+        self.Logger.warning('ABORT!')
+        self._kill()
+        Abort[self.TB] = False
+        return True
 
+    def _resetVariables(self):
+        busy[self.TB] = False
+        failed[self.TB] = False
+        TestEnd[self.TB] = False
+        DoTest[self.TB] = False
+        ClosePSI[self.TB] = False
+        Abort[self.TB] = False
 
-#def readout(proc,TB,client):
-#
-#
-#    #---non blocking RO---
-#    try:
-#        from Queue import Queue, Empty
-#    except ImportError:
-#        from queue import Queue, Empty  # python 3.x
-#    
-#    
-#    def enqueue_output(out, queue):
-#        for line in iter(out.readline, b''):
-#            queue.put(line)
-#        out.close()
-#    
-#    q = Queue()
-#    t = Thread(target=enqueue_output, args=(proc.stdout, q))
-#    t.daemon = True # thread dies with the program
-#    t.start()
-#    #------------------------
-#
-#
-#    failed = False
-#    Logger << 'HERE i am\n'
-#    while proc.poll() is None and not ClosePSI[TB]:
-#        if Abort[TB]:
-#            Logger << 'ABORT!'
-#            proc.kill()
-#            Logger << "--> PSI%s KILLED"%TB
-#            failed=True
-#            Abort[TB]=False
-#        #if ClosePSI[TB]:
-#	#    Logger << 'communicate!'
-#        #    proc.communicate(input='exit\n')[0]
-#        #    TestEnd[TB]=True
-#
-#	try:  line = q.get_nowait() # or q.get(timeout=.1)
-#	except Empty:
-#	    pass
-#	    #print('no output yet')
-#	else: # got line
-#    # ... do something with line
-#
-#
-#            line = proc.stdout.readline()
-#            hesays=line.rstrip()
-#            client.send('/TB%s'%TB,hesays+'\n')        
-#            printc(color[TB],'',"PSI%s stdout: %s"%(TB,hesays))
-#            if 'error' in line.rstrip() or 'Error' in line.rstrip():
-#                failed=True
-#                Logger << "--> PSI%s KILLED"%TB
-#                proc.kill()
-#            if 'command not found' in line.strip():
-#                Logger << "--> psi46expert for TB%s not found"%TB
-#            if Abort[TB]:
-#                Logger << 'ABORT!'
-#                proc.kill()
-#                Logger << "--> PSI%s KILLED"%TB
-#                failed=True            
-#                Abort[TB]=False
-#    return failed
-#trying with select:
+    def _readAllSoFar(self, retVal = ''): 
+        while (select.select([self.proc.stdout],[],[],0)[0]!=[]) and self.proc.poll() is None:   
+            retVal += self.proc.stdout.read(1)
+        return retVal
 
-def readAllSoFar(proc, retVal=''): 
-  while (select.select([proc.stdout],[],[],0)[0]!=[]) and proc.poll() is None:   
-    retVal+=proc.stdout.read(1)
-  return retVal
+    @staticmethod
+    def findError(stat):
+        return any([Error in stat for Error in ['error','Error','anyOtherString']])
 
-def readout(proc,TB,client):
-    failed = False
-    Logger << 'HERE i am\n'
-    while proc.poll() is None and ClosePSI[TB]==False:
-        if Abort[TB]:
-            Logger.warning('ABORT!')
+    def _readout(self):
+        failed = False
+        self.Logger << '>>> Aquire Testboard %s <<<'%self.TB
+        while self.proc.poll() is None and ClosePSI[self.TB]==False:
+            if Abort[self.TB]:
+                failed = self._abort()
+            lines = ['']
+            lines = self._readAllSoFar(lines[-1]).split('\n')
+            for a in range(len(lines)-1):
+                line=lines[a]
+                hesays=line.rstrip()
+                self.client.send(self.TBSubscription,'%s\n'%hesays)
+                self.Logger.printcolor("psi46@TB%s >> %s"%(self.TB,hesays),self.color)
+                if self.findError(line.rstrip()):
+                    self.Logger << 'The following error triggerd the exception:'
+                    self.Logger.warning(line.rstrip())
+                    failed=True
+                    self._kill()
+                if 'command not found' in line.strip():
+                    self.Logger.warning("psi46expert for TB%s not found"%self.TB)
+                if Abort[self.TB]:
+                    failed = self._abort()
+        self.Logger << '>>> Release Testboard %s <<<'%self.TB
+        TestEnd[self.TB] = True
+        busy[self.TB] = False
+        return failed
+
+    def _answer(self):
+        if failed[self.TB]:
+            self.client.send(self.psiSubscription,':STAT:TB%s! test:failed\n'%self.TB)
+            self.Logger.warning('Test failed in TB%s'%self.TB)
+        else:
+            self.client.send(self.psiSubscription,':STAT:TB%s! test:finished\n'%self.TB)
+            self.Logger << ':Test finished in TB%s'%self.TB
+
+    def executeTest(self,whichTest,dir,fname):
+        self._resetVariables()
+        self.Logger << 'executing psi46 %s in TB%s'%(whichTest,self.TB)
+        executestr='psi46expert -dir %s -f %s -r %s.root -log %s.log'%(dir,whichTest,fname,fname)
+        self._spawn(executestr)
+        failed[self.TB]=self._readout()
+        self._answer()
+
+    def openTB(self,dir,fname):
+        self._resetVariables()
+        Logger << 'open TB%s'%(self.TB)
+        executestr='psi46expert -dir %s -r %s.root -log %s.log'%(dir,fname,fname)
+        self._spawn(executestr)
+        failed[self.TB]=self._readout()
+        while not ClosePSI[self.TB]:
+            pass
+        self.Logger << 'CLOSE TB %s HERE'%(self.TB)
+        self.proc.communicate(input='exit\n')[0] 
+        self.proc.poll()
+        if (None == self.proc.returncode):
             try:
-                proc.kill()
+                self.proc.send_signal(signal.SIGINT)
             except:
-                pass
-            Logger.warning("--> PSI%s KILLED"%TB)
-            failed=True
-            Abort[TB]=False
-        #if ClosePSI[TB]:
-	#    Logger << 'communicate!'
-        #    proc.communicate(input='exit\n')[0]
-        #    TestEnd[TB]=True
-	lines = ['']
-	lines = readAllSoFar(proc, lines[-1]).split('\n')
-	#Logger << lines
-	for a in range(len(lines)-1):
-	    line=lines[a]
-	    #if not line == '':
-	    #    Logger << line
-            #line = proc.stdout.readline()
-            hesays=line.rstrip()
-            client.send('/TB%s'%TB,hesays+'\n')        
-            Logger.printcolor("PSI%s stdout: %s"%(TB,hesays),color[TB])
-            if 'error' in line.rstrip() or 'Error' in line.rstrip():
-            	failed=True
-            	Logger.warning("--> PSI%s KILLED"%TB)
-                try:
-            	    proc.kill()
-                except:
-                    pass
-            if 'command not found' in line.strip():
-            	Logger.warning("--> psi46expert for TB%s not found"%TB)
-            if Abort[TB]:
-            	Logger.warning('ABORT!')
-                try:
-            	    proc.kill()
-                except:
-                    pass
-            	Logger.warning("--> PSI%s KILLED"%TB)
-            	failed=True            
-            	Abort[TB]=False
-    Logger << 'I am done'
-    #proc.kill()
-    return failed
-
-#def readout(proc,TB,client):
-#    failed = False
-#    Logger << 'HERE i am\n'
-#    while proc.poll() is None and not ClosePSI[TB]:
-#        if Abort[TB]:
-#            Logger << 'ABORT!'
-#            proc.kill()
-#            Logger << "--> PSI%s KILLED"%TB
-#            failed=True
-#            Abort[TB]=False
-#        #if ClosePSI[TB]:
-#	#    Logger << 'communicate!'
-#        #    proc.communicate(input='exit\n')[0]
-#        #    TestEnd[TB]=True
-#
-#        line = proc.stdout.readline()
-#        hesays=line.rstrip()
-#        client.send('/TB%s'%TB,hesays+'\n')        
-#        printc(color[TB],'',"PSI%s stdout: %s"%(TB,hesays))
-#        if 'error' in line.rstrip() or 'Error' in line.rstrip():
-#            failed=True
-#            Logger << "--> PSI%s KILLED"%TB
-#            proc.kill()
-#        if 'command not found' in line.strip():
-#            Logger << "--> psi46expert for TB%s not found"%TB
-#        if Abort[TB]:
-#            Logger << 'ABORT!'
-#            proc.kill()
-#            Logger << "--> PSI%s KILLED"%TB
-#            failed=True            
-#            Abort[TB]=False
-#    return failed
+                slef.Logger << 'Process already killed'
+        self._answer()
 
 
+
+#Globals
 global busy
 global failed
 global TestEnd
 global DoTest
 global ClosePSI
 global Abort
+
+numTB = 4
+
+busy = [False]*numTB
+failed = [False]*numTB
+TestEnd = [False]*numTB
+DoTest=[False]*numTB
+ClosePSI=[False]*numTB
+Abort=[False]*numTB
+
 End=False
 #MAINLOOP
-numTB = 4
-def initVariables(): 
-    global busy
-    global failed
-    global TestEnd
-    global DoTest
-    global ClosePSI
-    global Abort
-    busy = [False]*numTB
-    failed = [False]*numTB
-    TestEnd = [False]*numTB
-    DoTest=[False]*numTB
-    ClosePSI=[False]*numTB
-    #Abort.lock = threading.Lock()
-    #Abort.lock.aquire()
-    Abort=[False]*numTB
-    #Abort.lock.release()
+color = colorGenerator()
+print 'PSI Master'
 
+#ToDo:
+#initGlobals(numTB)
+#init TBmasters:
+TBmasters=[]
+for i in range(numTB):
+    TBmasters.append(TBmaster(i, client, psiSubscription, Logger, next(color)))
 
-
-def executeTest(whichTest,dir,fname,TB,client):
-    initVariables()
-    Logger << 'psi46 %s in TB%s'%(whichTest,TB)
-    failed[TB] = False
-    TestEnd[TB] = False
-    executestr='psi46expert -dir %s -f %s -r %s.root -log %s.log'%(dir,whichTest,fname,fname)
-    proc = subprocess.Popen([executestr,''], shell=True, stdout=subprocess.PIPE)
-    client.subscribe('/TB%s'%TB)
-    failed[TB]=readout(proc,TB,client)
-    Logger << 'done'
-    TestEnd[TB] = True
-    busy[TB] = False
-    if failed[TB]:
-        client.send(psiSubscription,':STAT:TB%s! test:failed\n'%TB)
-    else:
-        client.send(psiSubscription,':STAT:TB%s! test:finished\n'%TB)
-
-def openTB(dir,fname,TB,client):
-    initVariables()
-    #ON_POSIX = 'posix' in sys.builtin_module_names
-    Logger << 'open TB%s'%(TB)
-    failed[TB] = False
-    TestEnd[TB] = False
-    executestr='psi46expert -dir %s -r %s.root -log %s.log'%(dir,fname,fname)
-    proc = subprocess.Popen([executestr,''], shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
-    #p = subprocess.Popen(['myprogram.exe'], stdout=subprocess.PIPE, bufsize=1, close_fds=ON_POSIX)
-    client.subscribe('/TB%s'%TB)
-    failed[TB]=readout(proc,TB,client)
-    Logger << 'done! oO'
-    #TestEnd[TB] = True
-    #busy[TB] = False
-    while not ClosePSI[TB]:
-        pass
-    Logger << 'CLOSE TB %s HERE'%(TB)
-    proc.communicate(input='exit\n')[0] 
-    proc.poll()
-    if (None == proc.returncode):
-        try:
-            proc.send_signal(signal.SIGINT)
-        except:
-            Logger<< 'Process already killed'
-
-    if failed[TB]:
-        client.send(psiSubscription,':STAT:TB%s! test:failed\n'%TB)
-        Logger << ':STAT:TB%s! test:failed'%TB
-    else:
-        client.send(psiSubscription,':STAT:TB%s! test:finished\n'%TB)
-        Logger << ':STAT:TB%s! test:finished'%TB
-
-
-
-
-Logger << 'Hello\n'
-initVariables()
-#RECEIVE COMMANDS:
+#RECEIVE COMMANDS (mainloop)
 while client.anzahl_threads > 0 and not End:
     sleep(.5)
     packet = client.getFirstPacket(psiSubscription)
     if not packet.isEmpty() and not "pong" in packet.data.lower():
         time,coms,typ,msg,cmd = decode(packet.data)
- 
-        Logger << time,coms,typ,msg
-        Logger << cmd
+        #Logger << time,coms,typ,msg
+        #Logger << cmd
         if coms[0].find('PROG')==0 and coms[1].find('TB')==0 and coms[2].find('OPEN')==0 and typ == 'c':
-	    Logger << msg
-            dir,fname=msg.split(',')
+            #Logger << msg
+            dir, fname = msg.split(',')
             TB=int(coms[1][2])
             if not busy[TB]:
-                #Logger << whichTest
-                #if whichTest == 'IV':
-                #Logger << 'IV test\n'
-                DoTest[TB] = Thread(target=openTB, args=(dir,fname,TB,client,))
+                DoTest[TB] = Thread(target=TBmasters[TB].openTB, args=(dir,fname,))
                 DoTest[TB].start()
 
         elif coms[0].find('PROG')==0 and coms[1].find('TB')==0 and coms[2][0:5] == 'CLOSE' and typ == 'c':
             if len(coms[1])>=3:
-		TB=int(coms[1][2])
-	    	Logger << 'trying to close TB...'
-            	ClosePSI[TB]=True
-
-
+                TB=int(coms[1][2])
+                Logger << 'trying to close TB...'
+                ClosePSI[TB]=True
 
         elif coms[0].find('PROG')==0 and coms[1][0:2] == 'TB' and coms[2][0:5] == 'START' and typ == 'c':
             whichTest,dir,fname=msg.split(',')
             TB=int(coms[1][2])
             if not busy[TB]:
-		Logger << whichTest
-                #if whichTest == 'IV':
-                #    Logger << 'IV test\n'
-                #    DoTest[TB] = Thread(target=openTB, args=(dir,fname,TB,client,))
-		#    DoTest[TB].start()
-
-                
-                Logger << '\t--> psi46 execute %s in TB%s'%(whichTest,TB)
-                DoTest[TB] = Thread(target=executeTest, args=(whichTest,dir,fname,TB,client,))
+                #Logger << whichTest
+                Logger << 'got command to execute %s in TB%s'%(whichTest,TB)
+                DoTest[TB] = Thread(target=TBmasters[TB].executeTest, args=(whichTest,dir,fname,))
                 DoTest[TB].start()
                 client.send(psiSubscription,':STAT:TB%s! %s:started\n'%(TB,whichTest))
                 busy[TB]=True
@@ -340,8 +236,7 @@ while client.anzahl_threads > 0 and not End:
                 failed[TB]=True
                 busy[TB]=False
                 Abort[TB]=True
-                Logger << 'killing TB%s...'%TB
-
+                Logger.warning('killing TB%s...'%TB)
                 
         elif coms[0].find('PROG')==0 and coms[1].find('EXIT')==0 and typ == 'c':
             Logger << 'exit'
@@ -350,7 +245,6 @@ while client.anzahl_threads > 0 and not End:
             else:
                 for i in range(0,numTB):
                     if busy[i]: client.send(psiSubscription,':STAT:TB%s! busy\n'%i)
-                
 
         elif coms[0][0:4] == 'STAT' and coms[1][0:2] == 'TB' and typ == 'q':
             TB=int(coms[1][2])
@@ -362,23 +256,18 @@ while client.anzahl_threads > 0 and not End:
                 client.send(psiSubscription,':STAT:TB%s! test:finished\n'%TB)
             else:
                 client.send(psiSubscription,':STAT:TB%s! status:unknown\n'%TB)
-            
-
         else:
             Logger << 'unknown command: ', coms, msg
     else:
         pass
         #Logger << 'waiting for answer...\n'
 
-
-
 for i in range(0,numTB):
     if failed[i]: client.send(psiSubscription,':STAT:TB%s! test:failed\n'%i)
     elif TestEnd[i]: client.send(psiSubscription,':STAT:TB%s! test:finished\n'%i)
 
-
 client.send(psiSubscription,':prog:stat! exit\n')    
-Logger << 'exiting...'
+print 'exiting...'
 client.closeConnection()
 
 #END
@@ -386,5 +275,5 @@ while client.anzahl_threads > 0:
     Logger << 'waiting for client to be closed...'
     client.closeConnection()
     sleep(0.5)
-    pass    		
-Logger << 'ciao!'
+    pass
+Logger << 'done'
