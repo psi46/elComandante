@@ -12,14 +12,14 @@ LDFLAGS	      	:= -g $(LLABLDFLAGS) $(ROOTLIBS)
 SOFLAGS       	:= -shared
 
 CPP         	:= g++
-CPPFLAGS    	:= -O -Wall -fPIC\
+CPPFLAGS    	:= -O -Wall -fPIC -I..\
 					$(LLABCPPFLAGS) $(ROOTCFLAGS)
 
 CXXFLAGS =	-O2 -g -Wall -fmessage-length=0 -I$(HOME)/sdvlp/libmodbus-3.0.3/src -I/home/veloxid/lib $(CPPFLAGS)
 
 OBJS =		jumoClient.o jumoInterface.o scpiInterpreter.o jumoSubClientHandler.o
 
-LIBS = -lmodbus   $(LLABLDFLAGS)
+LIBS = -lmodbus   $(LLABLDFLAGS) -L../subsystem
 
 TARGET =	jumoClient
 

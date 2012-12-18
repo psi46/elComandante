@@ -63,6 +63,9 @@ def handler(signum, frame):
         pass
     sys.exit(0)
 signal.signal(signal.SIGINT, handler)
+
+los_agentes = []
+
 try:
 #get timestamp
     timestamp = int(time.time())
@@ -159,7 +162,6 @@ try:
 #create subserver client
     client = sClient(serverZiel,serverPort,"kuehlingboxcommander")
 
-    los_agentes = []
     xray = xray_agente.xray_agente(Logger, client)
     xray.setup_configuration(config)
     xray.setup_initialization(init)
@@ -530,7 +532,6 @@ try:
 
 
     Logger.printv()
-    Logger.printv()
 
 #--------------LOOP over TESTS-----------------
 
@@ -598,7 +599,6 @@ try:
                 for agente in los_agentes:
                     finished = finished and agente.check_finished()
     	        sleep(0.1)
-    	Logger.printv()
     	Logger.printv()
 
     # Final cleanup

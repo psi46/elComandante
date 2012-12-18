@@ -1,4 +1,4 @@
-#!/usr/bin/python 
+#!/usr/bin/python2
 from sclient import *
 from decode import *
 from colorprinter import printer

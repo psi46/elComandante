@@ -2,7 +2,7 @@ class environment():
     def __init__(self, test_str, init):
         self.temperature = 17
         self.xray = False
-        self.xray_volatage = 30
+        self.xray_voltage = 30
         self.xray_current = 10
         self.xray_target = ""
         self.decode(test_str, init)
