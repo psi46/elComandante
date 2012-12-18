@@ -1,14 +1,14 @@
 #!/usr/bin/python2
-from sclient import *
-from decode import *
-from colorprinter import printer
+import sys
+sys.path.insert(1, "../")
+from myutils import sClient, decode, printer
 from threading import Thread
 import subprocess
 import time
 import argparse
 import keithleyInterface
 import os
-import sys
+import serial
 ON = 1
 OFF = 0
 End = False

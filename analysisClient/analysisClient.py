@@ -1,18 +1,16 @@
 #!/usr/bin/python2
 
 import sys
-sys.path.insert(1, "../python/")
+sys.path.insert(1, "../")
 import time
 import os
 import argparse
-import colorprinter
-import sclient
-import decode
+import myutils
 import signal
 import subprocess
 import shlex
 
-log = colorprinter.printer()
+log = myutils.printer()
 
 # Parse command line arguments
 parser = argparse.ArgumentParser()
@@ -32,7 +30,7 @@ log.printw()
 
 # Setup Subsystem
 abo = "/analysis"
-client = sclient.sClient("127.0.0.1", 12334, "analysisClient")
+client = myutils.sClient("127.0.0.1", 12334, "analysisClient")
 client.subscribe(abo)
 client.send(abo, 'Connecting analysisClient with Subsystem\n')
 
@@ -57,7 +55,7 @@ while client.anzahl_threads > 0 and client.isClosed == False:
 	packet = client.getFirstPacket(abo)
 	if not packet.isEmpty():
 		log << "Received packet from " + abo + ": " + packet.data
-		timeStamp, commands, type, message, command = decode.decode(packet.data)
+		timeStamp, commands, type, message, command = myutils.decode(packet.data)
 		if len(commands) == 2 and commands[0].upper() == "ANALYZE":
 			if commands[1].upper() == "EXECUTE":
 				log << command
