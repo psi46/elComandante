@@ -9,6 +9,9 @@ from threading import Thread
 import subprocess
 import sys
 import argparse
+import signal
+import select
+from time import sleep
 
 #------------some configuration--------------
 parser = argparse.ArgumentParser()
