@@ -4,10 +4,9 @@
 # 
 import sys
 sys.path.insert(1, "../")
-from myutils import sClient, printer, decode
+from myutils import sClient, printer, decode, BetterConfigParser
 from threading import Thread
 import subprocess
-from BetterConfigParser import BetterConfigParser
 import sys
 import argparse
 
