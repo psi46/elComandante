@@ -60,9 +60,24 @@ XrayVoltage: <!Environment Xrf|XrayVoltage!>
 XrayCurrent: <!Environment Xrf|XrayCurrent!>
 XrayTarget: Ba
 
+[Analysis VcalCalibrationStepAnalysisMo]
+command: XrayThresholdScanAnalysis --output analysis_XrayThresholdScanMo.root *_Mo/commander_VcalCalibrationStep.root
+
+[Analysis VcalCalibrationStepAnalysisAg]
+command: XrayThresholdScanAnalysis --output analysis_XrayThresholdScanAg.root *_Ag/commander_VcalCalibrationStep.root
+
+[Analysis VcalCalibrationStepAnalysisBa]
+command: XrayThresholdScanAnalysis --output analysis_XrayThresholdScanBa.root *_Ba/commander_VcalCalibrationStep.root
+
+[Analysis VcalVsThresholdAnalysis]
+command: VcalVsThresholdAnalysis --output analysis_VcalVsThreshold.root *VcalVsThreshold_*
+
+[Analysis VcalCalibrationAnalysis]
+command: VcalCalibration --targets 17.49:22.16:32.19 --output VcalCalibration.root analysis_VcalVsThreshold.root analysis_XrayThresholdScanMo.root analysis_XrayThresholdScanAg.root analysis_XrayThresholdScanBa.root
+
 [Tests]
 #Test: IV@17,Fulltest@17,IV@17
 Test: IV@17,Pretest@17,Fulltest@16
-#Test: VcalCalibrationStep@Mo,VcalCalibrationStep@Ag,VcalCalibrationStep@Ba,VcalVsThreshold@17
+#Test: VcalCalibrationStep@Mo,VcalCalibrationStep@Ag,VcalCalibrationStep@Ba,VcalVsThreshold@17,VcalCalibrationStepAnalysisMo,VcalCalibrationStepAnalysisAg,VcalCalibrationStepAnalysisBa,VcalVsThresholdAnalysis,VcalCalibrationAnalysis
 #,Pretest@-10
 #,Cycle,Pretest@17

@@ -7,6 +7,7 @@ dataDir:<!Directories|baseDir!>/DATA/
 defaultParameters: $configDir$/defaults/
 jumoDir: <!Directories|baseDir!>/jumoClient/
 keithleyDir: <!Directories|baseDir!>/keithleyClient/
+scriptDir: <!Directories|baseDir!>/analysisClient/scripts/
 
 [TestboardAddress]
 #TB0: DPE00SPH
@@ -29,6 +30,7 @@ coolingBoxSubscription: /jumo
 keithleySubscription: /keithley
 psiSubscription: /psi
 xraySubscription: /xray
+analysisSubscription: /analysis
 
 [jumoClient]
 port: /dev/ttyUSB0

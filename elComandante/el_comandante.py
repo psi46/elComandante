@@ -164,8 +164,8 @@ try:
     client = sClient(serverZiel,serverPort,"kuehlingboxcommander")
 
     # Create agentes that are responsible for client processes
-    los_agentes.append(xray_agente.xray_agente(Logger, client))
-    los_agentes.append(analysis_agente.analysis_agente(Logger, client))
+    los_agentes.append(xray_agente.xray_agente(timestamp, Logger, client))
+    los_agentes.append(analysis_agente.analysis_agente(timestamp, Logger, client))
 
     # Make the agentes read their configuration and initialization parameters
     for agente in los_agentes:

@@ -47,7 +47,7 @@ signal.signal(signal.SIGINT, handler)
 
 # Wait for new commands from elComandante
 
-shutter = 3 # FIXME: Read from config
+exec_dir = args.exec_dir
 
 log << "Waiting for commands ..."
 while client.anzahl_threads > 0 and client.isClosed == False:
@@ -57,19 +57,23 @@ while client.anzahl_threads > 0 and client.isClosed == False:
 		log << "Received packet from " + abo + ": " + packet.data
 		timeStamp, commands, type, message, command = myutils.decode(packet.data)
 		if len(commands) == 2 and commands[0].upper() == "ANALYZE":
+			if commands[1].upper() == "EXECDIR":
+				exec_dir = message.strip()
 			if commands[1].upper() == "EXECUTE":
-				log << command
 				cargs = message.split(",")
-				log << "Executing: " + " ".join(cargs)
 				cargs[0] = os.path.abspath(args.script_dir + "/" + cargs[0])
+				log << "Executing: " + " ".join(cargs)
+				log << "in directory " + exec_dir
 				try:
 					cwd_save = os.getcwd()
-					os.chdir(args.exec_dir)
-					p = subprocess.Popen(cargs, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
+					log << "Switching to directory " + exec_dir
+					os.chdir(exec_dir)
+					p = subprocess.Popen(" ".join(cargs), stdout = subprocess.PIPE, stderr = subprocess.STDOUT, shell = True)
+					log << "Switching back to " + cwd_save
 					os.chdir(cwd_save)
 				except:
 					log << "Execution failed!"
-					client.send(abo, ":FAILED\n")
+					client.send(abo, ":ERROR\n")
 				else:
 					out, err = p.communicate()
 					for line in out.split("\n"):

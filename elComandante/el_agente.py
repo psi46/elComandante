@@ -4,7 +4,8 @@
 # agents (el_agente) that supervise clients have to implement.
 
 class el_agente():
-	def __init__(self, log, sclient):
+	def __init__(self, timestamp, log, sclient):
+		self.timestamp = timestamp
 		self.log = log
 		self.sclient = sclient
 		self.active = 0

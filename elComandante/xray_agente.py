@@ -7,8 +7,8 @@ def preexec():
     os.setpgrp()
 
 class xray_agente(el_agente.el_agente):
-	def __init__(self, log, sclient):
-		el_agente.el_agente.__init__(self, log, sclient)
+	def __init__(self, timestamp, log, sclient):
+		el_agente.el_agente.__init__(self, timestamp, log, sclient)
 		self.name = "xrayClient"
 		self.hvon = False
 		self.beamon = False

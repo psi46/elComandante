@@ -48,7 +48,7 @@ vector<float> parse_targets(const char * targets)
 		if (ret != 1)
 			break;
 		target_energy.push_back(energy);
-		ptr = strchr(ptr, ',');
+		ptr = strchr(ptr, ':');
 		if (ptr)
 			ptr += 1;
 	}

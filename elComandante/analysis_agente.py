@@ -1,28 +1,42 @@
 import os
+import time
 import subprocess
+
+import el_agente
 
 def preexec():
 	os.setpgrp()
 
-class analysis_agente():
-	def __init__(self, log, sclient):
-		self.log = log
-		self.sclient = sclient
+class analysis_agente(el_agente.el_agente):
+	def __init__(self, timestamp, log, sclient):
+		el_agente.el_agente.__init__(self, timestamp, log, sclient)
 		self.active = 1
 		self.pending = False
 		self.name = "analysisClient"
-		self.conf = None
-		self.init = None
 	def setup_configuration(self, conf):
 		self.subscription = conf.get("subsystem", "analysisSubscription")
 		self.log_dir = conf.get("Directories", "dataDir") + "/logfiles/"
 		# FIXME: this is not correct
 		self.exec_dir = conf.get("Directories", "dataDir")
+		self.data_dir = conf.get("Directories", "dataDir")
 		self.script_dir = conf.get("Directories", "scriptDir")
 		self.conf = conf
 		return True
 	def setup_initialization(self, init):
 		self.init = init
+		self.directories = []
+		tb = 0
+		while True:
+			try:
+				name = init.get("Modules", "TB%i" % tb)
+				use = init.getboolean("TestboardUse", "TB%i" % tb)
+				if not use:
+					continue
+				date = time.strftime("%Y-%m-%d_%Hh%Mm", time.gmtime(self.timestamp))
+				self.directories.append(self.data_dir + ("/%s_%s_%s/" % (name, date, self.timestamp)))
+				tb += 1
+			except:
+				break
 		return True
 	def check_logfiles_presence(self):
 		# Returns a list of logfiles present in the filesystem
@@ -81,7 +95,9 @@ class analysis_agente():
 			return True
 		self.log << command
 		command = ",".join(command)
-		self.sclient.send(self.subscription, ":ANALYZE:EXECUTE " + command + "\n")
+		for dir in self.directories:
+			self.sclient.send(self.subscription, ":ANALYZE:EXECDIR " + dir + "\n")
+			self.sclient.send(self.subscription, ":ANALYZE:EXECUTE " + command + "\n")
 		self.set_pending()
 		return True
 	def cleanup_test(self, test, environment):
@@ -101,7 +117,7 @@ class analysis_agente():
 			        self.pending = False
 			elif "ERROR" in packet.data.upper():
 				self.pending = False
-				raise Exception("Error from client of %s" % self.name)
+				#raise Exception("Error from client of %s" % self.name)
 
 		return not self.pending
 	def set_pending(self):
