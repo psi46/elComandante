@@ -51,6 +51,13 @@ class xray_agente(el_agente.el_agente):
 	        self.log << "Starting " + self.name + " ..."
 		self.child = subprocess.Popen(command, shell = True, preexec_fn = preexec)
 		return True
+	def subscribe(self):
+		if (self.active):
+			self.sclient.subscribe(self.subscription)
+	def check_subscription(self):
+		if (self.active):
+			return self.sclient.checkSubscription(self.subscription)
+		return True
 	def request_client_exit(self):
 		if not self.active:
 			return True
@@ -59,7 +66,10 @@ class xray_agente(el_agente.el_agente):
 	def kill_client(self):
 		if not self.active:
 			return True
-		self.child.kill()
+		try:
+			self.child.kill()
+		except:
+			pass
 		return True
 	def prepare_test(self, test, environment):
 		# Run before a test is executed

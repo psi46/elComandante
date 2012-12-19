@@ -11,20 +11,38 @@ import subprocess
 import argparse
 import environment
 import xray_agente
+import analysis_agente
 import signal
 
+los_agentes = []
+
 def killChildren():
-    print 'killChildren'
+    print "Killing clients ..."
+
+    # Ask the client processes to exit
+    for agente in los_agentes:
+        agente.request_client_exit()
+
     try:
         for subscription in subscriptionList:
             client.send(subscription,':prog:exit\n')
-        sleep(1)
+        time.sleep(1)
     except:
         pass
+
+    # Close the subsystem client connection
     try:
         client.closeConnection()
     except:
         pass
+
+    # Kill the client processes
+    for agente in los_agentes:
+        try:
+            agente.kill_client()
+        except:
+            agente.log.error("Could not kill %s" % agente.name)
+
     try:
         psiChild.kill()
     except:
@@ -39,30 +57,14 @@ def killChildren():
         jumoChild.kill()
     except:
         print "couldn't kill jumoChild"
-        print Exception
         pass
 
 def handler(signum, frame):
-    try:
-        for subscription in subscriptionList:
-            client.send(subscription,':prog:exit\n')
-    except:
-        pass
+    print 'Signal handler called with signal %s' % signum
     killChildren();
-    try:
-        Logger << 'Close Connection'
-    except:
-        pass
-    sleep(1)
-    try:
-        client.closeConnection()
-        Logger << 'Signal handler called with signal %s'%signum
-    except:
-        pass
     sys.exit(0)
-signal.signal(signal.SIGINT, handler)
 
-los_agentes = []
+#signal.signal(signal.SIGINT, handler)
 
 try:
 #get timestamp
@@ -156,14 +158,19 @@ try:
     keithleySubscription = config.get('subsystem','keithleySubscription')
     psiSubscription = config.get('subsystem','psiSubscription')
     xraySubscription = config.get('subsystem','xraySubscription')
+    analysisSubscription = config.get('subsystem','analysisSubscription')
 
 #create subserver client
     client = sClient(serverZiel,serverPort,"kuehlingboxcommander")
 
-    xray = xray_agente.xray_agente(Logger, client)
-    xray.setup_configuration(config)
-    xray.setup_initialization(init)
-    los_agentes.append(xray)
+    # Create agentes that are responsible for client processes
+    los_agentes.append(xray_agente.xray_agente(Logger, client))
+    los_agentes.append(analysis_agente.analysis_agente(Logger, client))
+
+    # Make the agentes read their configuration and initialization parameters
+    for agente in los_agentes:
+    	agente.setup_configuration(config)
+    	agente.setup_initialization(init)
 
 #subscribe subscriptions
     subscriptionList = [psiSubscription]
@@ -171,10 +178,11 @@ try:
         subscriptionList.append(keithleySubscription)
     if init.getboolean("CoolingBox", "CoolingBoxUse"):
         subscriptionList.append(coolingBoxSubscription)
-    if init.getboolean("Xray", "XrayUse"):
-        subscriptionList.append(xraySubscription)
     for subscription in subscriptionList:
         client.subscribe(subscription)
+
+    for agente in los_agentes:
+        agente.subscribe()
 
 #handler
  #directory config
@@ -222,12 +230,12 @@ try:
         client.send(coolingBoxSubscription,':PROG:TEMP %s\n'%temp)
         client.send(coolingBoxSubscription,':prog:stat?\n')
         #client.receiveThread() 
-        sleep(3.0)
+        time.sleep(3.0)
         client.clearPackets(coolingBoxSubscription)
         client.send(coolingBoxSubscription,':prog:stat?\n')
         i = 0
         while client.anzahl_threads > 0 and not stable:
-            sleep(.5)
+            time.sleep(.5)
             packet = client.getFirstPacket(coolingBoxSubscription)
             if not packet.isEmpty() and not "pong" in packet.data.lower():
                 data = packet.data
@@ -262,7 +270,7 @@ try:
             Logger << 'Temperature cycling with %s cycles between %s and %s'%(nCycles,lowCycleTemp,highCycleTemp)
             cycleDone = False
             while client.anzahl_threads >0 and not cycleDone:
-                sleep(.5)
+                time.sleep(.5)
                 packet = client.getFirstPacket(coolingBoxSubscription)
                 if not packet.isEmpty():
                     #DONE
@@ -309,7 +317,7 @@ try:
         #wait for finishing
         busy = True
         while client.anzahl_threads > 0 and busy:
-            sleep(.5)
+            time.sleep(.5)
             packet = client.getFirstPacket(psiSubscription)
             if not packet.isEmpty() and not "pong" in packet.data.lower():
                 data = packet.data
@@ -350,7 +358,7 @@ try:
                 client.send(psiSubscription,':stat:TB%s?\n'%Testboard.slot)
                 received=False
                 while client.anzahl_threads > 0 and not received:
-                    sleep(.1)
+                    time.sleep(.1)
                     packet = client.getFirstPacket(psiSubscription)
                     if not packet.isEmpty() and not "pong" in packet.data.lower():
                         data = packet.data
@@ -393,10 +401,10 @@ try:
             client.send(keithleySubscription,':PROG:IV:TESTDIR %s'%Testboard.testdir)
 #todo check if testdir exists...
             client.send(psiSubscription,':prog:TB%s:open %s,commander_%s\n'%(Testboard.slot,Testboard.testdir,whichtest))
-            sleep(2.0)	
+            time.sleep(2.0)	
             client.send(keithleySubscription,':PROG:IV MEAS\n')
             while client.anzahl_threads >0 and not ivDone:
-                    sleep(.5)
+                    time.sleep(.5)
                     packet = client.getFirstPacket(keithleySubscription)
                     if not packet.isEmpty() and not "pong" in packet.data.lower():
                         #DONE
@@ -415,9 +423,9 @@ try:
                     else:
                         pass
 
-        Logger << 'try to close TB, sleep for 5 seconds'
+        Logger << 'try to close TB, time.sleep for 5 seconds'
         client.send(psiSubscription,':prog:TB%s:close %s,commander_%s\n'%(Testboard.slot,Testboard.testdir,whichtest))
-        sleep(5)
+        time.sleep(5)
         powercycle(Testboard)
 
     def powercycle(Testboard):
@@ -432,7 +440,7 @@ try:
         #wait for finishing
         busy = True
         while client.anzahl_threads > 0 and busy:
-            sleep(.5)
+            time.sleep(.5)
             packet = client.getFirstPacket(psiSubscription)
             if not packet.isEmpty() and not "pong" in packet.data.lower():
                 data = packet.data
@@ -441,7 +449,7 @@ try:
                     index=[Testboard.slot==int(coms[1][2]) for Testboard in Testboards].index(True)
                     #Testboards[index].finished()
                     Testboards[index].busy=False
-                    sleep(1)
+                    time.sleep(1)
                     try:
                         rmtree(Testboard.parentDir+'/tmp/')
                     except:
@@ -450,7 +458,7 @@ try:
                 if coms[0][0:4] == 'STAT' and coms[1][0:2] == 'TB' and typ == 'a' and msg=='test:failed':
                     index=[Testboard.slot==int(coms[1][2]) for Testboard in Testboards].index(True)
                     #Testboards[index].failed()
-                    sleep(1)
+                    time.sleep(1)
                     Testboards[index].busy=False
                     try:
                         rmtree(Testboard.parentDir+'/tmp/')
@@ -467,6 +475,7 @@ try:
     def preexec():#Don't forward Signals.
         os.setpgrp()
 
+    # Check whether the client is already running before trying to start it
     for agente in los_agentes:
     	agente.check_client_running()
 
@@ -477,6 +486,8 @@ try:
             continue
         if not os.system("ps aux |grep -v grep| grep -v vim|grep -v emacs|grep %s"%clientName):
             raise Exception("another %s is already running. Please Close client first"%clientName)
+
+    # Start the clients
 #open psi46handler in annother terminal
     psiChild = subprocess.Popen("xterm +sb -geometry 120x20+0+900 -fs 10 -fa 'Mono' -e 'python ../psiClient/psi46master.py -dir %s'"%(Directories['logDir']), shell=True,preexec_fn = preexec)
 #psiChild = subprocess.Popen("xterm +sb -geometry 160x20+0+00 -fs 10 -fa 'Mono' -e python psi46handler.py ", shell=True)
@@ -492,6 +503,8 @@ try:
     if init.getboolean("Keithley", "KeithleyUse"):
         keithleyChild = subprocess.Popen("xterm +sb -geometry 80x25+1200+1300 -fs 10 -fa 'Mono' -e %s/keithleyClient.py -d %s -dir %s -ts %s"%(Directories['keithleyDir'],config.get("keithleyClient","port"),Directories['logDir'],timestamp), shell=True,preexec_fn = preexec)
 #check subscriptions?
+
+    # Check the client subscriptions
     Logger<<"Check Subscription of the Clients:"
     time.sleep(2)
     for subscription in subscriptionList:
@@ -499,7 +512,12 @@ try:
             raise Exception("Cannot read from %s subscription"%subscription)
         else:
             Logger << "%s is answering"%subscription
-        
+    for agente in los_agentes:
+        if not agente.check_subscription():
+            raise Exception("Cannot read from %s subscription" % agente.subscription)
+        else:
+            Logger << "%s is answering" % agente.subscription
+
 #-------------SETUP TESTBOARDS----------------
     Logger << 'I found the following Testboards with Modules:'
     Logger.printn()
@@ -547,9 +565,9 @@ try:
                 finished = True
                 for agente in los_agentes:
                     finished = finished and agente.check_finished()
-    	        sleep(0.1)
+    	        time.sleep(0.1)
 
-        sleep(1.0)
+        time.sleep(1.0)
         if item == 'Cycle':
             doCycle()
         else:
@@ -581,7 +599,7 @@ try:
                 finished = True
                 for agente in los_agentes:
                     finished = finished and agente.check_finished()
-    	        sleep(0.1)
+    	        time.sleep(0.1)
 
         if init.getboolean("Keithley", "KeithleyUse"):
             client.send(keithleySubscription,':OUTP OFF\n')
@@ -596,7 +614,7 @@ try:
                 finished = True
                 for agente in los_agentes:
                     finished = finished and agente.check_finished()
-    	        sleep(0.1)
+    	        time.sleep(0.1)
     	Logger.printv()
 
     # Final cleanup
@@ -609,20 +627,20 @@ try:
             finished = True
             for agente in los_agentes:
                 finished = finished and agente.check_finished()
-	        sleep(0.1)
+	        time.sleep(0.1)
 
 #-------------Heat up---------------
     client.send(psiSubscription,':prog:exit\n')    
     if init.getboolean("CoolingBox", "CoolingBoxUse"):
         Logger << 'heating up coolingbox...'
         client.send(coolingBoxSubscription,':prog:heat\n')
-        sleep(3.0)
+        time.sleep(3.0)
         client.clearPackets(coolingBoxSubscription)
         client.send(coolingBoxSubscription,':prog:stat?\n')
         i = 0
         isWarm = False
         while client.anzahl_threads > 0 and not isWarm:
-            sleep(.5)
+            time.sleep(.5)
             packet = client.getFirstPacket(coolingBoxSubscription)
             if not packet.isEmpty() and not "pong" in packet.data.lower():
                 data = packet.data
@@ -650,11 +668,9 @@ try:
     client.closeConnection()
     Logger << 'I am done for now!'
 
-    sleep(1)
-    for agente in los_agentes:
-    	agente.kill_client()
+    time.sleep(1)
     killChildren()
-    sleep(1)
+    time.sleep(1)
 #-------------EXIT----------------
     while client.anzahl_threads > 0: 
         pass
@@ -681,10 +697,7 @@ try:
         try: rmtree(Testboard.parentDir+'/tmp/')
         except: pass
 except:
-    print 'kill Children'
-    for agente in los_agentes:
-        agente.kill_client()
     killChildren()
-    print 'DONE'
-    raise 
+    Logger << 'DONE'
+    raise
     sys.exit(0)

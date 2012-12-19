@@ -9,7 +9,8 @@ class el_agente():
 		self.sclient = sclient
 		self.active = 0
 		self.pending = False
-		self.name = ""
+		self.name = "el_agente"
+		self.subscription = "/el_agente"
 	def setup_configuration(self, conf):
 		return True
 	def setup_initialization(self, init):
@@ -23,6 +24,8 @@ class el_agente():
 	def start_client(self, timestamp):
 		# Start a client process
 		return False
+	def subscribe(self):
+		raise Exception("not implemented")
 	def check_subscription(self):
 		# Verify the subsystem connection
 		return False
