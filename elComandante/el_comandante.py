@@ -478,7 +478,7 @@ try:
         if not os.system("ps aux |grep -v grep| grep -v vim|grep -v emacs|grep %s"%clientName):
             raise Exception("another %s is already running. Please Close client first"%clientName)
 #open psi46handler in annother terminal
-    psiChild = subprocess.Popen("xterm +sb -geometry 120x20+0+900 -fs 10 -fa 'Mono' -e 'python ../psiClient/psi46handler.py -dir %s'"%(Directories['logDir']), shell=True,preexec_fn = preexec)
+    psiChild = subprocess.Popen("xterm +sb -geometry 120x20+0+900 -fs 10 -fa 'Mono' -e 'python ../psiClient/psi46master.py -dir %s'"%(Directories['logDir']), shell=True,preexec_fn = preexec)
 #psiChild = subprocess.Popen("xterm +sb -geometry 160x20+0+00 -fs 10 -fa 'Mono' -e python psi46handler.py ", shell=True)
 
     for agente in los_agentes:
