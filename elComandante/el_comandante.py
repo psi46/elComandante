@@ -489,7 +489,7 @@ try:
 
     # Start the clients
 #open psi46handler in annother terminal
-    psiChild = subprocess.Popen("xterm +sb -geometry 120x20+0+900 -fs 10 -fa 'Mono' -e 'python ../psiClient/psi46master.py -dir %s'"%(Directories['logDir']), shell=True,preexec_fn = preexec)
+    psiChild = subprocess.Popen("xterm +sb -geometry 120x20+0+900 -fs 10 -fa 'Mono' -e 'python ../psiClient/psi46master.py -dir %s -num 4'"%(Directories['logDir']), shell=True,preexec_fn = preexec)
 #psiChild = subprocess.Popen("xterm +sb -geometry 160x20+0+00 -fs 10 -fa 'Mono' -e python psi46handler.py ", shell=True)
 
     for agente in los_agentes:
