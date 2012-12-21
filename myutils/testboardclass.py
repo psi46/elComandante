@@ -14,6 +14,7 @@ class Testboard:
         self.busy=False
         self.timestamp=0
         self.parentDir='.'
+        self.active=True
         
     def dotest(self,test):
         self.currenttest=test

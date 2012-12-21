@@ -22,6 +22,9 @@ parser.add_argument("-c", "--config", dest="configDir",
 parser.add_argument("-dir","--directory", dest="loggingDir",
                         help="specify directory containing all logging files e.g. ../DATA/logfiles/",
                         default="../DATA/logfiles")
+parser.add_argument("-num","--numTB", dest="numTB",
+                        help="specify the number of Testboards in use",
+                        default="1")
 #parse args and setup logdir
 args = parser.parse_args()
 Logger = printer()
@@ -29,6 +32,7 @@ Logger.set_prefix('')
 Logger.set_logfile('%s/psi46Handler.log'%(args.loggingDir))
 #Logger <<'ConfigDir: "%s"'%args.configDir
 configDir= args.configDir
+numTB = args.numTB
 #load config
 config = BetterConfigParser()
 config.read(configDir+'/elComandante.conf')
@@ -173,7 +177,7 @@ global DoTest
 global ClosePSI
 global Abort
 
-numTB = 4
+#numTB = 4
 
 busy = [False]*numTB
 failed = [False]*numTB

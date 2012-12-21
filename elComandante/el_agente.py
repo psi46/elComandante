@@ -12,6 +12,7 @@ class el_agente():
 		self.pending = False
 		self.name = "el_agente"
 		self.subscription = "/el_agente"
+        self.timestamp=-1
 	def setup_configuration(self, conf):
 		return True
 	def setup_initialization(self, init):
@@ -23,6 +24,7 @@ class el_agente():
 		# Check whether a client process is running
 		return False
 	def start_client(self, timestamp):
+        self.timestamp = timestamp
 		# Start a client process
 		return False
 	def subscribe(self):
