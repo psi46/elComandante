@@ -25,8 +25,9 @@ class analysis_agente(el_agente.el_agente):
 	def setup_initialization(self, init):
 		self.init = init
 		self.directories = []
-		tb = 0
+		tb = -1
 		while True:
+			tb += 1
 			try:
 				name = init.get("Modules", "TB%i" % tb)
 				use = init.getboolean("TestboardUse", "TB%i" % tb)
@@ -34,7 +35,6 @@ class analysis_agente(el_agente.el_agente):
 					continue
 				date = time.strftime("%Y-%m-%d_%Hh%Mm", time.gmtime(self.timestamp))
 				self.directories.append(self.data_dir + ("/%s_%s_%s/" % (name, date, self.timestamp)))
-				tb += 1
 			except:
 				break
 		return True

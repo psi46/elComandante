@@ -138,12 +138,16 @@ try:
     Logger.timestamp = timestamp
     Logger.set_logfile('%s/elComandante.log'%(Directories['logDir']))
     Logger<<'Set LogFile to %s'%Logger.f
-#check if subsystem server is running, if not START subserver
 
-    if os.system("ps -ef | grep -v grep | grep subserver"):
+    #check if subsystem server is running, if not START subserver
+    if not "subserver.pid" in os.listdir("/var/tmp"):
+        Logger << "Starting subserver ..."
         os.system("cd %s && subserver"%(Directories['subserverDir']))
-        if os.system("ps -ef | grep -v grep | grep subserver"):
-            raise Exception("Could not start subserver");
+        time.sleep(0.2)
+        #check again whether it is running
+        if not "subserver.pid" in os.listdir("/var/tmp"):
+            raise Exception("Could not start subserver")
+    Logger << "Subserver is running."
 
 #read subserver settings
     serverZiel=config.get('subsystem','Ziel')
@@ -165,8 +169,9 @@ try:
 
     # Make the agentes read their configuration and initialization parameters
     for agente in los_agentes:
-    	agente.setup_configuration(config)
-    	agente.setup_initialization(init)
+        agente.setup_configuration(config)
+        agente.setup_initialization(init)
+    raise Exception("End")
 
 #subscribe subscriptions
     subscriptionList = [psiSubscription]
@@ -191,6 +196,7 @@ try:
     print 'Testlist:',testlist
 
 #-------------------------------------
+
 
 
 #-----------setup Test directory function-------
