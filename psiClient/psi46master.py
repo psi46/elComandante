@@ -32,7 +32,7 @@ Logger.set_prefix('')
 Logger.set_logfile('%s/psi46Handler.log'%(args.loggingDir))
 #Logger <<'ConfigDir: "%s"'%args.configDir
 configDir= args.configDir
-numTB = args.numTB
+numTB = int(args.numTB)
 #load config
 config = BetterConfigParser()
 config.read(configDir+'/elComandante.conf')

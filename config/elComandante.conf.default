@@ -16,7 +16,8 @@ TB0: DPE00JA9
 #TB0: DPCDKAPA
 TB1: DPE00T0D
 TB2: DPE00IUD
-TB3: DPE00J4X
+#TB3: DPE00J4X
+TB3: DPE00J72
 
 [defaultParameters]
 Roc: singleRocTest
@@ -34,6 +35,7 @@ analysisSubscription: /analysis
 
 [jumoClient]
 port: /dev/ttyUSB0
+programName: jumoClient
 
 [keithleyClient]
 #port: /dev/ttyUSB0

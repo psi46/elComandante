@@ -25,9 +25,6 @@ log.timestamp = float(args.timestamp)
 log.set_logfile(args.log_dir + "/analysisClient.log")
 log.set_prefix = ""
 
-# Print welcome
-log.printw()
-
 # Setup Subsystem
 abo = "/analysis"
 client = myutils.sClient("127.0.0.1", 12334, "analysisClient")

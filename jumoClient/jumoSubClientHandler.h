@@ -19,6 +19,8 @@
 #include <iostream>
 #include <sstream>
 #include <stdio.h>
+#include <ios>      // ::std::scientific, ::std::ios::scientific
+#include <iomanip>  // ::std::resetiosflags, ::std::setprecision
 #include <iostream>
 #include "subsystem/subClientHandler.h"
 #include "scpiInterpreter.h"
@@ -31,13 +33,15 @@
 
 class 	jumoSubClientHandler: public subClientHandler{
 	//todo constructor
-	enum enumSTATUS{ WAITING=1, DRYING=2,COOLING=3,STABLE=4,HEATING=5,UNSTABLE=6,
+	enum enumSTATUS{ WAITING=1, DRYING=2,COOLING=3,STABLE=4,HEATING=5,UNSTABLE=6,HEATING_FOR_COOLING=0,
 					CYCLE_DRYING=7,CYCLE_COOLING=8,CYCLE_HEATING=9,CYCLE_RESTART=10,CYCLE_STABLE=11,CYCLE_UNSTABLE=12};
 public:
 	jumoSubClientHandler(std::string clientName="jumoClient",std::string address="");
 	virtual ~jumoSubClientHandler();
+	void setVerbosity(bool verb){verbosity=verb;}
+	void CloseClient();
 private:
-	bool isCycleStatus(enumSTATUS status){return (!(status==WAITING||status==DRYING||status==STABLE||status==HEATING||status==UNSTABLE||status==COOLING));}
+	bool isCycleStatus(enumSTATUS status){return (!(status==WAITING||status==DRYING||status==STABLE||status==HEATING||status==UNSTABLE||status==COOLING||status==HEATING_FOR_COOLING));}
 	void repeatedActions();
 	void measureConditions();
 	void checkIfTempStable(float temp);
@@ -96,12 +100,14 @@ private:
 	float cycleLowTemp;
 	float MAXTEMP,MINTEMP;
 	float setPointTemp;
+
 private:
 	bool isFirstTimeDry;
 	bool isStable;
 	bool isDry;
 	bool isRunning;
 	std::string sendAboName;
+	bool verbosity;
 public:
 	bool analyseData(packetData_t data);
 };

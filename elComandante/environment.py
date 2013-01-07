@@ -6,6 +6,7 @@ class environment():
         self.xray_current = 10
         self.xray_target = ""
         self.decode(test_str, init)
+        self.name = "default"
     def decode(self, test_str, init):
         # Test should be a string like bla@Env
         env = test_str.split("@")
@@ -23,20 +24,24 @@ class environment():
         # Read environment definition from the init structure
         try:
             self.temperature = float(init.get("Environment " + env, "Temperature"))
+            self.name = env
         except:
             pass
         try:
             self.xray_voltage = float(init.get("Environment " + env, "XrayVoltage"))
             self.xray = True
+            self.name = env
         except:
             pass
         try:
             self.xray_current = float(init.get("Environment " + env, "XrayCurrent"))
             self.xray = True
+            self.name = env
         except:
             pass
         try:
             self.xray_target = init.get("Environment " + env, "XrayTarget")
             self.xray = True
+            self.name = env
         except:
             pass

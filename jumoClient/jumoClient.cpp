@@ -32,6 +32,8 @@ bool verbosity=false;
 bool isFakeDevice;
 void cleanexit() {
 	eprintf("clean exit\n");
+	client->CloseClient();
+	sleep(1.0);
 	client->killClient();
 //	client.closeConnection();
 	std::cout<<"client: "<<client->isOk()<<std::endl;
@@ -90,6 +92,7 @@ bool readInputs(int argc,char ** argv){
 int main(int argc, char *argv[]) {
 	readInputs(argc,argv);
 	client = new jumoSubClientHandler("jumoClient",address);
+	client->setVerbosity(verbosity);
 	atexit(cleanexit);
 	signal(SIGINT, sigint_handler);
 	signal(SIGTERM, sigint_handler);

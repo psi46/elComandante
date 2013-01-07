@@ -11,7 +11,7 @@ using namespace std;
 
 jumoSubClientHandler::jumoSubClientHandler(std::string name,std::string address):subClientHandler(name){
 	jumo.setDevice(address);
-
+	verbosity =false;
 	setPointTemp = 17.;
 	targetTemp=setPointTemp;
 	//jumo.setTargetTemperature(targetTemp);
@@ -366,8 +366,34 @@ void jumoSubClientHandler::checkIfTempStable(float temp){
 					if(now-stableSince>60)
 						changeStatus(CYCLE_HEATING);
 					break;
+		case HEATING_FOR_COOLING:
+//				cout<<"Warming up for stablizing Temperature...currentTemp "<<temp<<", targetTemp: "<<setPointTemp<<endl;
+				std::cout<<" coolingForHeating: ";
+				std::cout<<std::setprecision(2)<<std::fixed<<std::showpos;
+				std::cout<<std::setw(4)<<temp<<" - ";
+				std::cout<<std::setw(4)<<setPointTemp<<" = ";
+				std::cout<<std::setw(4)<<temp-setPointTemp<<" "<<std::endl;
+				std::cout<<std::noshowpos;
+				if(temp>setPointTemp-deltaTMax){
+					cout<<"Temperature is high enough... Change to Cooling..."<<endl;
+					jumo.stopProgram();
+					jumo.startSection(1);
+					sleep(1);
+					changeStatus(COOLING);
+				}
+				break;
 		default://COOLING,UNSTABLE
-		std::cout<<"cooling/unstable: "<<(float)deltaTime<<" "<<temp<<"- "<<targetTemp<<"="<<deltaT<<" "<<deltaTMax<<std::endl;
+			std::cout<<" cooling / unstable: "<<setw(3)<<(int)(deltaTime<0?0:deltaTime)<<" ";
+			std::cout<<std::setprecision(2)<<std::fixed<<std::showpos;
+			std::cout<<std::setw(4)<<temp<<" - ";
+			std::cout<<std::setw(4)<<targetTemp<<" = ";
+			std::cout<<std::setw(4)<<deltaT<<" ";
+			std::cout<<std::setw(4)<<deltaTMax<<std::endl;
+			std::cout<<std::noshowpos;
+			if ((temp < targetTemp-deltaTMax)&&!isCycleStatus(status)){
+				cout<<"need to warm up for stabilzing temperature..."<<endl;
+				changeStatus(HEATING_FOR_COOLING);
+			}
 			if(deltaT<deltaTMax){ //dry and deltaT<deltaTMax =>stableSince now/stillstable
 				if(deltaTime<0||stableSince==-1){
 					stableSince=now;
@@ -478,15 +504,15 @@ void jumoSubClientHandler::sendSetPointTemp(){
 void jumoSubClientHandler::checkStatus(){
 	if(isCycleStatus(status)){
 		targetTemp=cycleLowTemp;
-		cout<<getStatusString(status)<<" is a CycleStatus!"<<targetTemp<<endl;
+		if(verbosity) cout<<getStatusString(status)<<" is a CycleStatus!"<<targetTemp<<endl;
 	}
 	else{
 		targetTemp=setPointTemp;
-		cout<<getStatusString(status)<<" is a  normal Status!"<<targetTemp<<endl;
+		if(verbosity)cout<<getStatusString(status)<<" is a  normal Status!"<<targetTemp<<endl;
 	}
 	if(status==COOLING||status==STABLE||status==CYCLE_COOLING||status==UNSTABLE){
 		jumo.setTargetTemperature(targetTemp);
-		cout<<"Set new Temperature in Box to "<<targetTemp<<endl;
+		if(verbosity)cout<<"Set new Temperature in Box to "<<targetTemp<<endl;
 	}
 
 	float jumoSetTemp;
@@ -499,7 +525,7 @@ void jumoSubClientHandler::checkStatus(){
 	int sectionNo;
 	jumo.readSectionNo(&sectionNo);
 	section =sectionNo;
-	cout<<"SectionNo = "<<sectionNo<<endl;
+	if(verbosity) cout<<"SectionNo = "<<sectionNo<<endl;
 	switch (sectionNo){
 	case 0: 
 		if(status==CYCLE_RESTART) break;
@@ -511,7 +537,7 @@ void jumoSubClientHandler::checkStatus(){
 		break;
 	case 2: if(status==DRYING||status==WAITING)changeStatus(COOLING);
 		else if(status==CYCLE_DRYING||status==CYCLE_RESTART)changeStatus(CYCLE_COOLING);
-		else if(status==CYCLE_HEATING||status==HEATING){jumo.nextStep();sleep(1);}
+		else if(status==CYCLE_HEATING||status==HEATING||status==HEATING_FOR_COOLING){jumo.nextStep();sleep(1);}
 		break;
 	case 3: if(status==DRYING||status==COOLING||status==STABLE||status==UNSTABLE||status==WAITING)changeStatus(HEATING);
 		else if(status==CYCLE_DRYING||status==CYCLE_COOLING||status==CYCLE_STABLE||status==CYCLE_UNSTABLE)changeStatus(CYCLE_HEATING);
@@ -548,7 +574,7 @@ void jumoSubClientHandler::sendProgramNumber(){
 
 void jumoSubClientHandler::startHeating(){
 	cout<<"start Heating"<<endl;
-	if(status!=HEATING||status!=CYCLE_HEATING){
+	if(status!=HEATING||status!=CYCLE_HEATING||status!=HEATING_FOR_COOLING){
 		jumo.nextStep();
 		sleep(1);
 	}
@@ -579,7 +605,7 @@ void jumoSubClientHandler::sendTimeForStable(){
 }
 
 void jumoSubClientHandler::startCycle(int nCycle){
-	nCycles=nCycle+1;
+	nCycles=nCycle-1;
 	cout<<"Start Cycle with "<<nCycles<<" Cylces"<<endl;
 	changeStatus(CYCLE_RESTART);
 }
@@ -643,13 +669,18 @@ std::string jumoSubClientHandler::getStatusString(jumoSubClientHandler::enumSTAT
 		case STABLE:   output<<"STABLE";  break;
 		case UNSTABLE: output<<"UNSTABLE";break;
 		case HEATING:  output<<"HEATING"; break;
-		case CYCLE_DRYING:   output<<"CYCLE_DRYING"<< nCycles;  break;
-		case CYCLE_COOLING:  output<<"CYCLE_COOLING"<< nCycles; break;
-		case CYCLE_STABLE:   output<<"CYCLE_STABLE"<< nCycles;  break;
-		case CYCLE_UNSTABLE: output<<"CYCLE_UNSTABLE"<< nCycles;break;
-		case CYCLE_HEATING:  output<<"CYCLE_HEATING"<< nCycles; break;
-		case CYCLE_RESTART: output<<"CYCLE_RESTART"<< nCycles; break;
+		case HEATING_FOR_COOLING: output<<"HEATING_FOR_COOLING";break;
+		case CYCLE_DRYING:   output<<"CYCLE_DRYING "<< nCycles;  break;
+		case CYCLE_COOLING:  output<<"CYCLE_COOLING "<< nCycles; break;
+		case CYCLE_STABLE:   output<<"CYCLE_STABLE "<< nCycles;  break;
+		case CYCLE_UNSTABLE: output<<"CYCLE_UNSTABLE "<< nCycles;break;
+		case CYCLE_HEATING:  output<<"CYCLE_HEATING "<< nCycles; break;
+		case CYCLE_RESTART: output<<"CYCLE_RESTART "<< nCycles; break;
 		default: 	   output<<"UNKNOWN";break;
 		}
 	return output.str();
+}
+
+void jumoSubClientHandler::CloseClient(){
+	jumo.stopProgram();
 }

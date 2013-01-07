@@ -309,11 +309,11 @@ float jumoInterface::calculateDewPoint(float T, float RH) {
 }
 
 int jumoInterface::write(int address,float value){
-	std::cout<<"\n\n\n"<<std::endl;
-	std::cout<<"write float to "<<hex<<address<<" \tval:"<<(float)value<<" "<<std::endl;
+	if(verbosity)std::cout<<"\n\n\n"<<std::endl;
+	if(verbosity)std::cout<<"write float to "<<hex<<address<<" \tval:"<<(float)value<<" "<<std::endl;
 	//data
 	memcpy(data_out,&value,sizeof(float));
-	cout<<hex<<data_out[0]<<"_"<<hex<<data_out[1]<<"="<<convertToFloat(data_out[0],data_out[1])<<endl;
+	if(verbosity)cout<<hex<<data_out[0]<<"_"<<hex<<data_out[1]<<"="<<convertToFloat(data_out[0],data_out[1])<<endl;
 //	data_out[3]=data_out[1];
 //	data_out[1]=data_out[0];
 //	data_out[0]=data_out[3];
@@ -397,7 +397,7 @@ int jumoInterface::startSection(int sectionNo){
 
 	}
 	else
-		cout<<"SectionNo: "<<sectionNo<<" does not fit with lastSection: "<<lastSection<<endl;
+		if(verbosity)cout<<"SectionNo: "<<sectionNo<<" does not fit with lastSection: "<<lastSection<<endl;
 	return -1;
 }
 
@@ -413,7 +413,7 @@ int jumoInterface::readLastSectionNo(int *lastSectionNo){
 
 
 int jumoInterface::setTargetTemperature(float temp){
-	cout<<"JumoInterface::setTArgetTemp: "<<temp<<endl;
+	if(verbosity)cout<<"JumoInterface::setTargetTemp: "<<temp<<endl;
 //        int result;
 //        int length = 2;
 //        result = read(0x00CE,length,&data_out[0]);
@@ -425,9 +425,11 @@ int jumoInterface::setTargetTemperature(float temp){
 	int length = 2;
 	read(address,length,&data_out[0]);
 	float jumoTargetTemp =convertToFloat(data_out[0],data_out[1]);
-	cout<<"Target Temp: "<<temp<<"\tjumoTargetTemp:"<<jumoTargetTemp<<endl;
 	if(temp==jumoTargetTemp)
-		return 0;
+			return 0;
+	if(temp!=jumoTargetTemp)
+		cout<<"update TargetTemperature from "<<jumoTargetTemp<<flush;
+
 
 //
 //	length =1;
@@ -445,7 +447,9 @@ int jumoInterface::setTargetTemperature(float temp){
 	address = 0x00CE;
 	length = 2;
 	read(address,length,&data_out[0]);
-	cout<<"read TEMP: "<<convertToFloat(data_out[0],data_out[1])<<endl;;
+	float_t newTemp = convertToFloat(data_out[0],data_out[1]);
+	if(verbosity)
+		cout<<"read TEMP: "<<newTemp<<endl;;
 	write(0x00CE,(float)temp);
 	write(0x083E,(float)temp); //define setpoint2
 	write(0x017A, 2); //change setpoint to setpoint2
@@ -459,7 +463,9 @@ int jumoInterface::setTargetTemperature(float temp){
 	write(address,0x0100);
 
 	read(address,length,&data_out[0]);
-	cout<<"read TEMP2: "<<convertToFloat(data_out[0],data_out[1])<<endl;;
+//	cout<<"read TEMP2: "<<convertToFloat(data_out[0],data_out[1])<<endl;;
+	cout<<" to "<< newTemp<<", desired value: "<< temp<<endl;
         // return write(0x0172,0xBCF5);
+	return 1;
 }
 

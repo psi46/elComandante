@@ -9,6 +9,9 @@ import argparse
 import keithleyInterface
 import os
 import serial
+import signal
+from decode import is_float
+from time import sleep
 ON = 1
 OFF = 0
 End = False

@@ -11,6 +11,7 @@ import subprocess
 import argparse
 import environment
 import xray_agente
+import coolingBox_agente
 import analysis_agente
 import signal
 
@@ -52,11 +53,6 @@ def killChildren():
         keithleyChild.kill()
     except:
         print "couldn't kill keithleyChild"
-        pass
-    try:
-        jumoChild.kill()
-    except:
-        print "couldn't kill jumoChild"
         pass
 
 def handler(signum, frame):
@@ -146,9 +142,8 @@ try:
 
     if os.system("ps -ef | grep -v grep | grep subserver"):
         os.system("cd %s && subserver"%(Directories['subserverDir']))
-
-    if os.system("ps -ef | grep -v grep | grep subserver"):
-        raise Exception("Could not start subserver");
+        if os.system("ps -ef | grep -v grep | grep subserver"):
+            raise Exception("Could not start subserver");
 
 #read subserver settings
     serverZiel=config.get('subsystem','Ziel')
@@ -166,6 +161,7 @@ try:
     # Create agentes that are responsible for client processes
     los_agentes.append(xray_agente.xray_agente(timestamp, Logger, client))
     los_agentes.append(analysis_agente.analysis_agente(timestamp, Logger, client))
+    los_agentes.append(coolingBox_agente.coolingBox_agente(timestamp, Logger,client))
 
     # Make the agentes read their configuration and initialization parameters
     for agente in los_agentes:
@@ -192,6 +188,7 @@ try:
     testlist= testlist.split(',')
     while '' in testlist:
             testlist.remove('')
+    print 'Testlist:',testlist
 
 #-------------------------------------
 
@@ -218,78 +215,6 @@ try:
             Logger.warning("OS error({0}): {1}".format(e.errno, e.strerror))
         #change address
 #------------------------------------------------
-
-
-#
-    def stablizeTemperature(temp):
-#-------------set temp----------------
-        stable = False
-        Logger << '\t Stablize CoolingBox Temperature @ %s degrees'%temp
-        client.clearPackets(coolingBoxSubscription)
-        client.send(coolingBoxSubscription,':prog:start\n')
-        client.send(coolingBoxSubscription,':PROG:TEMP %s\n'%temp)
-        client.send(coolingBoxSubscription,':prog:stat?\n')
-        #client.receiveThread() 
-        time.sleep(3.0)
-        client.clearPackets(coolingBoxSubscription)
-        client.send(coolingBoxSubscription,':prog:stat?\n')
-        i = 0
-        while client.anzahl_threads > 0 and not stable:
-            time.sleep(.5)
-            packet = client.getFirstPacket(coolingBoxSubscription)
-            if not packet.isEmpty() and not "pong" in packet.data.lower():
-                data = packet.data
-                Time,coms,typ,msg = decode(data)[:4]
-                if len(coms) > 1:
-                    if coms[0].find('PROG')>=0 and coms[1].find('STAT')>=0 and typ == 'a' and (msg == 'stable' or msg =='STABLE'):
-                        Logger << '\t--> Got information to be stable at %s from packet @ %s'%(int(time.time()),Time)
-                        Logger << '\t--> Temp is stable now. I begin with the %s'%(whichtest)
-                        stable = True
-                    elif coms[0][0:4] == 'PROG' and coms[1][0:4] == 'STAT' and typ == 'a':
-                        if not i%10:
-                            Logger << '\t--> Jumo is in status %s'%(msg)
-                        if 'waiting' in msg.lower():
-                            client.send(coolingBoxSubscription,':prog:start\n')
-                            client.send(coolingBoxSubscription,':PROG:TEMP %s\n'%temp)
-                        i+=1
-                else:
-                    pass
-            else:
-                client.send(coolingBoxSubscription,':prog:stat?\n')
-                pass
-        #-------------temp stable----------------
-#
-#-----------cycle function-----------------------
-    def doCycle():
-            highCycleTemp = float(init.get('Cycle','highTemp'))
-            lowCycleTemp = float(init.get('Cycle','lowTemp'))
-            nCycles = int(init.get('Cycle','nCycles'))
-            client.send(coolingBoxSubscription,':prog:cycle:highTemp %s\n'%highCycleTemp)
-            client.send(coolingBoxSubscription,':prog:cycle:lowTemp %s\n'%lowCycleTemp)
-            client.send(coolingBoxSubscription,':prog:cycle %s\n'%nCycles)
-            Logger << 'Temperature cycling with %s cycles between %s and %s'%(nCycles,lowCycleTemp,highCycleTemp)
-            cycleDone = False
-            while client.anzahl_threads >0 and not cycleDone:
-                time.sleep(.5)
-                packet = client.getFirstPacket(coolingBoxSubscription)
-                if not packet.isEmpty():
-                    #DONE
-                    data = packet.data
-                    Time,coms,typ,msg = decode(data)[:4]
-                    if len(coms) > 1:
-                        if coms[0].find('PROG')>=0 and coms[1].find('CYCLE')>=0 and typ == 'a' and (msg == 'FINISHED'):
-                            Logger << '\t--> Cycle FINISHED'
-                            cycleDone = True
-                        else:
-                            pass
-                    else:
-                        pass
-                    pass
-                else:
-                    pass
-#------------------------------------------------
-
-
     def setupParentDir(timestamp,Testboard):
             Testboard.parentDir=Directories['dataDir']+'/%s_%s_%s/'%(Testboard.module,strftime("%Y-%m-%d_%Hh%Mm",gmtime(timestamp)),timestamp)
             try:
@@ -476,13 +401,14 @@ try:
         os.setpgrp()
 
     # Check whether the client is already running before trying to start it
+    Logger << "Check whether clients are runnning ..."
     for agente in los_agentes:
     	agente.check_client_running()
 
     for clientName in ["jumoClient","psi46handler","keithleyClient"]:
         if clientName == "jumoClient" and init.getboolean("CoolingBox", "CoolingBoxUse"):
             continue
-        if clientName == "keithleyClient" and init.getboolean("Keithley", "KeithleyUse"):
+        if clientName == "keithleyClient" and init.getboolean("Keithley", "KeithleyUse")==False:
             continue
         if not os.system("ps aux |grep -v grep| grep -v vim|grep -v emacs|grep %s"%clientName):
             raise Exception("another %s is already running. Please Close client first"%clientName)
@@ -496,9 +422,6 @@ try:
         agente.start_client(timestamp)
 
 
-#open jumo handler
-    if init.getboolean("CoolingBox", "CoolingBoxUse"):
-        jumoChild = subprocess.Popen("xterm +sb -geometry 80x25+1200+0 -fs 10 -fa 'Mono' -e '%s/jumoClient -d %s |tee %s/jumo.log'"%(Directories['jumoDir'],config.get("jumoClient","port"),Directories['logDir']), shell=True,preexec_fn = preexec)
 #open Keithley handler
     if init.getboolean("Keithley", "KeithleyUse"):
         keithleyChild = subprocess.Popen("xterm +sb -geometry 80x25+1200+1300 -fs 10 -fa 'Mono' -e %s/keithleyClient.py -d %s -dir %s -ts %s"%(Directories['keithleyDir'],config.get("keithleyClient","port"),Directories['logDir'],timestamp), shell=True,preexec_fn = preexec)
@@ -511,12 +434,13 @@ try:
         if not client.checkSubscription(subscription):
             raise Exception("Cannot read from %s subscription"%subscription)
         else:
-            Logger << "%s is answering"%subscription
+            Logger << "\t%s is answering"%subscription
     for agente in los_agentes:
         if not agente.check_subscription():
             raise Exception("Cannot read from %s subscription" % agente.subscription)
         else:
-            Logger << "%s is answering" % agente.subscription
+            Logger << "\t%s is answering" % agente.subscription
+    Logger << "Subscriptions checked"
 
 #-------------SETUP TESTBOARDS----------------
     Logger << 'I found the following Testboards with Modules:'
@@ -556,20 +480,23 @@ try:
         env = environment.environment(item, init)
 
         # Prepare for the tests
+        Logger << "Prepare Test: %s"%item
         for agente in los_agentes:
             agente.prepare_test(item, env)
-
         # Wait for preparation to finish
+        Logger << "Wait for preparation to finish" 
         finished = False
         while not finished:
                 finished = True
                 for agente in los_agentes:
                     finished = finished and agente.check_finished()
     	        time.sleep(0.1)
+        Logger << "Prepared for test %s"%item
 
         time.sleep(1.0)
         if item == 'Cycle':
-            doCycle()
+            pass
+            #doCycle()
         else:
             if init.getboolean("Keithley", "KeithleyUse"):
                 client.send(keithleySubscription,':OUTP ON\n')
@@ -582,29 +509,31 @@ try:
             Logger << 'I do now the following Test:'
             Logger << '\t%s at %s degrees'%(whichtest, temp)
             
-            if init.getboolean("CoolingBox", "CoolingBoxUse"):
-                stablizeTemperature(temp)
             if whichtest == 'IV':
                 doIVCurve(temp)
             else:
                 doPSI46Test(whichtest,temp)
 
         # Execute tests
+        Logger << "Execute Test: %s"%item
         for agente in los_agentes:
             agente.execute_test(item, env)
 
         # Wait for test execution to finish
+        Logger << "Wait for test execution to finish"
         finished = False
         while not finished:
                 finished = True
                 for agente in los_agentes:
                     finished = finished and agente.check_finished()
     	        time.sleep(0.1)
+        Logger << "Item %s has been finished."%item
 
         if init.getboolean("Keithley", "KeithleyUse"):
             client.send(keithleySubscription,':OUTP OFF\n')
 
         # Cleanup tests
+        Logger << "start with Clean Up tests."
         for agente in los_agentes:
             agente.cleanup_test(item, env)
 
@@ -615,52 +544,26 @@ try:
                 for agente in los_agentes:
                     finished = finished and agente.check_finished()
     	        time.sleep(0.1)
+        Logger << " Clean Up tests Done"
     	Logger.printv()
 
     # Final cleanup
+    Logger << "Do final Clean Up after all tests"
     for agente in los_agentes:
         agente.final_test_cleanup()
 
     # Wait for final cleanup to finish
+    Logger << "Wait for final clean up to finish"
     finished = False
     while not finished:
             finished = True
             for agente in los_agentes:
                 finished = finished and agente.check_finished()
 	        time.sleep(0.1)
+    Logger << "Final Clean up has been done"
 
 #-------------Heat up---------------
     client.send(psiSubscription,':prog:exit\n')    
-    if init.getboolean("CoolingBox", "CoolingBoxUse"):
-        Logger << 'heating up coolingbox...'
-        client.send(coolingBoxSubscription,':prog:heat\n')
-        time.sleep(3.0)
-        client.clearPackets(coolingBoxSubscription)
-        client.send(coolingBoxSubscription,':prog:stat?\n')
-        i = 0
-        isWarm = False
-        while client.anzahl_threads > 0 and not isWarm:
-            time.sleep(.5)
-            packet = client.getFirstPacket(coolingBoxSubscription)
-            if not packet.isEmpty() and not "pong" in packet.data.lower():
-                data = packet.data
-                Time,coms,typ,msg = decode(data)[:4]
-                if len(coms) > 1:
-                    if coms[0].find('PROG')>=0 and coms[1].find('STAT')>=0 and typ == 'a' and (msg.lower() == 'waiting'):
-                        Logger << '\t--> Got information to be done at %s from packet @ %s'%(int(time.time()),Time)
-                        Logger << '\t--> Cooling Box is heated up now.'
-                        isWarm = True
-                    elif coms[0][0:4] == 'PROG' and coms[1][0:4] == 'STAT' and typ == 'a':
-                        if not i%10:
-                            Logger << '\t--> Jumo is in status %s'%(msg)
-                        if not 'heating' in msg.lower() and not 'waiting' in msg.lower():
-                            client.send(coolingBoxSubscription,':prog:heat\n')
-                        i+=1
-                else:
-                    pass
-            else:
-                client.send(coolingBoxSubscription,':prog:stat?\n')
-                pass
 
     for agente in los_agentes:
     	agente.request_client_exit()
@@ -676,13 +579,13 @@ try:
         pass
     Logger.printv()
     Logger << 'ciao!'
-    del Logger
     try:
         os.stat(Directories['logDir'])
     except:
         raise Exception("Couldn't find logDir %s"%Directories['logDir'])
     killChildren();
 
+    del Logger
     for Testboard in Testboards:
             try:
                 copytree(Directories['logDir'],Testboard.parentDir+'logfiles')
@@ -697,7 +600,10 @@ try:
         try: rmtree(Testboard.parentDir+'/tmp/')
         except: pass
 except:
+    try:
+        Logger << 'DONE'
+    except:
+        pass
     killChildren()
-    Logger << 'DONE'
     raise
     sys.exit(0)

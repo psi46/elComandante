@@ -75,6 +75,8 @@ class printer:
         print '----+-----------------------------------------------------------------------'
         print '    |'
         print '    |  \033[1;30mEL COMANDANTE\033[1;m - CMS Pixel Detector Module Testing Software'
+        print '    |  \033[1;30mElComandante:\033[1;m An \033[1;30mEL\033[1;maborate \033[1;30mC\033[1;momputer \033[1;30mO\033[1;mperated \033[1;30mM\033[1;modular \033[1;30mA\033[1;mccessible' 
+        print '    |                   \033[1;30mN\033[1;mested \033[1;30mD\033[1;mata \033[1;30mA\033[1;mggregation \033[1;30mN\033[1;metwork \033[1;30mT\033[1;mesting \033[1;30mE\033[1;mnvironment'
         print '    |  Developped at ETHZ in 2012'
         print '    |  Felix Bachmair & Philipp Eller'
         print '    |'
