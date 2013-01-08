@@ -43,9 +43,9 @@ for target in args.targets.split(","):
 	name = positions[0]
 	positions = positions[1:]
 	if len(positions) == 0:
-		error = "Invalid target description."
+		error = "Invalid target description: " + target
 		log.warning(error)
-		raise Exception(error)
+		continue
 	str = name + " target at position "
 	if len(positions) > 1:
 		str += "["
@@ -62,37 +62,27 @@ for target in args.targets.split(","):
 log.printv()
 
 # Open the xray generator device ###################################################
-log << "Opening " + args.xray_type +  " xray device at " + args.xray_device + " ..."
+log << "Opening " + args.xray_type + " xray device at " + args.xray_device + " ..."
 if args.xray_type == "id3003":
 	xray_generator = id3003.id3003_xray_generator(args.xray_device)
 else:
 	error = "Unknown device " + args.xray_type + "."
 	log.warning(error)
-	raise Exception(error)
+	sys.exit(1)
 
 if not xray_generator.is_open():
 	error = "Unable to open " + args.xray_type + " device."
 	log.warning(error)
-	raise Exception(error)
+	sys.exit(1)
 else:
 	log << "Xray device is open."
 
 if not xray_generator.test_communication():
 	error = "Unable to communicate with " + args.xray_type + " device."
 	log.warning(error)
-	raise Exception(error)
+	sys.exit(1)
 else:
 	log << "Communication with xray device is OK."
-
-# Reset the device
-#log << "Resetting device ..."
-#success = motor_stage.reset()
-#if not success:
-#	error = "Unable to reset the device."
-#	log.warning(error)
-#	raise Exception(error)
-#else:
-#	log << "Device reset."
 
 # Sleep a little to allow the device to reset properly
 #sleep_seconds = 0.5
@@ -102,25 +92,25 @@ else:
 log.printv()
 
 # Open the motor stage device ################################################################
-log << "Opening " + args.stage_type +  " fluorescence device at " + args.stage_device + " ..."
+log << "Opening " + args.stage_type + " fluorescence device at " + args.stage_device + " ..."
 if args.stage_type == "zaber":
 	motor_stage = zaber.zaber_motor_stage(args.stage_device)
 else:
 	error = "Unknown device " + args.stage_type + "."
 	log.warning(error)
-	raise Exception(error)
+	sys.exit(1)
 
 if not motor_stage.is_open():
 	error = "Unable to open " + args.stage_type + " device."
 	log.warning(error)
-	raise Exception(error)
+	sys.exit(1)
 else:
 	log << "Fluorescence device is open."
 
 if not motor_stage.test_communication():
 	error = "Unable to communicate with " + args.stage_type + " device."
 	log.warning(error)
-	raise Exception(error)
+	sys.exit(1)
 else:
 	log << "Communication with fluorescence device is OK."
 
@@ -130,7 +120,7 @@ else:
 #if not success:
 #	error = "Unable to reset the device."
 #	log.warning(error)
-#	raise Exception(error)
+#	sys.exit(1)
 #else:
 #	log << "Device reset."
 
@@ -145,7 +135,7 @@ success = motor_stage.home()
 if not success:
 	error = "Unable to move to home position."
 	log.warning(error)
-	raise Exception(error)
+	sys.exit(1)
 else:
 	log << "Home position reached."
 
@@ -162,6 +152,19 @@ def handler(signal, frame):
 		log << "Client connection closed."
 
 signal.signal(signal.SIGINT, handler)
+
+state_kV = xray_generator.get_voltage()
+state_mA = xray_generator.get_current()
+state_HV = xray_generator.get_hv()
+
+def check_state(xray, kV, mA, HV):
+	if xray.get_hv() != HV:
+		return False
+	if xray.get_voltage() != kV:
+		return False
+	if xray.get_current() != mA:
+		return False
+	return True
 
 # Wait for new commands from elComandante
 
@@ -194,9 +197,10 @@ while client.anzahl_threads > 0 and client.isClosed == False:
 				if not success:
 					error = "Unable to set the voltage."
 					log.warning(error)
-					raise Exception(error)
+					client.send(abo, ":ERROR %s\n" % error)
 				else:
 					log << "Voltage set."
+					state_kV = kV
 			elif commands[1].upper() == "CURRENT":
 				mA = int(message)
 				log << "Setting current to " + `mA` + " mA ..."
@@ -204,9 +208,10 @@ while client.anzahl_threads > 0 and client.isClosed == False:
 				if not success:
 					error = "Unable to set the current."
 					log.warning(error)
-					raise Exception(error)
+					client.send(abo, ":ERROR %s\n" % error)
 				else:
 					log << "Current set."
+					state_mA = mA
 			elif commands[1].upper() == "HV":
 				on = 0
 				if message.upper() == "ON":
@@ -216,7 +221,7 @@ while client.anzahl_threads > 0 and client.isClosed == False:
 				else:
 					error = "Invalid command: " + packet.data
 					log.warning(error)
-					raise Exception(error)
+					client.send(abo, ":ERROR %s\n" % error)
 
 				if on:
 					log << "Turning high voltage on ..."
@@ -229,12 +234,13 @@ while client.anzahl_threads > 0 and client.isClosed == False:
 					else:
 						error = "Unable to turn off the high voltage."
 					log.warning(error)
-					raise Exception(error)
+					client.send(abo, ":ERROR %s\n" % error)
 				else:
 					if on:
 						log << "High voltage on and stable."
 					else:
 						log << "High voltage off."
+					state_HV = on
 			elif commands[1].upper() == "BEAM":
 				on = 0
 				if message.upper() == "ON":
@@ -244,7 +250,7 @@ while client.anzahl_threads > 0 and client.isClosed == False:
 				else:
 					error = "Invalid command: " + packet.data
 					log.warning(error)
-					raise Exception(error)
+					client.send(abo, ":ERROR %s\n" % error)
 
 				if on:
 					log << "Turning beam on ..."
@@ -257,7 +263,7 @@ while client.anzahl_threads > 0 and client.isClosed == False:
 					else:
 						error = "Unable to turn off the beam."
 					log.warning(error)
-					raise Exception(error)
+					client.send(abo, ":ERROR %s\n" % error)
 				else:
 					if on:
 						log << "Beam on."
@@ -267,6 +273,16 @@ while client.anzahl_threads > 0 and client.isClosed == False:
 			client.send(abo, ":FINISHED\n")
 		elif len(commands) == 1 and commands[0].upper() == "EXIT":
 			break
+	else:
+		if not check_state(xray_generator, state_kV, state_mA, state_HV):
+			log.warning("Error: Xray generator state changed unexpectedly!")
+			client.send(abo, ":ERROR Xray generator state changed unexpectedly!\n")
+
+			# Get the new state to avoid sending more errors
+			state_kV = xray_generator.get_voltage()
+			state_mA = xray_generator.get_current()
+			state_HV = xray_generator.get_hv()
+
 
 log.printv()
 log << "Closing connection ..."

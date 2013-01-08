@@ -22,22 +22,26 @@ class id3003_xray_generator(xray_generator):
 			return False
 		command = "SV:{0:02d}\n".format(int(kV))
 		self.serial_command_no_response(command)
+		return self.get_voltage() == kV
+	def get_voltage(self):
 		answer = self.serial_command_with_response("VN\n")
-		return answer[6:8] == "{0:02d}".format(int(kV))
+		return int(answer[6:8])
 	def set_current(self, mA):
 		if type(mA) != int or mA < 2 or mA > 80:
 			return False
 		command = "SC:{0:02d}\n".format(int(mA))
 		self.serial_command_no_response(command)
+		return self.get_current() == mA
+	def get_current(self):
 		answer = self.serial_command_with_response("CN\n")
-		return answer[6:8] == "{0:02d}".format(int(mA))
+		return int(answer[6:8])
 	def set_hv(self, on):
 		if on:
 			self.serial_command_no_response("HV:1\n")
 		else:
 			self.serial_command_no_response("HV:0\n")
-		answer = self.serial_command_with_response("SR:01\n")
-		if bool(int(answer[1:-1]) & (1 << 6)) != bool(on):
+
+		if self.get_hv() != on:
 			return False
 
 		if not on:
@@ -63,6 +67,9 @@ class id3003_xray_generator(xray_generator):
 			time.sleep(0.2)
 
 		return True
+	def get_hv(self):
+		answer = self.serial_command_with_response("SR:01\n")
+		return bool(int(answer[1:-1]) & (1 << 6))
 	def set_beam_shutter(self, beamno, on):
 		if beamno < 1 or beamno > 4:
 			return False
