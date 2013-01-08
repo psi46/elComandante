@@ -76,9 +76,9 @@ try:
     args = parser.parse_args()
 #print args.configDir
     configDir= args.configDir
-    try: 
+    try:
         os.access(configDir,os.R_OK)
-    except:    
+    except:
         raise Exception('configDir \'%s\' is not accessible'%configDir)
         #sys.exit()
         #raise SystemExit
@@ -171,7 +171,6 @@ try:
     for agente in los_agentes:
         agente.setup_configuration(config)
         agente.setup_initialization(init)
-    raise Exception("End")
 
 #subscribe subscriptions
     subscriptionList = [psiSubscription]
@@ -217,7 +216,7 @@ try:
             f.close()
         except IOError as e:
             Logger.warning("I/O error({0}): {1}".format(e.errno, e.strerror))
-        except OSError as e: 
+        except OSError as e:
             Logger.warning("OS error({0}): {1}".format(e.errno, e.strerror))
         #change address
 #------------------------------------------------
@@ -263,12 +262,12 @@ try:
                     index=[Testboard.slot==int(coms[1][2]) for Testboard in Testboards].index(True)
                     Testboards[index].failed()
                     Testboards[index].busy=False
-                    
+
             packet = client.getFirstPacket(coolingBoxSubscription)
             if not packet.isEmpty() and not "pong" in packet.data.lower():
                 data = packet.data
                 Time,coms,typ,msg = decode(data)[:4]
-                #nnprint "MESSAGE: %s %s %s %s "%(Time,typ,coms,msg.upper()) 
+                #nnprint "MESSAGE: %s %s %s %s "%(Time,typ,coms,msg.upper())
                 if coms[0].find('STAT')==0 and typ == 'a' and 'ERROR' in msg[0].upper():
                     Logger.warning('jumo has error!')
                     Logger.warning('\t--> I will abort the tests...')
@@ -281,8 +280,8 @@ try:
                         Testboard.busy=False
             busy=reduce(lambda x,y: x or y, [Testboard.busy for Testboard in Testboards])
         #-------------test finished----------------
-        
-        
+
+
         #---------------Test summary--------------
         Logger.printv()
         for Testboard in Testboards:
@@ -298,7 +297,7 @@ try:
                             received=True
                             if msg == 'test:failed':
                                 Logger.warning('\tTest in Testboard %s failed! :('%Testboard.slot)
-                                powercycle(Testboard)                                
+                                powercycle(Testboard)
                             elif msg == 'test:finished':
                                 Logger << '\tTest in Testboard %s successful! :)'%Testboard.slot
                             else:
@@ -308,7 +307,7 @@ try:
                                 powercycle(Testboard)
         Logger.printv()
         #---------------iterate in Testloop--------------
-        
+
 #
 #-----------IV function-----------------------
     def doIVCurve(temp):
@@ -327,12 +326,12 @@ try:
             ivDone = False
             client.send(keithleySubscription,':PROG:IV:START %s'%ivStart)
             client.send(keithleySubscription,':PROG:IV:STOP %s'%ivStop)
-            client.send(keithleySubscription,':PROG:IV:STEP %s'%ivStep) 
-            client.send(keithleySubscription,':PROG:IV:DELA Y%s'%ivDelay) 
+            client.send(keithleySubscription,':PROG:IV:STEP %s'%ivStep)
+            client.send(keithleySubscription,':PROG:IV:DELA Y%s'%ivDelay)
             client.send(keithleySubscription,':PROG:IV:TESTDIR %s'%Testboard.testdir)
 #todo check if testdir exists...
             client.send(psiSubscription,':prog:TB%s:open %s,commander_%s\n'%(Testboard.slot,Testboard.testdir,whichtest))
-            time.sleep(2.0)	
+            time.sleep(2.0)
             client.send(keithleySubscription,':PROG:IV MEAS\n')
             while client.anzahl_threads >0 and not ivDone:
                     time.sleep(.5)
@@ -346,7 +345,7 @@ try:
                                 Logger << '\t--> IV-Curve FINISHED'
                                 ivDone = True
                             elif coms[0].find('IV')==0 and typ == 'q':
-                                #print fullComand                            
+                                #print fullComand
                                 pass
                         else:
                             pass
@@ -401,7 +400,7 @@ try:
                     pass
             busy=Testboard.busy
         #-------------test finished----------------
-        
+
 
     def preexec():#Don't forward Signals.
         os.setpgrp()
@@ -409,7 +408,7 @@ try:
     # Check whether the client is already running before trying to start it
     Logger << "Check whether clients are runnning ..."
     for agente in los_agentes:
-    	agente.check_client_running()
+        agente.check_client_running()
 
     for clientName in ["jumoClient","psi46handler","keithleyClient"]:
         if clientName == "jumoClient" and init.getboolean("CoolingBox", "CoolingBoxUse"):
@@ -460,7 +459,7 @@ try:
             #print Testboards[-1].defparamdir
             Logger << '\t- Testboard %s at address %s with Module %s'%(Testboards[-1].slot,Testboards[-1].address,Testboards[-1].module)
             parentDir=setupParentDir(timestamp,Testboards[-1])
-            
+
             Logger << 'try to powercycle Testboard...'
             powercycle(Testboards[-1])
 
@@ -490,13 +489,13 @@ try:
         for agente in los_agentes:
             agente.prepare_test(item, env)
         # Wait for preparation to finish
-        Logger << "Wait for preparation to finish" 
+        Logger << "Wait for preparation to finish"
         finished = False
         while not finished:
                 finished = True
                 for agente in los_agentes:
                     finished = finished and agente.check_finished()
-    	        time.sleep(0.1)
+                time.sleep(0.1)
         Logger << "Prepared for test %s"%item
 
         time.sleep(1.0)
@@ -514,7 +513,7 @@ try:
             Logger.printv()
             Logger << 'I do now the following Test:'
             Logger << '\t%s at %s degrees'%(whichtest, temp)
-            
+
             if whichtest == 'IV':
                 doIVCurve(temp)
             else:
@@ -532,7 +531,7 @@ try:
                 finished = True
                 for agente in los_agentes:
                     finished = finished and agente.check_finished()
-    	        time.sleep(0.1)
+                time.sleep(0.1)
         Logger << "Item %s has been finished."%item
 
         if init.getboolean("Keithley", "KeithleyUse"):
@@ -549,9 +548,9 @@ try:
                 finished = True
                 for agente in los_agentes:
                     finished = finished and agente.check_finished()
-    	        time.sleep(0.1)
+                time.sleep(0.1)
         Logger << " Clean Up tests Done"
-    	Logger.printv()
+        Logger.printv()
 
     # Final cleanup
     Logger << "Do final Clean Up after all tests"
@@ -565,14 +564,14 @@ try:
             finished = True
             for agente in los_agentes:
                 finished = finished and agente.check_finished()
-	        time.sleep(0.1)
+                time.sleep(0.1)
     Logger << "Final Clean up has been done"
 
 #-------------Heat up---------------
-    client.send(psiSubscription,':prog:exit\n')    
+    client.send(psiSubscription,':prog:exit\n')
 
     for agente in los_agentes:
-    	agente.request_client_exit()
+        agente.request_client_exit()
 
     client.closeConnection()
     Logger << 'I am done for now!'
@@ -581,7 +580,7 @@ try:
     killChildren()
     time.sleep(1)
 #-------------EXIT----------------
-    while client.anzahl_threads > 0: 
+    while client.anzahl_threads > 0:
         pass
     Logger.printv()
     Logger << 'ciao!'
