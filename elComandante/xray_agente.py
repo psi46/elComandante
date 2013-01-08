@@ -4,7 +4,7 @@ import subprocess
 import el_agente
 
 def preexec():
-    os.setpgrp()
+	os.setpgrp()
 
 class xray_agente(el_agente.el_agente):
 	def __init__(self, timestamp, log, sclient):
@@ -39,16 +39,16 @@ class xray_agente(el_agente.el_agente):
 	def start_client(self, timestamp):
 		if not self.active:
 			return True
-	        command = "xterm +sb -geometry 120x20+0+300 -fs 10 -fa 'Mono' -e "
-	        command += "python ../xrayClient/xrayClient.py "
-	        command += "--timestamp {0:d} ".format(timestamp)
-	        command += "--directory {0:s} ".format(self.logdir)
-	        command += "--xray-device {0:s} ".format(self.xray_device)
-	        command += "--xray-type {0:s} ".format(self.xray_type)
-	        command += "--stage-device {0:s} ".format(self.xrf_device)
-	        command += "--stage-type {0:s} ".format(self.xrf_type)
-	        command += "--targets {0:s}".format(self.targets)
-	        self.log << "Starting " + self.name + " ..."
+		command = "xterm +sb -geometry 120x20+0+300 -fs 10 -fa 'Mono' -e "
+		command += "python ../xrayClient/xrayClient.py "
+		command += "--timestamp {0:d} ".format(timestamp)
+		command += "--directory {0:s} ".format(self.logdir)
+		command += "--xray-device {0:s} ".format(self.xray_device)
+		command += "--xray-type {0:s} ".format(self.xray_type)
+		command += "--stage-device {0:s} ".format(self.xrf_device)
+		command += "--stage-type {0:s} ".format(self.xrf_type)
+		command += "--targets {0:s}".format(self.targets)
+		self.log << "Starting " + self.name + " ..."
 		self.child = subprocess.Popen(command, shell = True, preexec_fn = preexec)
 		return True
 	def subscribe(self):
@@ -128,16 +128,16 @@ class xray_agente(el_agente.el_agente):
 		self.set_pending()
 		return True
 	def check_finished(self):
-		if not self.active or not self.pending:
+		if not self.active:
 			return True
 
 		packet = self.sclient.getFirstPacket(self.subscription)
 		if not packet.isEmpty():
-			if "FINISHED" in packet.data.upper():
+			if self.pending and "FINISHED" in packet.data.upper():
 				self.pending = False
 			elif "ERROR" in packet.data.upper():
 				self.pending = False
-				raise Exception("Error from client of %s" % self.name)
+				raise Exception("Error from %s!" % self.name)
 
 		return not self.pending
 	def set_pending(self):
