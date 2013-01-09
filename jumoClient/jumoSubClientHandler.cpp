@@ -510,6 +510,8 @@ void jumoSubClientHandler::checkStatus(){
 		targetTemp=setPointTemp;
 		if(verbosity)cout<<getStatusString(status)<<" is a  normal Status!"<<targetTemp<<endl;
 	}
+	if (status==HEATING||status==CYCLE_HEATING)
+		targetTemp=+40;
 	if(status==COOLING||status==STABLE||status==CYCLE_COOLING||status==UNSTABLE){
 		jumo.setTargetTemperature(targetTemp);
 		if(verbosity)cout<<"Set new Temperature in Box to "<<targetTemp<<endl;
