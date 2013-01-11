@@ -606,7 +606,7 @@ try:
         except: pass
 except:
     try:
-        Logger << 'DONE'
+        #TODO: Logger << 'DONE'
     except:
         pass
     killChildren()
