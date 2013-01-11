@@ -1,7 +1,7 @@
 #!/usr/bin/python2
 import sys
 sys.path.insert(1, "../")
-from myutils import sClient, decode, printer
+from myutils import sClient, decode, printer, is_float
 from threading import Thread
 import subprocess
 import time
@@ -10,7 +10,7 @@ import keithleyInterface
 import os
 import serial
 import signal
-from decode import is_float
+#from decode import is_float
 from time import sleep
 ON = 1
 OFF = 0

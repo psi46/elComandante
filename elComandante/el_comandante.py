@@ -11,6 +11,7 @@ import subprocess
 import argparse
 import environment
 import xray_agente
+import psi_agente
 import coolingBox_agente
 import analysis_agente
 import signal
@@ -42,13 +43,8 @@ def killChildren():
         try:
             agente.kill_client()
         except:
-            agente.log.error("Could not kill %s" % agente.name)
+            agente.log.warning("Could not kill %s" % agente.name)
 
-    try:
-        psiChild.kill()
-    except:
-        print "couldn't kill psiChild"
-        pass
     try:
         keithleyChild.kill()
     except:
@@ -96,7 +92,7 @@ try:
     Directories['baseDir']=config.get('Directories','baseDir')
     Directories['testdefDir']=config.get('Directories','testDefinitions')
     Directories['dataDir']=config.get('Directories','dataDir')
-    Directories['defaultDir']=config.get('Directories','defaultParameters')
+    Directories['defaultParameters']=config.get('Directories','defaultParameters')
     Directories['subserverDir']=config.get('Directories','subserverDir')
     Directories['keithleyDir']=config.get('Directories','keithleyDir')
     Directories['jumoDir']=config.get('Directories','jumoDir')
@@ -163,17 +159,22 @@ try:
     client = sClient(serverZiel,serverPort,"kuehlingboxcommander")
 
     # Create agentes that are responsible for client processes
-    los_agentes.append(xray_agente.xray_agente(timestamp, Logger, client))
+    los_agentes.append(psi_agente.psi_agente(timestamp, Logger, client))
+    if init.getboolean("Xray", "XrayUse"):
+        los_agentes.append(xray_agente.xray_agente(timestamp, Logger, client))
     los_agentes.append(analysis_agente.analysis_agente(timestamp, Logger, client))
-    los_agentes.append(coolingBox_agente.coolingBox_agente(timestamp, Logger,client))
+    if init.getboolean("CoolingBox", "CoolingBoxUse"):
+        los_agentes.append(coolingBox_agente.coolingBox_agente(timestamp, Logger,client))
+
+    print [agente.name for agente in los_agentes]
 
     # Make the agentes read their configuration and initialization parameters
     for agente in los_agentes:
+        agente.setup_dir(Directories)
         agente.setup_configuration(config)
         agente.setup_initialization(init)
-
 #subscribe subscriptions
-    subscriptionList = [psiSubscription]
+    subscriptionList = []
     if init.getboolean("Keithley", "KeithleyUse"):
         subscriptionList.append(keithleySubscription)
     if init.getboolean("CoolingBox", "CoolingBoxUse"):
@@ -192,34 +193,8 @@ try:
     testlist= testlist.split(',')
     while '' in testlist:
             testlist.remove('')
-    print 'Testlist:',testlist
 
 #-------------------------------------
-
-
-
-#-----------setup Test directory function-------
-    def setupdir(Testboard):
-        Logger.printn()
-        Logger << 'I setup the directories:'
-        Logger << '\t- %s'%Testboard.testdir
-        Logger << '\t  with default Parameters from %s'%Testboard.defparamdir
-        #copy directory
-        try:
-            copytree(Testboard.defparamdir, Testboard.testdir)
-            f = open( '%s/configParameters.dat'%Testboard.testdir, 'r' )
-            lines = f.readlines()
-            f.close()
-            lines[0]='testboardName %s'%Testboard.address
-            f = open( '%s/configParameters.dat'%Testboard.testdir, 'w' )
-            f.write(''.join(lines))
-            f.close()
-        except IOError as e:
-            Logger.warning("I/O error({0}): {1}".format(e.errno, e.strerror))
-        except OSError as e:
-            Logger.warning("OS error({0}): {1}".format(e.errno, e.strerror))
-        #change address
-#------------------------------------------------
     def setupParentDir(timestamp,Testboard):
             Testboard.parentDir=Directories['dataDir']+'/%s_%s_%s/'%(Testboard.module,strftime("%Y-%m-%d_%Hh%Mm",gmtime(timestamp)),timestamp)
             try:
@@ -228,91 +203,11 @@ try:
                 os.mkdir(Testboard.parentDir)
             return Testboard.parentDir
 #
-    def doPSI46Test(whichtest,temp):
-        client.clearPackets(psiSubscription)
-#-------------start test-----------------
-        for Testboard in Testboards:
-            #Setup Test Directory
-            Testboard.timestamp=timestamp
-            Testboard.currenttest=item
-            Testboard.testdir=Testboard.parentDir+'/%s_%s_%s/'%(int(time.time()),whichtest,temp)
-            setupdir(Testboard)
-            #Start PSI
-            Testboard.busy=True
-            #client.send(psiSubscription,':prog:TB1:start Pretest,~/supervisor/singleRocTest_TB1,commanderPretest')
-            client.send(psiSubscription,':prog:TB%s:start %s,%s,commander_%s\n'%(Testboard.slot,Directories['testdefDir']+'/'+ whichtest,Testboard.testdir,whichtest))
-            Logger.printn()
-            Logger << 'psi46 at Testboard %s is now started'%Testboard.slot
-
-        #wait for finishing
-        busy = True
-        while client.anzahl_threads > 0 and busy:
-            time.sleep(.5)
-            packet = client.getFirstPacket(psiSubscription)
-            if not packet.isEmpty() and not "pong" in packet.data.lower():
-                data = packet.data
-                Time,coms,typ,msg = decode(data)[:4]
-                if coms[0].find('STAT')==0 and coms[1].find('TB')==0 and typ == 'a' and msg=='test:finished':
-                    index=[Testboard.slot==int(coms[1][2]) for Testboard in Testboards].index(True)
-                    #print Testboards[index].tests
-                    #print Testboards[index].currenttest
-                    Testboards[index].finished()
-                    Testboards[index].busy=False
-                if coms[0][0:4] == 'STAT' and coms[1][0:2] == 'TB' and typ == 'a' and msg=='test:failed':
-                    index=[Testboard.slot==int(coms[1][2]) for Testboard in Testboards].index(True)
-                    Testboards[index].failed()
-                    Testboards[index].busy=False
-
-            packet = client.getFirstPacket(coolingBoxSubscription)
-            if not packet.isEmpty() and not "pong" in packet.data.lower():
-                data = packet.data
-                Time,coms,typ,msg = decode(data)[:4]
-                #nnprint "MESSAGE: %s %s %s %s "%(Time,typ,coms,msg.upper())
-                if coms[0].find('STAT')==0 and typ == 'a' and 'ERROR' in msg[0].upper():
-                    Logger.warning('jumo has error!')
-                    Logger.warning('\t--> I will abort the tests...')
-                    Logger.printn()
-                    for Testboard in Testboards:
-                        client.send(psiSubscription,':prog:TB%s:kill\n'%Testboard.slot)
-                        Logger.warning('\t Killing psi46 at Testboard %s'%Testboard.slot)
-                        index=[Testboard.slot==int(coms[1][2]) for Testboard in Testboards].index(True)
-                        Testboard.failed()
-                        Testboard.busy=False
-            busy=reduce(lambda x,y: x or y, [Testboard.busy for Testboard in Testboards])
-        #-------------test finished----------------
-
-
-        #---------------Test summary--------------
-        Logger.printv()
-        for Testboard in Testboards:
-                client.send(psiSubscription,':stat:TB%s?\n'%Testboard.slot)
-                received=False
-                while client.anzahl_threads > 0 and not received:
-                    time.sleep(.1)
-                    packet = client.getFirstPacket(psiSubscription)
-                    if not packet.isEmpty() and not "pong" in packet.data.lower():
-                        data = packet.data
-                        Time,coms,typ,msg = decode(data)[:4]
-                        if coms[0][0:4] == 'STAT' and coms[1][0:3] == 'TB%s'%Testboard.slot and typ == 'a':
-                            received=True
-                            if msg == 'test:failed':
-                                Logger.warning('\tTest in Testboard %s failed! :('%Testboard.slot)
-                                powercycle(Testboard)
-                            elif msg == 'test:finished':
-                                Logger << '\tTest in Testboard %s successful! :)'%Testboard.slot
-                            else:
-                                Logger << '%s %s %s %s @ %s'%(Time,coms,typ,msg,int(time.time()))
-                                Logger.printn()
-                                Logger.warning('\tStatus of Testboard %s unknown...! :/'%Testboard.slot)
-                                powercycle(Testboard)
-        Logger.printv()
-        #---------------iterate in Testloop--------------
-
-#
 #-----------IV function-----------------------
+    #ToDo!!!
     def doIVCurve(temp):
         client.clearPackets(psiSubscription)
-        for Testboard in Testboards:
+        for Testboard in los_agentes[0].Testboards:
             Testboard.timestamp=timestamp
             Testboard.currenttest=item
             Testboard.testdir=Testboard.parentDir+'/%s_IV_%s'%(int(time.time()),temp)
@@ -358,48 +253,6 @@ try:
         time.sleep(5)
         powercycle(Testboard)
 
-    def powercycle(Testboard):
-        client.clearPackets(psiSubscription)
-        Testboard.timestamp=timestamp
-        whichtest='powercycle'
-        Testboard.testdir=Testboard.parentDir+'/tmp/'
-        setupdir(Testboard)
-        Logger << 'Powercycle Testboard at slot no %s'%Testboard.slot
-        Testboard.busy=True
-        client.send(psiSubscription,':prog:TB%s:start %s,%s,commander_%s\n'%(Testboard.slot,Directories['testdefDir']+'/'+ whichtest,Testboard.testdir,whichtest))
-        #wait for finishing
-        busy = True
-        while client.anzahl_threads > 0 and busy:
-            time.sleep(.5)
-            packet = client.getFirstPacket(psiSubscription)
-            if not packet.isEmpty() and not "pong" in packet.data.lower():
-                data = packet.data
-                Time,coms,typ,msg = decode(data)[:4]
-                if coms[0].find('STAT')==0 and coms[1].find('TB')==0 and typ == 'a' and msg=='test:finished':
-                    index=[Testboard.slot==int(coms[1][2]) for Testboard in Testboards].index(True)
-                    #Testboards[index].finished()
-                    Testboards[index].busy=False
-                    time.sleep(1)
-                    try:
-                        rmtree(Testboard.parentDir+'/tmp/')
-                    except:
-                        Logger.warning("Couldn't delete temp Dir")
-                        pass
-                if coms[0][0:4] == 'STAT' and coms[1][0:2] == 'TB' and typ == 'a' and msg=='test:failed':
-                    index=[Testboard.slot==int(coms[1][2]) for Testboard in Testboards].index(True)
-                    #Testboards[index].failed()
-                    time.sleep(1)
-                    Testboards[index].busy=False
-                    try:
-                        rmtree(Testboard.parentDir+'/tmp/')
-                    except:
-                        Logger.warning("Couldn't delete temp Dir")
-                        pass
-                    raise Exception('Could not open Testboard at %s.'%Testboard.slot)
-                else:
-                    pass
-            busy=Testboard.busy
-        #-------------test finished----------------
 
 
     def preexec():#Don't forward Signals.
@@ -410,7 +263,7 @@ try:
     for agente in los_agentes:
         agente.check_client_running()
 
-    for clientName in ["jumoClient","psi46handler","keithleyClient"]:
+    for clientName in ["jumoClient","keithleyClient"]:
         if clientName == "jumoClient" and init.getboolean("CoolingBox", "CoolingBoxUse"):
             continue
         if clientName == "keithleyClient" and init.getboolean("Keithley", "KeithleyUse")==False:
@@ -418,10 +271,6 @@ try:
         if not os.system("ps aux |grep -v grep| grep -v vim|grep -v emacs|grep %s"%clientName):
             raise Exception("another %s is already running. Please Close client first"%clientName)
 
-    # Start the clients
-#open psi46handler in annother terminal
-    psiChild = subprocess.Popen("xterm +sb -geometry 120x20+0+900 -fs 10 -fa 'Mono' -e 'python ../psiClient/psi46master.py -dir %s -num 4'"%(Directories['logDir']), shell=True,preexec_fn = preexec)
-#psiChild = subprocess.Popen("xterm +sb -geometry 160x20+0+00 -fs 10 -fa 'Mono' -e python psi46handler.py ", shell=True)
 
     for agente in los_agentes:
         agente.start_client(timestamp)
@@ -450,18 +299,13 @@ try:
 #-------------SETUP TESTBOARDS----------------
     Logger << 'I found the following Testboards with Modules:'
     Logger.printn()
-    Testboards=[]
+    #ToDo:
     for tb, module in init.items('Modules'):
-        if init.getboolean('TestboardUse',tb):
-            Testboards.append(Testboarddefinition(int(tb[2]),module,config.get('TestboardAddress',tb),init.get('ModuleType',tb)))
-            Testboards[-1].tests=testlist
-            Testboards[-1].defparamdir=Directories['defaultDir']+'/'+config.get('defaultParameters',Testboards[-1].type)
-            #print Testboards[-1].defparamdir
-            Logger << '\t- Testboard %s at address %s with Module %s'%(Testboards[-1].slot,Testboards[-1].address,Testboards[-1].module)
-            parentDir=setupParentDir(timestamp,Testboards[-1])
+            parentDir=setupParentDir(timestamp,los_agentes[0].Testboards[-1])
 
-            Logger << 'try to powercycle Testboard...'
-            powercycle(Testboards[-1])
+    Logger << 'try to powercycle Testboard...'
+    #        powercycle(Testboards[-1])
+    los_agentes[0].powercycle()
 
     Logger.printv()
     Logger << 'I found the following Tests to be executed:'
@@ -517,12 +361,13 @@ try:
             if whichtest == 'IV':
                 doIVCurve(temp)
             else:
-                doPSI46Test(whichtest,temp)
+                pass
+                #doPSI46Test(whichtest,temp)
 
         # Execute tests
         Logger << "Execute Test: %s"%item
         for agente in los_agentes:
-            agente.execute_test(item, env)
+            agente.execute_test()
 
         # Wait for test execution to finish
         Logger << "Wait for test execution to finish"
@@ -540,7 +385,7 @@ try:
         # Cleanup tests
         Logger << "start with Clean Up tests."
         for agente in los_agentes:
-            agente.cleanup_test(item, env)
+            agente.cleanup_test()
 
         # Wait for cleanup to finish
         finished = False
@@ -568,7 +413,7 @@ try:
     Logger << "Final Clean up has been done"
 
 #-------------Heat up---------------
-    client.send(psiSubscription,':prog:exit\n')
+    #client.send(psiSubscription,':prog:exit\n')
 
     for agente in los_agentes:
         agente.request_client_exit()
@@ -591,7 +436,7 @@ try:
     killChildren();
 
     del Logger
-    for Testboard in Testboards:
+    for Testboard in los_agentes[0].Testboards:
             try:
                 copytree(Directories['logDir'],Testboard.parentDir+'logfiles')
             except:
@@ -601,14 +446,10 @@ try:
     rmtree(Directories['logDir'])
 
     #cleanup
-    for Testboard in Testboards:
+    for Testboard in los_agentes[0].Testboards:
         try: rmtree(Testboard.parentDir+'/tmp/')
         except: pass
 except:
-    try:
-        #TODO: Logger << 'DONE'
-    except:
-        pass
     killChildren()
     raise
     sys.exit(0)

@@ -102,18 +102,18 @@ class xray_agente(el_agente.el_agente):
 				self.hvon = False
 			self.set_pending()
 		return True
-	def execute_test(self, test, environment):
+	def execute_test(self):
 		# Runs a test
 		if not self.active:
 			return True
 		#self.log << self.name + ": Executing " + test + " ..."
 		return True
-	def cleanup_test(self, test, environment):
+	def cleanup_test(self):
 		# Run after a test has executed
 		if not self.active:
 			return True
 		if self.beamon:
-			self.log << self.name + ": Cleaning up " + test + " ..."
+			self.log << self.name + ": Cleaning up ..."
 			self.sclient.send(self.subscription, ":SET:BEAM OFF\n")
 			self.beamon = False
 			self.set_pending()

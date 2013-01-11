@@ -101,11 +101,11 @@ class coolingBox_agente(el_agente.el_agente):
         self.sclient.clearPackets(self.subscription)
         self.stabalizeTemperature(environment.temperature)
         self.set_pending()
+        self.currentTest = test
         return True
 
-    def execute_test(self, test, environment):
+    def execute_test(self):
         # Initiate a test
-        self.currentTest = test
         self.log << "%s: execute Test \'%s\'"%(self.name,self.currentTest)
         if not self.active:
             return True
@@ -122,7 +122,7 @@ class coolingBox_agente(el_agente.el_agente):
             self.sclient.send(self.subscription,":PROG:CYCLE %s\n"%self.nCycles)
         return True
 
-    def cleanup_test(self, test, environment):
+    def cleanup_test(self):
         self.currentTest = "none"
         # Run after a test has executed
         if not self.active:
