@@ -6,8 +6,6 @@ class Testboard:
         self.type=type
         self.tests=[]
         self.currenttest=''
-        self.fintests=[]
-        self.failtests=[]
         self.testdir=''
         self.defparamdir=''
         self.powerdup=False
@@ -15,12 +13,3 @@ class Testboard:
         self.timestamp=0
         self.parentDir='.'
         self.active=True
-        
-    def dotest(self,test):
-        self.currenttest=test
-
-    def finished(self):
-        self.fintests.append(self.tests[self.tests.index(self.currenttest)])
-        
-    def failed(self):
-        self.failtests.append(self.tests[self.tests.index(self.currenttest)])
