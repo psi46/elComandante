@@ -3,76 +3,84 @@ import sys
 sys.path.insert(1, "../")
 from myutils import BetterConfigParser, sClient, decode, printer
 from myutils import Testboard as Testboarddefinition
-from time import strftime, gmtime
+from time import strftime, gmtime, sleep
 import time
 from shutil import copytree,rmtree
 import argparse
 import environment
 import signal
 import el_agente
+import subprocess
 
 def preexec():
     os.setpgrp()
 
 class psi_agente(el_agente.el_agente):
-	def __init__(self, log, sself.sclient,config):
-	    super(psi_agente,self).__init__(log, sself.sclient)
-        self.config = config
-		self.name = "psiClient"
+    def __init__(self, timestamp,log, sclient):
+        el_agente.el_agente.__init__(self,timestamp, log, sclient)
+        self.name = "psiClient"
         self.currenttest=None
-
-	def setup_configuration(self, conf, Testboards, timestamp):
+    def setup_configuration(self, conf):
         self.conf = conf
-        self.timestamp = timestamp
         self.numerator = 0
-        self.subscription = conf.get("subsystem", "xraySubscription")
-        self.logdir = conf.get("Directories", "dataDir") + "/logfiles/"
-        self.Testboards=Testboards
-        self.numTestboards = len(self.Testboards)
+        self.subscription = conf.get("subsystem", "psiSubscription")
+        #self.logdir = conf.get("Directories", "dataDir") + "/logfiles/"
         self.active = True
+    def setup_initialization(self, init):
+        self.Testboards=[]
+        for tb, module in init.items('Modules'):
+            if init.getboolean('TestboardUse',tb):
+                self.Testboards.append(Testboarddefinition(int(tb[2]),module,self.conf.get('TestboardAddress',tb),init.get('ModuleType',tb)))
+                #Testboards[-1].tests=testlist
+                self.Testboards[-1].defparamdir=self.Directories['defaultParameters']+'/'+self.conf.get('defaultParameters',self.Testboards[-1].type)
+                self.log << '\t- Testboard %s at address %s with Module %s'%(self.Testboards[-1].slot,self.Testboards[-1].address,self.Testboards[-1].module)
+        self.numTestboards = len(init.items('Modules'))
+    def check_client_running(self):
+        if not self.active:
+            return False
+        process = os.system("ps aux | grep -v grep | grep -v vim | grep -v emacs | grep %s" % self.name)
+        if type(process) == str and process != "":
+            raise Exception("Another %s self.sclient is already running. Please close this self.sclient first." % self.sclient.name)
+            return True
+        return False
+    def subscribe(self):
+        if (self.active):
+            self.sclient.subscribe(self.subscription)
+                            
 
-	def check_client_running(self):
-		if not self.active:
-			return False
-		process = os.system("ps aux | grep -v grep | grep -v vim | grep -v emacs | grep %s" % self.name)
-		if type(process) == str and process != "":
-			raise Exception("Another %s self.sclient is already running. Please close this self.sclient first." % self.sclient.name)
-			return True
-		return False
-
-	def start_client(self, timestamp):
+    def start_client(self, timestamp):
         self.timestamp = timestamp
-		if not self.active:
-			return True
+        if not self.active:
+            return True
         command = "xterm +sb -geometry 120x20+0+300 -fs 10 -fa 'Mono' -e "
-        command += "python ../psiClient/psi46handler.py "
-        command += "-dir %s"%(Directories['logDir'])
-        command += "-num %s"%slef.numTestboards
+        command += "python ../psiClient/psi46master.py "
+        command += "-dir %s "%(self.Directories['logDir'])
+        command += "-num %s"%self.numTestboards
         self.log << "Starting " + self.name + " ..."
-		self.child = subprocess.Popen(command, shell = True, preexec_fn = preexec)
-		return True
+        self.child = subprocess.Popen(command, shell = True, preexec_fn = preexec)
+        return True
 
-	def request_client_exit(self):
-		if not self.active:
-			return True
-		self.sclient.send(self.subscription, ":EXIT\n")
-		return False
+    def request_client_exit(self):
+        if not self.active:
+            return True
+        self.sclient.send(self.subscription, ":EXIT\n")
+        return False
 
-	def kill_client(self):
-		if not self.active:
-			return True
-		self.child.kill()
-		return True
+    def kill_client(self):
+        if not self.active:
+            return True
+        self.child.kill()
+        return True
 
-	def prepare_test(self, whichtest):
-		if not self.active:
-			return False
-		# Run before a test is executed
+    def prepare_test(self, whichtest, env):
+        if not self.active:
+            return False
+        # Run before a test is executed
         self.powercycle()
-        self.curenttest = whichtest
-		self.log << self.name + ": Preparing " + self.currenttest + " ..."
+        self.currenttest = whichtest.split('@')[0]
+        self.log << self.name + ": Preparing " + self.currenttest + " ..."
         for Testboard in self.Testboards:
-            self._prepare_testboard(Testboard):
+            self._prepare_testboard(Testboard)
         return True
 
     def _prepare_testboard(self,Testboard):
@@ -82,35 +90,33 @@ class psi_agente(el_agente.el_agente):
     def powercycle(self):
         self.currenttest='powercycle'
         for Testboard in self.Testboards:
-            self._prepare_testboard(Testboard):
+            self._prepare_testboard(Testboard)
         self.execute_test()
+        self.cleanup_test()
 
-	def execute_test(self):
-		if not self.active:
-			return False
-		# Runs a test
-        self.sclient.clearPackets(psiSubscription)
+    def execute_test(self):
+        if not self.active:
+            return False
+        # Runs a test
+        self.sclient.clearPackets(self.subscription)
         if not self.currenttest == 'powercycle':
-            self.log << self.name + ": Executing " + test + " ..."
+            self.log << self.name + ": Executing " + self.currenttest + " ..."
         else:
             self.log << 'Powercycling Testboards'
         for Testboard in self.Testboards:
-            self._execute_testboard(Testboard):
-        while self.sclient.anzahl_threads > 0 and any([Testboard.busy for Testboard in Testboards]):
+            self._execute_testboard(Testboard)
+        while self.sclient.anzahl_threads > 0 and any([Testboard.busy for Testboard in self.Testboards]):
             sleep(.5)
-            packet = self.sclient.getFirstPacket(psiSubscription)
+            packet = self.sclient.getFirstPacket(self.subscription)
             if not packet.isEmpty() and not "pong" in packet.data.lower():
                 data = packet.data
                 Time,coms,typ,msg = decode(data)[:4]
                 if coms[0].find('STAT')==0 and coms[1].find('TB')==0 and typ == 'a' and msg=='test:finished':
                     index=[Testboard.slot==int(coms[1][2]) for Testboard in self.Testboards].index(True)
-                    self.Testboards[index].finished()
                     self.Testboards[index].busy=False
                 if coms[0][0:4] == 'STAT' and coms[1][0:2] == 'TB' and typ == 'a' and msg=='test:failed':
                     index=[Testboard.slot==int(coms[1][2]) for Testboard in self.Testboards].index(True)
-                    if not self.currenttest == 'powercycle':
-                        self.Testboards[index].failed()
-                    else:
+                    if self.currenttest == 'powercycle':
                         sleep(1)
                         raise Exception('Could not open Testboard at %s.'%Testboard.slot)
                     self.Testboards[index].busy=False
@@ -127,7 +133,7 @@ class psi_agente(el_agente.el_agente):
             #        self.log.warning('\t--> I will abort the tests...')
             #        self.log.printn()
             #        for Testboard in self.Testboards:
-            #            self.sclient.send(psiSubscription,':prog:TB%s:kill\n'%Testboard.slot)
+            #            self.sclient.send(self.subscription,':prog:TB%s:kill\n'%Testboard.slot)
             #            self.log.warning('\t Killing psi46 at Testboard %s'%Testboard.slot)
             #            index=[Testboard.slot==int(coms[1][2]) for Testboard in self.Testboards].index(True)
             #            Testboard.failed()
@@ -136,37 +142,39 @@ class psi_agente(el_agente.el_agente):
 
     def _execute_testboard(self,Testboard): 
         Testboard.busy=True
-        self.sclient.send(psiSubscription,':prog:TB%s:start %s,%s,commander_%s\n'%(Testboard.slot,Directories['testdefDir']+'/'+ self.currenttest,Testboard.testdir,self.currenttest))
+        self.sclient.send(self.subscription,':prog:TB%s:start %s,%s,commander_%s\n'%(Testboard.slot,self.Directories['testdefDir']+'/'+ self.currenttest,Testboard.testdir,self.currenttest))
         if not self.currenttest == 'powercycle':
             self.log.printn()
             self.log << 'psi46 at Testboard %s is now started'%Testboard.slot
 
-	def cleanup_test(self):
-		# Run after a test has executed
-		if not self.active:
-			return True
+    def cleanup_test(self):
+        # Run after a test has executed
+        if not self.active:
+            return True
         if not self.currenttest == 'powercycle':
             self.numerator += 1
         else:
-            for Testboard in Testboards:
+            for Testboard in self.Testboards:
                 self._deldir(Testboard)
-		return True
+        return True
 
-	def final_test_cleanup(self):
-		# Run after a test has executed
-		if not self.active:
-			return True
-		return True
+    def final_test_cleanup(self):
+        # Run after a test has executed
+        self.powercycle()
+        if not self.active:
+            return True
+        return True
 
-	def check_finished(self):
-		if not self.active or not self.pending:
-			return True
+    def check_finished(self):
+        if not self.active or not self.pending:
+            return True
 
     def _setupdir_testboard(self,Testboard):
         self.log.printn()
-        self.log << 'I setup the directories:'
-        self.log << '\t- %s'%Testboard.testdir
-        self.log << '\t  with default Parameters from %s'%Testboard.defparamdir
+        if not self.currenttest == 'powercycle':
+            self.log << 'I setup the directories:'
+            self.log << '\t- %s'%Testboard.testdir
+            self.log << '\t  with default Parameters from %s'%Testboard.defparamdir
         #copy directory
         try:
             copytree(Testboard.defparamdir, Testboard.testdir)
@@ -183,7 +191,7 @@ class psi_agente(el_agente.el_agente):
         except OSError as e:
             self.log.warning("OS error({0}): {1}".format(e.errno, e.strerror))
 
-    def _deldir_testboard(self,Testboard):
+    def _deldir(self,Testboard):
         try:
             rmtree(Testboard.testdir)
         except:
@@ -191,10 +199,10 @@ class psi_agente(el_agente.el_agente):
             pass
 
     def open_testboard(self,Testboard):
-        self.sclient.clearPackets(psiSubscription)
+        self.sclient.clearPackets(self.subscription)
         self.log << self.name + ": Opening Testboard " + Testboard.slot  + " ..."
-        self.client.send(psiSubscription,':prog:TB%s:open %s\n'%(Testboard.slot,Testboard.testdir)) 
+        self.client.send(self.subscription,':prog:TB%s:open %s\n'%(Testboard.slot,Testboard.testdir)) 
     
     def close_testboard(self,Testboard):
         self.log << self.name + ": Closing Testboard " + Testboard.slot  + " ..."
-        self.client.send(psiSubscription,':prog:TB%s:close %s\n'%(Testboard.slot,Testboard.testdir))
+        self.client.send(self.subscription,':prog:TB%s:close %s\n'%(Testboard.slot,Testboard.testdir))
