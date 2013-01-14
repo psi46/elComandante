@@ -13,3 +13,4 @@ class Testboard:
         self.timestamp=0
         self.parentDir='.'
         self.active=True
+        self.numerator = 0

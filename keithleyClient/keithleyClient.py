@@ -10,7 +10,6 @@ import keithleyInterface
 import os
 import serial
 import signal
-#from decode import is_float
 from time import sleep
 ON = 1
 OFF = 0
@@ -212,11 +211,11 @@ def  analyseIV(coms,typ,msg):
         if msg.lower().find('meas')>=0 and typ=='c':
             outMsg= 'Do Sweep from %.2f V to %.2f'%(startValue,stopValue)
             outMsg+=' in steps of %.2fV with a delay of %.f\n'%(stepValue,delay)
-            outMsg+='TestDirectory is "%s"'%testDir
+            outMsg+='\tTestDirectory is "%s"\n'%testDir
             Logger << outMsg
             client.send(aboName,outMsg)
             sweep()
-        else:
+        elif typ!='a':
             Logger << 'error'
             printHelp()
     elif len(coms)==1:
@@ -272,7 +271,7 @@ def  analyseIV(coms,typ,msg):
         Logger << outMsg
         outMsg+='\n'
         client.send(aboName,outMsg)
-    else:
+    elif typ != 'a':
         Logger << 'error prog iv len to long'
         printHelp()
     pass
@@ -298,7 +297,7 @@ def analyseProg(coms,typ,msg):
 
 def analyseOutp(coms,typ,msg): #pretty much ok
     #Logger << 'analyse Output'
-    if len(coms)>0:
+    if len(coms)>0 and  typ != 'a':
         Logger << 'not valid command: %s %s %s '%(coms, typ, msg)
         printHelp()
     else:
@@ -315,10 +314,10 @@ def analyseOutp(coms,typ,msg): #pretty much ok
                 keithley.setOutput(ON)
             elif msg in ['0','OFF','False']:
                 keithley.setOutput(OFF)
-            else: 
+            elif  typ != 'a':
                 Logger << 'message of :OUTP not valid: %s, valid messages are \'ON\',\'OFF\''%msg
                 printHelp()
-        else:
+        elif  typ != 'a':
             Logger << 'this a non valid typ'
             printHelp()
     pass
@@ -327,14 +326,14 @@ def analysePacket(coms,typ,msg):
     if coms[0].find('PROG')>=0:
         if len(coms[1:])>0:
             analyseProg(coms[1:],typ,msg)
-        else:
+        elif typ != 'a':
             Logger << 'not valid packet: %s'%coms
             printHelp()
         pass
     elif coms[0].find('OUTP')>=0:
         analyseOutp(coms[1:],typ,msg)
         pass
-    elif coms[0].find('HELP')>=0:
+    elif coms[0].find('HELP')>=0 and typ != 'a':
         printHelp()
     elif coms[0]=='K':
         command = ":".join(map(str, coms[1:]))+' '+msg

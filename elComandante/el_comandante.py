@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import sys
 sys.path.insert(1, "../")
-from myutils import BetterConfigParser, sClient, decode, printer
+from myutils import BetterConfigParser, sClient, decode, printer, preexec
 from myutils import Testboard as Testboarddefinition
 from time import strftime, gmtime
 import time
@@ -14,6 +14,7 @@ import xray_agente
 import psi_agente
 import coolingBox_agente
 import analysis_agente
+import highVoltage_agente
 import signal
 
 los_agentes = []
@@ -44,12 +45,6 @@ def killChildren():
             agente.kill_client()
         except:
             agente.log.warning("Could not kill %s" % agente.name)
-
-    try:
-        keithleyChild.kill()
-    except:
-        print "couldn't kill keithleyChild"
-        pass
 
 def handler(signum, frame):
     print 'Signal handler called with signal %s' % signum
@@ -156,27 +151,29 @@ try:
     analysisSubscription = config.get('subsystem','analysisSubscription')
 
 #create subserver client
-    client = sClient(serverZiel,serverPort,"kuehlingboxcommander")
+    client = sClient(serverZiel,serverPort,"elComandante")
 
     # Create agentes that are responsible for client processes
     los_agentes.append(psi_agente.psi_agente(timestamp, Logger, client))
+    los_agentes.append(highVoltage_agente.highVoltage_agente(timestamp,Logger,client))
     if init.getboolean("Xray", "XrayUse"):
         los_agentes.append(xray_agente.xray_agente(timestamp, Logger, client))
     los_agentes.append(analysis_agente.analysis_agente(timestamp, Logger, client))
     if init.getboolean("CoolingBox", "CoolingBoxUse"):
         los_agentes.append(coolingBox_agente.coolingBox_agente(timestamp, Logger,client))
-
+    
+    print 'agentes: '
     print [agente.name for agente in los_agentes]
 
     # Make the agentes read their configuration and initialization parameters
     for agente in los_agentes:
+        Logger << "setup of Agente: %s"% agente.name
         agente.setup_dir(Directories)
         agente.setup_configuration(config)
         agente.setup_initialization(init)
+        
 #subscribe subscriptions
     subscriptionList = []
-    if init.getboolean("Keithley", "KeithleyUse"):
-        subscriptionList.append(keithleySubscription)
     if init.getboolean("CoolingBox", "CoolingBoxUse"):
         subscriptionList.append(coolingBoxSubscription)
     for subscription in subscriptionList:
@@ -185,7 +182,6 @@ try:
     for agente in los_agentes:
         agente.subscribe()
 
-#handler
  #directory config
     Logger.printw() #welcome message
 #get list of tests to do:
@@ -202,83 +198,31 @@ try:
             except:
                 os.mkdir(Testboard.parentDir)
             return Testboard.parentDir
-#
-#-----------IV function-----------------------
-    #ToDo!!!
-    def doIVCurve(temp):
-        client.clearPackets(psiSubscription)
-        for Testboard in los_agentes[0].Testboards:
-            Testboard.timestamp=timestamp
-            Testboard.currenttest=item
-            Testboard.testdir=Testboard.parentDir+'/%s_IV_%s'%(int(time.time()),temp)
-            setupdir(Testboard)
-            Logger << 'DO IV CURVE for Testboard slot no %s'%Testboard.slot
-            #%(Testboard.address,Testboard.module,Testboard.slot),Testboard
-            ivStart = float(init.get('IV','Start'))
-            ivStop  = float(init.get('IV','Stop'))
-            ivStep  = float(init.get('IV','Step'))
-            ivDelay = float(init.get('IV','Delay'))
-            ivDone = False
-            client.send(keithleySubscription,':PROG:IV:START %s'%ivStart)
-            client.send(keithleySubscription,':PROG:IV:STOP %s'%ivStop)
-            client.send(keithleySubscription,':PROG:IV:STEP %s'%ivStep)
-            client.send(keithleySubscription,':PROG:IV:DELA Y%s'%ivDelay)
-            client.send(keithleySubscription,':PROG:IV:TESTDIR %s'%Testboard.testdir)
-#todo check if testdir exists...
-            client.send(psiSubscription,':prog:TB%s:open %s,commander_%s\n'%(Testboard.slot,Testboard.testdir,whichtest))
-            time.sleep(2.0)
-            client.send(keithleySubscription,':PROG:IV MEAS\n')
-            while client.anzahl_threads >0 and not ivDone:
-                    time.sleep(.5)
-                    packet = client.getFirstPacket(keithleySubscription)
-                    if not packet.isEmpty() and not "pong" in packet.data.lower():
-                        #DONE
-                        data = packet.data
-                        Time,coms,typ,msg,fullComand = decode(data)
-                        if len(coms) > 1:
-                            if coms[0].find('PROG')>=0 and coms[1].find('IV')>=0 and typ == 'a' and (msg == 'FINISHED'):
-                                Logger << '\t--> IV-Curve FINISHED'
-                                ivDone = True
-                            elif coms[0].find('IV')==0 and typ == 'q':
-                                #print fullComand
-                                pass
-                        else:
-                            pass
-                        pass
-                    else:
-                        pass
+        
+    def waitForFinished(los_agentes):
+        finished = False
+        while not finished:
+            time.sleep(1.0)
+            finished = all([agente.check_finished() for agente in los_agentes])
+            output = '\t'
+            for agente in los_agentes:
+                output += '%s: %s\t'%(agente.name,int(agente.check_finished()))
+            if not finished:
+                sys.stdout.write('%s\r' %output)
+            sys.stdout.flush()
+        print ''
 
-        Logger << 'try to close TB, time.sleep for 5 seconds'
-        client.send(psiSubscription,':prog:TB%s:close %s,commander_%s\n'%(Testboard.slot,Testboard.testdir,whichtest))
-        time.sleep(5)
-        powercycle(Testboard)
-
-
-
-    def preexec():#Don't forward Signals.
-        os.setpgrp()
 
     # Check whether the client is already running before trying to start it
     Logger << "Check whether clients are runnning ..."
     for agente in los_agentes:
+        Logger << "%s: "%agente.name
         agente.check_client_running()
-
-    for clientName in ["jumoClient","keithleyClient"]:
-        if clientName == "jumoClient" and init.getboolean("CoolingBox", "CoolingBoxUse"):
-            continue
-        if clientName == "keithleyClient" and init.getboolean("Keithley", "KeithleyUse")==False:
-            continue
-        if not os.system("ps aux |grep -v grep| grep -v vim|grep -v emacs|grep %s"%clientName):
-            raise Exception("another %s is already running. Please Close client first"%clientName)
-
 
     for agente in los_agentes:
         agente.start_client(timestamp)
 
 
-#open Keithley handler
-    if init.getboolean("Keithley", "KeithleyUse"):
-        keithleyChild = subprocess.Popen("xterm +sb -geometry 80x25+1200+1300 -fs 10 -fa 'Mono' -e %s/keithleyClient.py -d %s -dir %s -ts %s"%(Directories['keithleyDir'],config.get("keithleyClient","port"),Directories['logDir'],timestamp), shell=True,preexec_fn = preexec)
 #check subscriptions?
 
     # Check the client subscriptions
@@ -310,13 +254,21 @@ try:
     Logger.printv()
     Logger << 'I found the following Tests to be executed:'
     Logger.printn()
+    testlist2 = []
     for item in testlist:
         if item.find('@')>=0:
-            whichtest, temp = item.split('@')
+            whichtest, env = item.split('@')
         else:
             whichtest = item
-            temp = 17.0
-        Logger << '\t- %s at %s degrees'%(whichtest, temp)
+            env = 17.0
+        if 'IV' in item:
+            for Testboard in los_agentes[0].Testboards:
+                testlist2.append('%s_TB%s@%s'%(whichtest,Testboard.slot,env))
+                Logger << '\t- %s_TB%s at %s degrees'%(whichtest,Testboard.slot, env)
+        else:
+            testlist2.append(item)
+            Logger << '\t- %s at %s degrees'%(whichtest, env)
+    testlist = testlist2
 #------------------------------------------
 
 
@@ -327,7 +279,7 @@ try:
     for item in testlist:
         Logger << item
         env = environment.environment(item, init)
-
+        temp = env.temperature
         # Prepare for the tests
         Logger << "Prepare Test: %s"%item
         for agente in los_agentes:
@@ -335,52 +287,24 @@ try:
         # Wait for preparation to finish
         Logger << "Wait for preparation to finish"
         finished = False
-        while not finished:
-                finished = True
-                for agente in los_agentes:
-                    finished = finished and agente.check_finished()
-                time.sleep(0.1)
+        waitForFinished(los_agentes)
+
+                
         Logger << "Prepared for test %s"%item
 
-        time.sleep(1.0)
-        if item == 'Cycle':
-            pass
-            #doCycle()
-        else:
-            if init.getboolean("Keithley", "KeithleyUse"):
-                client.send(keithleySubscription,':OUTP ON\n')
-            if item.find('@')>=0:
-                whichtest, temp = item.split('@')
-            else:
-                whichtest = item
-                temp =17.0
-            Logger.printv()
-            Logger << 'I do now the following Test:'
-            Logger << '\t%s at %s degrees'%(whichtest, temp)
-
-            if whichtest == 'IV':
-                doIVCurve(temp)
-            else:
-                pass
-                #doPSI46Test(whichtest,temp)
-
         # Execute tests
+        Logger.printv()
+        Logger << 'I do now the following Test:'
+        Logger << '\t%s at %s degrees'%(whichtest, temp)
         Logger << "Execute Test: %s"%item
         for agente in los_agentes:
             agente.execute_test()
+            time.sleep(1.0)            
 
         # Wait for test execution to finish
         Logger << "Wait for test execution to finish"
-        finished = False
-        while not finished:
-                finished = True
-                for agente in los_agentes:
-                    finished = finished and agente.check_finished()
-                time.sleep(0.1)
+        waitForFinished(los_agentes)
         Logger << "Item %s has been finished."%item
-
-        if init.getboolean("Keithley", "KeithleyUse"):
-            client.send(keithleySubscription,':OUTP OFF\n')
 
         # Cleanup tests
         Logger << "start with Clean Up tests."
@@ -388,12 +312,7 @@ try:
             agente.cleanup_test()
 
         # Wait for cleanup to finish
-        finished = False
-        while not finished:
-                finished = True
-                for agente in los_agentes:
-                    finished = finished and agente.check_finished()
-                time.sleep(0.1)
+        waitForFinished(los_agentes)
         Logger << " Clean Up tests Done"
         Logger.printv()
 
@@ -404,12 +323,7 @@ try:
 
     # Wait for final cleanup to finish
     Logger << "Wait for final clean up to finish"
-    finished = False
-    while not finished:
-            finished = True
-            for agente in los_agentes:
-                finished = finished and agente.check_finished()
-                time.sleep(0.1)
+    waitForFinished(los_agentes)
     Logger << "Final Clean up has been done"
 
 #-------------Heat up---------------
@@ -436,6 +350,7 @@ try:
     killChildren();
 
     del Logger
+    #todo
     for Testboard in los_agentes[0].Testboards:
             try:
                 copytree(Directories['logDir'],Testboard.parentDir+'logfiles')

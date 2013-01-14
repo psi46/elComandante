@@ -2,12 +2,10 @@ import os
 import subprocess
 import sys
 sys.path.insert(1,"../")
-from myutils import sClient,decode,printer
+from myutils import sClient,decode,printer,preexec
 import el_agente
 import time
 
-def preexec():
-    os.setpgrp()
 
 class coolingBox_agente(el_agente.el_agente):
     def __init__(self, timestamp, log, sclient):
@@ -15,7 +13,7 @@ class coolingBox_agente(el_agente.el_agente):
         self.name = "coolingBoxClient"
         self.log = log
         self.sclient = sclient
-        self.active = 0
+        self.active = False
         self.pending = False
         self.Temperature = 17
         self.counter = 0
@@ -65,12 +63,7 @@ class coolingBox_agente(el_agente.el_agente):
     def subscribe(self):
         if(self.active):
             self.sclient.subscribe(self.subscription)
-    def check_subscription(self):
-        # Verify the subsystem connection
-        if (self.active):
-                return self.sclient.checkSubscription(self.subscription)
-        return True
-
+            
     def request_client_exit(self):
         # Request the client to exit with a command
         # through subsystem
