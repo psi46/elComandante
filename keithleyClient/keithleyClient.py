@@ -90,10 +90,8 @@ client = sClient(serverZiel,serverPort,"keithleyClient")
 client.subscribe(aboName)
 client.send(aboName,'Connecting Keithley Client with Subsystem\n')
 keithley=keithleyInterface.keithleyInterface(serialPort)
-keithley.setOutput(ON)
-Logger << 'status:%s'%keithley.getOutputStatus()
 keithley.setOutput(OFF)
-Logger << 'status:%s'%keithley.getOutputStatus()
+#Logger << 'status:%s'%keithley.getOutputStatus()
 
 def readCurrentIV():
     if keithley.getOutputStatus():
@@ -104,13 +102,14 @@ def readCurrentIV():
                 voltage = float(data[0])
                 current = float(data[1])
                 resistance = float(data[2])
-                Logger << '%s: %s V - %s A'%(timestamp,data[0],data[1])
+                #Logger << '%s: %s V - %s A'%(timestamp,data[0],data[1])
                 IVLogger << '%s: %s V - %s A'%(timestamp,data[0],data[1])
                 client.send(voltageAbo,'%s\n'%voltage)
                 client.send(currentAbo,'%s\n'%current)
                 client.send(resistanceAbo,'%s\n'%resistance)
         else:
-            Logger << ' could somehow not read data correctly: %s'%data
+            #Logger << ' could somehow not read data correctly: %s'%data
+            pass
     else:
         Logger << 'output is off'
         
@@ -119,12 +118,12 @@ def sweep():
     global testDir
     doingSweep = True
     outputStatus = keithley.getOutputStatus()
-    client.send(aboName,'Start with Linear Sweep from %sV to %sV in %sV steps\n'%(startValue,stopValue,stepValue))
+    client.send(aboName,':MSG! Start with Linear Sweep from %sV to %sV in %sV steps\n'%(startValue,stopValue,stepValue))
     Logger << "TestDirectory is: %s"%testDir
     ntries = 0
     while True:
         retVal = keithley.doLinearSweep(startValue, stopValue, stepValue, nSweeps, delay)
-        Logger << 'keithley RetVal: %s'%retVal
+#        Logger << 'keithley RetVal: %s'%retVal
         ntries+=1
         if retVal!=0 or ntries>=maxSweepTries:
             Logger << 'exit while loop'
@@ -206,7 +205,7 @@ def  analyseIV(coms,typ,msg):
     global maxSwepTries
     global nSweeps
     global testDir
-    Logger <<'analyse :IV'
+#    Logger <<'analyse :IV'
     if len(coms)==0:
         if msg.lower().find('meas')>=0 and typ=='c':
             outMsg= 'Do Sweep from %.2f V to %.2f'%(startValue,stopValue)
@@ -219,15 +218,15 @@ def  analyseIV(coms,typ,msg):
             Logger << 'error'
             printHelp()
     elif len(coms)==1:
-        Logger << 'iv len >0'
+#        Logger << 'iv len >0'
         outMsg = 'not Valid Input'
         if coms[0].lower().find('testdir')>=0:
             if typ =='c':
-                Logger << '%s: "%s"'%(coms[0],msg)
+#                Logger << '%s: "%s"'%(coms[0],msg)
                 testDir = msg
                 try:
                     os.stat(testDir)
-                    Logger << 'checked Directory'
+#                    Logger << 'checked Directory'
                 except:
                     outMsg = ':IV:TESTDIR! %s: directory does not exist. Error!'%testDir
                 else:
@@ -236,49 +235,54 @@ def  analyseIV(coms,typ,msg):
         if coms[0].find('START')>=0:
             if typ =='c' and is_float(msg):
                 startValue=float(msg)
-                Logger << 'prog-iv-start=%s'%msg
+#                Logger << 'prog-iv-start=%s'%msg
             elif typ =='q':
-                Logger << 'prog-iv-start?'
+#                Logger << 'prog-iv-start?'
+                pass
             outMsg = ':PROG:IV:START! %s'%startValue
         elif coms[0].find('STOP')>=0:
             if typ =='c'and is_float(msg):
                 stopValue = float(msg)
-                Logger << 'prog-iv-stop=%s'%msg
+#                Logger << 'prog-iv-stop=%s'%msg
             elif typ =='q':
-                Logger << 'prog-iv-stop?'
+#                Logger << 'prog-iv-stop?'
+                pass
             outMsg = ':PROG:IV:STOP! %s'%stopValue
         elif coms[0].find('STEP')>=0:
             if typ =='c'and is_float(msg):
                 stepValue=float(msg)
-                Logger << 'prog-iv-step=%s'%msg
+#                Logger << 'prog-iv-step=%s'%msg
             elif typ =='q':
-                Logger << 'prog-iv-step?'
+#                Logger << 'prog-iv-step?'
+                pass
             outMsg = ':PROG:IV:STEP! %s'%stepValue
         elif coms[0].find('DEL')>=0:           
             if typ =='c'and is_float(msg):
                 delay=float(msg)
-                Logger << 'prog-iv-delay=%s'%msg
+#                Logger << 'prog-iv-delay=%s'%msg
             elif typ =='q':
-                Logger << 'prog-iv-delay?'
+#                Logger << 'prog-iv-delay?'
+                Logger
             outMsg = ':PROG:IV:DELAY! %s'%delay
         elif coms[0].find('MAXTRIPS')>=0:           
             if typ =='c' and is_float(msg):
                 maxSweepTries=float(msg)
-                Logger << 'prog-iv-trip=%s'%msg
+#                Logger << 'prog-iv-trip=%s'%msg
             elif typ =='q':
-                Logger << 'prog-iv-trip?'
+#                Logger << 'prog-iv-trip?'
+                pass
             outMsg = ':PROG:IV:TRIP! %s'%delay
         Logger << outMsg
         outMsg+='\n'
         client.send(aboName,outMsg)
     elif typ != 'a':
-        Logger << 'error prog iv len to long'
+#        Logger << 'error prog iv len to long'
         printHelp()
     pass
         
 def analyseProg(coms,typ,msg):
-    Logger << 'analyse :PROG'
-    Logger << coms
+#    Logger << 'analyse :PROG'
+#    Logger << coms
     if coms[0].find('IV')>=0:
         analyseIV(coms[1:],typ,msg)
         pass
@@ -288,17 +292,16 @@ def analyseProg(coms,typ,msg):
         elif msg in ['OFF','FALSE','0']:
             keithley.initKeithley()
     elif coms[0].find('EXIT')>=0 and typ =='c':
-        Logger << 'end program'
+#        Logger << 'end program'
         client.closeConnection();
-        
     else:
-        Logger <<Help()
+        Logger << Help()
     pass
 
 def analyseOutp(coms,typ,msg): #pretty much ok
     #Logger << 'analyse Output'
     if len(coms)>0 and  typ != 'a':
-        Logger << 'not valid command: %s %s %s '%(coms, typ, msg)
+#        Logger << 'not valid command: %s %s %s '%(coms, typ, msg)
         printHelp()
     else:
         if typ=='q':
@@ -307,7 +310,7 @@ def analyseOutp(coms,typ,msg): #pretty much ok
             outMsg = ':OUTP! '
             outMsg+= 'ON' if status else 'OFF'
             outMsg+='\n'
-            Logger << outMsg
+#            Logger << outMsg
             client.send(aboName,outMsg)
         elif typ=='c':
             if msg in ['1','ON','True']:
@@ -359,7 +362,7 @@ while client.anzahl_threads > 0 and End == False and client.isClosed == False:
     
     if not packet.isEmpty():
 
-        Logger << 'got Packet: %s'%packet.Print()
+        #Logger << 'got Packet: %s'%packet.Print()
         data = packet.data
         timeStamp,coms,typ,msg,command = decode(data)
         # 'T:',timeStamp, 'Comand:',command

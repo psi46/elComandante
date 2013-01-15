@@ -9,6 +9,7 @@ OFF=0
 class keithleyInterface:
     def __init__(self,serialPortName):
         self.bOpen=False
+        self.bOpenInformed=False
         self.serialPortName=serialPortName
         self.writeSleepTime=0.1
         self.readSleepTime=0.2
@@ -47,10 +48,8 @@ class keithleyInterface:
         if self.bOpen:
             output = self.serial.write(data)
         else:
-            print 'Writing: %s'%data
             output = True
         time.sleep(self.writeSleepTime)
-        print '%s: %s'%(output,data)
         return output==len(data)
 
     def read(self,minLength=1):
@@ -58,7 +57,9 @@ class keithleyInterface:
         i=0
         #print  self.serial.inWaiting()
         if not self.bOpen:
-            print 'cannot read since Not serial port is not open'
+            if not self.bOpenInformed:
+                print 'cannot read since Not serial port is not open'
+                self.bOpenInformed = False
             return ''
         while self.serial.inWaiting()<=0 and i<10:
             time.sleep(self.readSleepTime)
@@ -112,17 +113,17 @@ class keithleyInterface:
         else:
             data+='OFF'
             printVal += 'OFF'
-        print printVal
+#        print printVal
         return self.write(data)
     
     def getOutputStatus(self):
-        print 'Get Output Status'
+#        print 'Get Output Status'
         data = ':OUTP?'
         answer = self.getAnswerForQuery(data)
-        print 'length ',len(answer)
+#        print 'length ',len(answer)
         while len(answer)>1 and not self.is_number(answer):
             answer= self.getAnswerForQuery(data)
-        print answer
+#        print answer
         if len(answer)>0 and not answer=='':
             stat = int(answer)
         else:
@@ -136,7 +137,7 @@ class keithleyInterface:
         
     def clearBuffer(self):
         if self.bOpen:
-            print 'clearing Buffer: %s'%self.serial.inWaiting()
+#            print 'clearing Buffer: %s'%self.serial.inWaiting()
             while self.serial.inWaiting():
                 self.read()
                 time.sleep(self.readSleepTime)
@@ -159,13 +160,13 @@ class keithleyInterface:
         
     
     def setTriggerCounter(self,nTrig):
-        print 'set Trigger Counter: %s'%nTrig
+#        print 'set Trigger Counter: %s'%nTrig
         if nTrig<1 or nTrig>= 2500:
-            print 'Trigger Counter is not in allowed range',nTrig
+#            print 'Trigger Counter is not in allowed range',nTrig
             return -1
         return self.write(':TRIG:COUN %s'%int(nTrig))
         
-    def setVoltageSweepStartValue(self,startValue):
+    def setVolteepSweepStartValue(self,startValue):
         if not self.validVoltage(startValue):
             return -1
         return self.write(':SOUR:VOLT:START %s'%startValue)
@@ -344,9 +345,9 @@ class keithleyInterface:
             return -1
             
     def getSweepPoints(self):
-        print 'getSweepPoints'
+#        print 'getSweepPoints'
         data = self.getAnswerForQuery(':SOUR:SWE:POIN?')
-        print 'receivedData %s'%data
+#        print 'receivedData %s'%data
         if data =='':
             return -1
         nSweepPoints = int(data)
@@ -366,11 +367,11 @@ class keithleyInterface:
     
     
     def getAnswerForQuery(self,data,minlength =1):
-        print 'getAnswer for query: %s'%data
+#        print 'getAnswer for query: %s'%data
         self.write(data)
         time.sleep(self.readSleepTime)
         data = self.read(minlength)
-        print 'length is %s'%len(data)
+#        print 'length is %s'%len(data)
         return self.clearString(data)
     
     def  validVoltage(self,value): #TODO Write function which 'knows' if the voltage is possible
@@ -385,28 +386,31 @@ class keithleyInterface:
         return data.strip()
     
     def convertData(self,timestamp,data):
-        if type(data)==str:
-            newData = data.split(' ')
-        elif type(data)==list:
-            newData=data
-        else:
-            raise Exception('convertDAta: unvalid type!')
-        if len(newData)%5 != 0:
-            raise Exception('Something is wrong with the string, length=%s  \'%s\''%(len(newData),data))
-            return -1
-        if len(newData)>5:
-            retVal = self.convertData(timestamp,newData[:5])
-            retVal = self.convertData(timestamp,newData[5:])
-        measurment = [float(x) for x in newData]
-        measurment.insert(0,timestamp)
-        self.measurments.append(measurment)
-        self.lastVoltage = measurment[0]
-        tripped = self.isTriped(measurment[5])
-        print '%s:\tMeasured at %s V: %s A, %s, %s, %s \t=> new Length of Queue: %s'%(measurment[0],measurment[1],measurment[2],measurment[3],measurment[4],tripped,len(self.measurments))
-        if tripped:
-            return False
-        else:
-            return True
+        try:
+            if type(data)==str:
+                newData = data.split(' ')
+            elif type(data)==list:
+                newData=data
+            else:
+                raise Exception('convertData: unvalid type!')
+            if len(newData)%5 != 0:
+                print 'Something is wrong with the string, length=%s  \'%s\''%(len(newData),data)
+                return -1
+            if len(newData)>5:
+                retVal = self.convertData(timestamp,newData[:5])
+                retVal = self.convertData(timestamp,newData[5:])
+            measurment = [float(x) for x in newData]
+            measurment.insert(0,timestamp)
+            self.measurments.append(measurment)
+            self.lastVoltage = measurment[0]
+            tripped = self.isTriped(measurment[5])
+            print '%s:\tMeasured at %s V: %s A, %s, %s, %s \t=> new Length of Queue: %s'%(measurment[0],measurment[1],measurment[2],measurment[3],measurment[4],tripped,len(self.measurments))
+            if tripped:
+                return False
+            else:
+                return True
+        except:
+            raise
         
     def readSweepOutput(self,nTrig,firstCall):
         time.sleep(1.0)
@@ -418,15 +422,17 @@ class keithleyInterface:
         timestamp = time.time()
         isLastOfSweep= (data.find('\r')<0)
         data = self.clearString(data)
-        tripped = not self.convertData(timestamp,data)
-        retVal =-3
+        retVal = self.convertData(timestamp,data)
+        tripped = not retVal
+        if retVal == -1:
+            pass
+        else:
+            retVal =-3
         if tripped:
             retVal = 0
             print 'Keithley is Tripped'
-            
-        #print '%s, %s: %s'%(nTrig,len(data),data)
-        if retVal==-3:
-            print 'RetVal %s'%retVal
+        elif retVal==-3:
+#            print 'RetVal %s'%retVal
             if  nTrig >=0:
                 if isLastOfSweep:
                     retVal = self.readSweepOutput(nTrig,False)
@@ -437,7 +443,7 @@ class keithleyInterface:
             else:
                 retVal= -1
         
-        print 'readSweepOutput RetVal: %s'%retVal
+#        print 'readSweepOutput RetVal: %s'%retVal
         return retVal
     
     def initFourWireResistensMeasurement(self):
@@ -458,34 +464,26 @@ class keithleyInterface:
         #:OUTPut <state>
         #:READ?
     def doLinearSweep(self,startValue,stopValue,stepValue,nSweeps,delay):
-        print self.clearErrorQueue()
-        print self.clearBuffer()
-        print self.setMeasurementDelay(delay)
-        print self.setSweepRangingMode('BEST')
-        print self.setSweepSpacingType('LIN')
-        print self.setVoltSourceMode('SWEEP')
-        print self.setVoltageSweepStartValue(startValue)
-        print self.setVoltageSweepStopValue(stopValue)
+        self.clearErrorQueue()
+        self.clearBuffer()
+        self.setMeasurementDelay(delay)
+        self.setSweepRangingMode('BEST')
+        self.setSweepSpacingType('LIN')
+        self.setVoltSourceMode('SWEEP')
+        self.setVolteepSweepStartValue(startValue)
+        self.setVoltageSweepStopValue(stopValue)
         
         if (stopValue-startValue)/stepValue <0:
             stepValue *= -1
-        print self.setVoltageSweepStepValue(stepValue)
-        print stopValue
-        print startValue
-        print stepValue
+        self.setVoltageSweepStepValue(stepValue)
         nTrig = int(stopValue-startValue)
-        print 'Delta: %s'%nTrig
         nTrig = nTrig/stepValue
-        print nTrig
         nTrig +=1
-        print nTrig
         nTrig = int(nTrig)
-        print nTrig
         nTrig *= nSweeps
         nTrig = int(nTrig)
-        print nTrig
-        print self.setTriggerCounter(nTrig)
-        print self.setOutput(True)
+        self.setTriggerCounter(nTrig)
+        self.setOutput(True)
         self.write(':READ?')
         retVal =  self.readSweepOutput(nTrig,True)
         print 'doLinearSweep retVal %s'%retVal
