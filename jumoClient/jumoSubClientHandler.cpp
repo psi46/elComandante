@@ -329,12 +329,14 @@ void jumoSubClientHandler::checkIfTempStable(float temp){
 	gettimeofday(&tv,NULL);
 	long now = tv.tv_sec;
 	long deltaTime = (long)now-(long)stableSince;
+	//set temperature for channel 1
 	if(isCycleStatus(status))
 		targetTemp=cycleLowTemp;
 	else
 		targetTemp=setPointTemp;
-    if(status==HEATING||status == CYCLE_HEATING||status==DRYING||status==CYCLE_DRYING)
+    if(status==HEATING||status == CYCLE_HEATING||status==DRYING||status==CYCLE_DRYING||status==HEATING_FOR_COOLING){
         targetTemp = +40;
+    }
 	float deltaT =  fabs(temp-targetTemp);
 	if(stableSince<0)deltaTime=0;
 	switch(status){
@@ -510,8 +512,10 @@ void jumoSubClientHandler::checkStatus(){
 		targetTemp=setPointTemp;
 		if(verbosity)cout<<getStatusString(status)<<" is a  normal Status!"<<targetTemp<<endl;
 	}
-	if (status==HEATING||status==CYCLE_HEATING)
+	if (status==HEATING||status==CYCLE_HEATING){
 		targetTemp=+40;
+		jumo.setTargetTemperature(targetTemp);
+	}
 	if(status==COOLING||status==STABLE||status==CYCLE_COOLING||status==UNSTABLE){
 		jumo.setTargetTemperature(targetTemp);
 		if(verbosity)cout<<"Set new Temperature in Box to "<<targetTemp<<endl;
@@ -631,6 +635,7 @@ std::string jumoSubClientHandler::getProgHelp(int i){
 	help<<intend(i)<<":PROG:NUMber?       "<<"\n";
 	help<<intend(i)<<":PROG:PAUSe         "<<"\n";
 	help<<intend(i)<<":PROG:CYCLE (nTimes)"<<"\n";
+	help<<getCycleHelp(i);
 	cout<<help.str()<<endl;
 	return help.str();
 }
@@ -644,6 +649,13 @@ std::string jumoSubClientHandler::getMeasureHelp(int i){
 	help<<intend(i)<<":MEASure:HUMidity?              "<<"\treturns current Jumo Humidity\n";
 	help<<intend(i)<<":MEASure:HUMidity:MAX?          "<<"\treturns maximum allowed Humidtiy\n";
 	help<<intend(i)<<":MEASure:HUMidity:MAX (VAL)     "<<"\tsets maximum allowed Humidtiy to VAL\n";
+	cout<<help.str()<<endl;
+	return help.str();
+}
+std::string jumoSubClientHandler::getCycleHelp(int i){
+	stringstream help;
+	help<<intend(i)<<":PROG:CYCLE:HIGHTEMP VAL        "<<"\tset cycle high temperature\n";
+	help<<intend(i)<<":PROG:CYCLE:LOWTEMP  VAL        "<<"\tset cycle high temperature\n";
 	cout<<help.str()<<endl;
 	return help.str();
 }

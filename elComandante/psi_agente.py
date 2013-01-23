@@ -180,15 +180,23 @@ class psi_agente(el_agente.el_agente):
             data = packet.data
             Time,coms,typ,msg = decode(data)[:4]
             if coms[0].find('STAT')==0 and coms[1].find('TB')==0 and typ == 'a' and msg=='test:finished':
-                index=[Testboard.slot==int(coms[1][2]) for Testboard in self.Testboards].index(True)
-                self.Testboards[index].busy=False
+                try:
+                    index=[Testboard.slot==int(coms[1][2]) for Testboard in self.Testboards].index(True)
+                    self.Testboards[index].busy=False
+                except:
+                    self.log<<"Couldn't find TB with slot %s"%coms[1][2]
             if coms[0][0:4] == 'STAT' and coms[1][0:2] == 'TB' and typ == 'a' and msg=='test:failed':
-                index=[Testboard.slot==int(coms[1][2]) for Testboard in self.Testboards].index(True)
-                if self.currenttest == 'powercycle':
+                try:
+                    index=[Testboard.slot==int(coms[1][2]) for Testboard in self.Testboards].index(True)
+                except:
+                    self.log<<"Couldn't find TB with slot %s"%coms[1][2]
+                    index =-1
+                if self.currenttest == 'powercycle' and index !=-1:
                     sleep(1)
                     raise Exception('Could not open Testboard at %s.'%Testboard.slot)
                     self.Testboards[index].busy=False
         self.pending = any([Testboard.busy for Testboard in self.Testboards])
+        self.log<<[Testboard.busy for Testboard in self.Testboards])
         return not self.pending
         
         

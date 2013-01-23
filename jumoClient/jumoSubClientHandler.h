@@ -83,6 +83,7 @@ private:
 	void printHelp();
 	std::string getProgHelp(int i=0);
 	std::string getMeasureHelp(int i=0);
+	std::string getCycleHelp(int i=0);
 	static std::string intend(int i=1);
 	int extractProgramNumber(std::string data);
 	void changeStatus(enumSTATUS newStatus);

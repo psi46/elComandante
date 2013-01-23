@@ -208,7 +208,11 @@ while client.anzahl_threads > 0 and not End:
         #Logger << cmd
         if coms[0].find('PROG')==0 and coms[1].find('TB')==0 and coms[2].find('OPEN')==0 and typ == 'c':
             #Logger << msg
-            dir, fname = msg.split(',')
+            splittedMsg =msg.split(',')
+            if len(splittedMsg) !=2:
+                print "couldnt convert Msg: %s --> %s"%(msg,splittedMsg)
+                raise Exception
+            dir, fname = splittedMsg
             TB=int(coms[1][2])
             if not busy[TB]:
                 DoTest[TB] = Thread(target=TBmasters[TB].openTB, args=(dir,fname,))
