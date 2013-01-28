@@ -83,10 +83,10 @@ class psi_agente(el_agente.el_agente):
                 self.currenttest = 'IV'
                 self.activeTestboard = int(activeTestboard[1].strip('TB'))
                 #print 'active testboard for IV is: %s'%self.activeTestboard
-            pass
-        self.log << "%s: Preparing %s, %s ..."%(self.name, self.currenttest,self.activeTestboard)
+        self.log << "%s: Preparing %s, TB%s ..."%(self.name, self.currenttest,self.activeTestboard)
         for Testboard in self.Testboards:
             self._prepare_testboard(Testboard)    
+        self.pending = False
         return True
 
     def _prepare_testboard(self,Testboard):
@@ -105,6 +105,8 @@ class psi_agente(el_agente.el_agente):
         for Testboard in self.Testboards:
             self._prepare_testboard(Testboard)
         self.execute_test()
+        while not self.check_finished():
+            sleep(1)
         self.cleanup_test()
 
     def execute_test(self):
@@ -114,6 +116,7 @@ class psi_agente(el_agente.el_agente):
         # Runs a test
         self.sclient.clearPackets(self.subscription)
         if 'IV' in self.currenttest:
+            self.pending = False
             return True
         elif not self.currenttest == 'powercycle':
             self.log << self.name + ": Executing " + self.currenttest + " ..."
@@ -194,7 +197,7 @@ class psi_agente(el_agente.el_agente):
                 if self.currenttest == 'powercycle' and index !=-1:
                     sleep(1)
                     raise Exception('Could not open Testboard at %s.'%Testboard.slot)
-                    self.Testboards[index].busy=False
+                self.Testboards[index].busy=False
         self.pending = any([Testboard.busy for Testboard in self.Testboards])
         self.log<<[Testboard.busy for Testboard in self.Testboards])
         return not self.pending
@@ -218,10 +221,14 @@ class psi_agente(el_agente.el_agente):
             f = open( '%s/configParameters.dat'%Testboard.testdir, 'w' )
             f.write(''.join(lines))
             f.close()
+            #print 'Testdir:' + Testboard.testdir
+            #print os.listdir(Testboard.testdir)
         except IOError as e:
             self.log.warning("I/O error({0}): {1}".format(e.errno, e.strerror))
+            raise
         except OSError as e:
             self.log.warning("OS error({0}): {1}".format(e.errno, e.strerror))
+            raise
 
     def _deldir(self,Testboard):
         try:

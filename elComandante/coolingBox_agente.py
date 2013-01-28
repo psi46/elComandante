@@ -87,14 +87,14 @@ class coolingBox_agente(el_agente.el_agente):
         if not self.active:
             return True
         self.log << "%s: Preparing %s @ %s..."%(self.name,test,environment.name)
-        if "cycle" not in test:
-            pass
         self.Temperature = environment.temperature
         self.log << "Target temperature: %s"%self.Temperature
         self.sclient.clearPackets(self.subscription)
+        self.currentTest = test
+        if "cycle" in test.lower():
+            return True
         self.stabalizeTemperature(environment.temperature)
         self.set_pending()
-        self.currentTest = test
         return True
 
     def execute_test(self):
@@ -102,7 +102,7 @@ class coolingBox_agente(el_agente.el_agente):
         self.log << "%s: execute Test \'%s\'"%(self.name,self.currentTest)
         if not self.active:
             return True
-        if "cycle" in test.lower():
+        if "cycle" in self.currentTest.lower():
             self.sclient.clearPackets(self.subscription)
             time.sleep(1.0)
             self.set_pending()

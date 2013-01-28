@@ -129,15 +129,22 @@ try:
     Logger.timestamp = timestamp
     Logger.set_logfile('%s/elComandante.log'%(Directories['logDir']))
     Logger<<'Set LogFile to %s'%Logger.f
+#i
+    #check if subsystem server is running, if not START subserver
+     
+    if os.system("ps -ef | grep -v grep | grep subserver"):
+        os.system("cd %s && subserver"%(Directories['subserverDir']))
+        if os.system("ps -ef | grep -v grep | grep subserver"):
+            raise Exception("Could not start subserver");
 
     #check if subsystem server is running, if not START subserver
-    if not "subserver.pid" in os.listdir("/var/tmp"):
-        Logger << "Starting subserver ..."
-        os.system("cd %s && subserver"%(Directories['subserverDir']))
-        time.sleep(0.2)
-        #check again whether it is running
-        if not "subserver.pid" in os.listdir("/var/tmp"):
-            raise Exception("Could not start subserver")
+    #if not "subserver.pid" in os.listdir("/var/tmp"):
+    #    Logger << "Starting subserver ..."
+    #    os.system("cd %s && subserver"%(Directories['subserverDir']))
+    #    time.sleep(0.2)
+    #    #check again whether it is running
+    #    if not "subserver.pid" in os.listdir("/var/tmp"):
+    #        raise Exception("Could not start subserver")
     Logger << "Subserver is running."
 
 #read subserver settings
@@ -200,11 +207,12 @@ try:
             return Testboard.parentDir
         
     def waitForFinished(los_agentes):
+        os.system('setterm -cursor off')
         finished = False
         while not finished:
             time.sleep(1.0)
             finished = all([agente.check_finished() for agente in los_agentes])
-            output = '\t'
+            output = ' \t'
             for agente in los_agentes:
                 output += '%s: %s\t'%(agente.name,int(agente.check_finished()))
             if not finished:
@@ -244,8 +252,10 @@ try:
     Logger << 'I found the following Testboards with Modules:'
     Logger.printn()
     #ToDo:
-    for tb, module in init.items('Modules'):
-            parentDir=setupParentDir(timestamp,los_agentes[0].Testboards[-1])
+    for Testboard in los_agentes[0].Testboards:
+            parentDir=setupParentDir(timestamp,Testboard)
+            Logger << '\t- Testboard %s at address %s with Module %s'%(Testboard.slot,Testboard.address,Testboard.module)
+
 
     Logger << 'try to powercycle Testboard...'
     #        powercycle(Testboards[-1])
@@ -357,9 +367,10 @@ try:
             except:
                 raise
                 #raise Exception('Could not copy Logfiles into testDirectory of Module %s\n%s ---> %s'%(Testboard.module,Directories['logDir'],Testboard.parentdir))
-
-    rmtree(Directories['logDir'])
-
+    try:
+        rmtree(Directories['logDir'])
+    except:
+        pass
     #cleanup
     for Testboard in los_agentes[0].Testboards:
         try: rmtree(Testboard.parentDir+'/tmp/')
