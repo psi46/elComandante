@@ -57,7 +57,7 @@ Logger.timestamp = float(args.timestamp)
 Logger.set_logfile('%s/Keithley.log'%(args.dataDir))
 Logger.set_prefix('')
 #default testDir, should be set (by elComandante)  when doing IV curve
-testDir = '%s/ivCurve.log'%(args.dataDir)
+testDir = '%s'%(args.dataDir)
 IVLogger.set_logfile('%s/IV.log'%(args.dataDir))
 IVLogger.set_prefix('')
 IVLogger.timestamp = float(args.timestamp)
@@ -111,7 +111,8 @@ def readCurrentIV():
             #Logger << ' could somehow not read data correctly: %s'%data
             pass
     else:
-        Logger << 'output is off'
+        pass
+        #Logger << 'output is off'
         
 def sweep():
     global doingSweep

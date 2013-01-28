@@ -1,5 +1,6 @@
 import time
 import serial
+import math
 from string import maketrans
 from collections import deque
 ON=1
@@ -19,6 +20,7 @@ class keithleyInterface:
         self.measurments = deque()
         self.lastVoltage = 0
         self.openSerialPort()
+        self.model =2400
 
     
     def openSerialPort(self):
@@ -172,6 +174,10 @@ class keithleyInterface:
         return self.write(':SOUR:VOLT:START %s'%startValue)
         
     def setVoltageSweepStopValue(self,stopValue):
+        print 'set sweepstopValue: %s'%stopValue
+        if self.maxVolt < math.fabs(stopValue):
+            stopValue = math.copysign(self.maxVolt,stopValue)
+            print 'set voltage to maximum allowed voltage: %s'%stopValue
         stopVoltage=float(stopValue)
         if not self.validVoltage(stopVoltage):
             return -1
@@ -185,6 +191,9 @@ class keithleyInterface:
         return self.write(':SOUR:VOLT:STEP %s'%stepVoltage)
     
     def setVoltage(self,value):
+        if self.maxVolt < math.fabs(value):
+            value = math.copysign(self.maxVolt,value)
+            print 'set voltage to maximum allowed voltage: %s'%value
         if not self.validVoltage(value):
             print 'invalid Voltage: %s'%value
             return -1
@@ -404,7 +413,7 @@ class keithleyInterface:
             self.measurments.append(measurment)
             self.lastVoltage = measurment[0]
             tripped = self.isTriped(measurment[5])
-            print '%s:\tMeasured at %s V: %s A, %s, %s, %s \t=> new Length of Queue: %s'%(measurment[0],measurment[1],measurment[2],measurment[3],measurment[4],tripped,len(self.measurments))
+            print '%s:\tMeasured at %s V: %s A, %s \t=> new Length of Queue: %s/%s'%(measurment[0],measurment[1],measurment[2],tripped,len(self.measurments),self.nTrigs)
             if tripped:
                 return False
             else:
@@ -482,6 +491,7 @@ class keithleyInterface:
         nTrig = int(nTrig)
         nTrig *= nSweeps
         nTrig = int(nTrig)
+        self.nTrigs = nTrig
         self.setTriggerCounter(nTrig)
         self.setOutput(True)
         self.write(':READ?')
@@ -493,6 +503,7 @@ class keithleyInterface:
         self.setOutput(False)
         self.reset()
         self.clearBuffer()
+        self.identify()
         self.setOutput(False)
         self.setRearOutput()
         self.setFixedVoltMode()
@@ -506,7 +517,24 @@ class keithleyInterface:
         self.setImmidiateVoltage(-150)
         self.clearErrorQueue()
         self.setComplianceAbortLevel('LATE')
-        
+
+    def identify(self):
+        self.identifier = self.getAnswerForQuery('*IDN?')
+        self.getModelName()
+
+    def getModelName(self):
+        identList = self.identifier.split(' ')
+        self.model = 9999
+        if len(identList) >5:
+            if self.is_number(identList[4]):
+                self.model = int(identList[4])
+        if self.model == 2400:
+            self.maxVolt = 200
+        elif self.model == 2410:
+            self.maxVolt = 1100
+        else:
+            self.maxVolt = 0
+        print 'Connected Keithley Model %s'%self.model
         
     def is_number(self,s):
         try:
