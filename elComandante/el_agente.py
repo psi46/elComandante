@@ -13,6 +13,7 @@ class el_agente():
         self.name = "el_agente"
         self.subscription = "/el_agente"
         self.Directories={}
+        self.test = None
     def setup_configuration(self, conf):
         return True
     def send(self,message):
@@ -49,6 +50,8 @@ class el_agente():
     def kill_client(self):
         # Kill a client with a SIGTERM signal
         return False
+    def set_test(self, test):
+        self.test = test
     def prepare_test(self, test, environment):
         # Run before a test is executed
         return False

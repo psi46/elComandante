@@ -69,6 +69,9 @@ class psi_agente(el_agente.el_agente):
             return True
         self.child.kill()
         return True
+    def set_test(self, test):
+        el_agente.el_agente.set_test(self, test)
+        self.test.parameter_dir = list(test.parent.parameter_dir)
 
     def prepare_test(self, whichtest, env):
         if not self.active:
@@ -199,7 +202,7 @@ class psi_agente(el_agente.el_agente):
                     raise Exception('Could not open Testboard at %s.'%Testboard.slot)
                 self.Testboards[index].busy=False
         self.pending = any([Testboard.busy for Testboard in self.Testboards])
-        self.log<<[Testboard.busy for Testboard in self.Testboards])
+        self.log<<[Testboard.busy for Testboard in self.Testboards]
         return not self.pending
         
         
@@ -209,10 +212,11 @@ class psi_agente(el_agente.el_agente):
         if not self.currenttest == 'powercycle':
             self.log << 'I setup the directories:'
             self.log << '\t- %s'%Testboard.testdir
-            self.log << '\t  with default Parameters from %s'%Testboard.defparamdir
+            self.log << '\t  with Parameters from %s' % self.test.parent.parameter_dir[Testboard.slot]
         #copy directory
         try:
-            copytree(Testboard.defparamdir, Testboard.testdir)
+            self.test.parameter_dir[Testboard.slot] = Testboard.testdir
+            copytree(self.test.parent.parameter_dir[Testboard.slot], Testboard.testdir)
             #change TB address
             f = open( '%s/configParameters.dat'%Testboard.testdir, 'r' )
             lines = f.readlines()

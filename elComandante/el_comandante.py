@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import sys
 sys.path.insert(1, "../")
-from myutils import BetterConfigParser, sClient, decode, printer, preexec
+from myutils import BetterConfigParser, sClient, decode, printer, preexec, testchain
 from myutils import Testboard as Testboarddefinition
 from time import strftime, gmtime
 import time
@@ -193,9 +193,26 @@ try:
     Logger.printw() #welcome message
 #get list of tests to do:
     testlist=init.get('Tests','Test')
+    test_chain = testchain.parse_test_list(testlist)
+    print test_chain
     testlist= testlist.split(',')
     while '' in testlist:
             testlist.remove('')
+
+    # Get default parameter directories
+    dir_list = []
+    tb = 0
+    while True:
+        try:
+            module_type = init.get("ModuleType", "TB" + `tb`)
+            dir = config.get("defaultParameters", module_type)
+        except:
+            break
+        else:
+            dir = Directories['defaultParameters'] + '/' + dir
+            dir_list.append(dir)
+            tb += 1
+    test_chain.parameter_dir = dir_list
 
 #-------------------------------------
     def setupParentDir(timestamp,Testboard):
@@ -257,28 +274,28 @@ try:
             Logger << '\t- Testboard %s at address %s with Module %s'%(Testboard.slot,Testboard.address,Testboard.module)
 
 
-    Logger << 'try to powercycle Testboard...'
-    #        powercycle(Testboards[-1])
-    los_agentes[0].powercycle()
-
     Logger.printv()
     Logger << 'I found the following Tests to be executed:'
     Logger.printn()
     testlist2 = []
-    for item in testlist:
-        if item.find('@')>=0:
-            whichtest, env = item.split('@')
-        else:
-            whichtest = item
-            env = 17.0
-        if 'IV' in item:
-            for Testboard in los_agentes[0].Testboards:
-                testlist2.append('%s_TB%s@%s'%(whichtest,Testboard.slot,env))
-                Logger << '\t- %s_TB%s at %s degrees'%(whichtest,Testboard.slot, env)
-        else:
-            testlist2.append(item)
-            Logger << '\t- %s at %s degrees'%(whichtest, env)
-    testlist = testlist2
+    #for item in testlist:
+    #    if item.find('@')>=0:
+    #        whichtest, env = item.split('@')
+    #    else:
+    #        whichtest = item
+    #        env = 17.0
+    #    if 'IV' in item:
+    #        for Testboard in los_agentes[0].Testboards:
+    #            testlist2.append('%s_TB%s@%s'%(whichtest,Testboard.slot,env))
+    #            Logger << '\t- %s_TB%s at %s degrees'%(whichtest,Testboard.slot, env)
+    #    else:
+    #        testlist2.append(item)
+    #        Logger << '\t- %s at %s degrees'%(whichtest, env)
+    #testlist = testlist2
+    test = test_chain.next()
+    while test:
+        Logger << "\t- %s" % test.test_str
+        test = test.next()
 #------------------------------------------
 
 
@@ -286,27 +303,32 @@ try:
 
 #--------------LOOP over TESTS-----------------
 
-    for item in testlist:
-        Logger << item
-        env = environment.environment(item, init)
+    test = test_chain.next()
+    while test:
+        Logger << test.test_str
+        env = environment.environment(test.test_str, init)
+        test.environment = env
+        test.testname = test.test_str.split("@")[0]
         temp = env.temperature
-        # Prepare for the tests
-        Logger << "Prepare Test: %s"%item
+
         for agente in los_agentes:
-            agente.prepare_test(item, env)
+            agente.set_test(test)
+
+        # Prepare for the tests
+        Logger << "Prepare Test: %s" % test.test_str
+        for agente in los_agentes:
+            agente.prepare_test(test.test_str, env)
         # Wait for preparation to finish
         Logger << "Wait for preparation to finish"
         finished = False
         waitForFinished(los_agentes)
 
                 
-        Logger << "Prepared for test %s"%item
+        Logger << "Prepared for test %s" % test.test_str
 
         # Execute tests
         Logger.printv()
-        Logger << 'I do now the following Test:'
-        Logger << '\t%s at %s degrees'%(whichtest, temp)
-        Logger << "Execute Test: %s"%item
+        Logger << "Execute Test: %s" % test.test_str
         for agente in los_agentes:
             agente.execute_test()
             time.sleep(1.0)            
@@ -314,7 +336,7 @@ try:
         # Wait for test execution to finish
         Logger << "Wait for test execution to finish"
         waitForFinished(los_agentes)
-        Logger << "Item %s has been finished."%item
+        Logger << "Test %s has been finished." % test.test_str
 
         # Cleanup tests
         Logger << "start with Clean Up tests."
@@ -325,6 +347,8 @@ try:
         waitForFinished(los_agentes)
         Logger << " Clean Up tests Done"
         Logger.printv()
+
+        test = test.next()
 
     # Final cleanup
     Logger << "Do final Clean Up after all tests"
