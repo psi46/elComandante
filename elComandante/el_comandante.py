@@ -15,6 +15,7 @@ import psi_agente
 import coolingBox_agente
 import analysis_agente
 import highVoltage_agente
+import watchDog_agente
 import signal
 
 los_agentes = []
@@ -163,6 +164,7 @@ try:
     # Create agentes that are responsible for client processes
     los_agentes.append(psi_agente.psi_agente(timestamp, Logger, client))
     los_agentes.append(highVoltage_agente.highVoltage_agente(timestamp,Logger,client))
+    los_agentes.append(watchDog_agente.watchDog_agente(timestamp,Logger,client))
     if init.getboolean("Xray", "XrayUse"):
         los_agentes.append(xray_agente.xray_agente(timestamp, Logger, client))
     los_agentes.append(analysis_agente.analysis_agente(timestamp, Logger, client))

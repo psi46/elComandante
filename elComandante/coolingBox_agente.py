@@ -53,10 +53,11 @@ class coolingBox_agente(el_agente.el_agente):
             return True
         command  = "xterm +sb -geometry 80x25+1200+0 -fs 10 -fa 'Mono' -e '"
         command += "%s/%s "%(self.programDir,self.programName)
-        command += "-d %s "%self.port
-        command += "|tee %s/%s'"%(self.logDir,self.logFileName)
+        command += "-d %s"%self.port
+        #command += "|tee %s/%s'"%(self.logDir,self.logFileName)
+        command += "'"
         self.log << "Starting %s ..."%self.name
-        #self.log << "Command: %s"%command
+        self.log << "Command: %s"%command
         self.child = subprocess.Popen(command, shell = True, preexec_fn = preexec)
         return True;
 
