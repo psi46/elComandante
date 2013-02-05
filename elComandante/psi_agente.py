@@ -18,6 +18,7 @@ class psi_agente(el_agente.el_agente):
         el_agente.el_agente.__init__(self,timestamp, log, sclient)
         self.name = "psiClient"
         self.currenttest=None
+        self.init = None
     def setup_configuration(self, conf):
         self.conf = conf
         self.subscription = conf.get("subsystem", "psiSubscription")
@@ -25,6 +26,7 @@ class psi_agente(el_agente.el_agente):
         #self.logdir = conf.get("Directories", "dataDir") + "/logfiles/"
         self.active = True
     def setup_initialization(self, init):
+        self.init = init
         self.Testboards=[]
         for tb, module in init.items('Modules'):
             if init.getboolean('TestboardUse',tb):
@@ -202,10 +204,7 @@ class psi_agente(el_agente.el_agente):
                     raise Exception('Could not open Testboard at %s.'%Testboard.slot)
                 self.Testboards[index].busy=False
         self.pending = any([Testboard.busy for Testboard in self.Testboards])
-        self.log<<[Testboard.busy for Testboard in self.Testboards]
         return not self.pending
-        
-        
 
     def _setupdir_testboard(self,Testboard):
         self.log.printn()
@@ -217,21 +216,98 @@ class psi_agente(el_agente.el_agente):
         try:
             self.test.parameter_dir[Testboard.slot] = Testboard.testdir
             copytree(self.test.parent.parameter_dir[Testboard.slot], Testboard.testdir)
-            #change TB address
-            f = open( '%s/configParameters.dat'%Testboard.testdir, 'r' )
-            lines = f.readlines()
-            f.close()
-            lines[0]='testboardName %s'%Testboard.address
-            f = open( '%s/configParameters.dat'%Testboard.testdir, 'w' )
-            f.write(''.join(lines))
-            f.close()
-            #print 'Testdir:' + Testboard.testdir
-            #print os.listdir(Testboard.testdir)
+            self._setup_configfiles(Testboard)
         except IOError as e:
             self.log.warning("I/O error({0}): {1}".format(e.errno, e.strerror))
             raise
         except OSError as e:
             self.log.warning("OS error({0}): {1}".format(e.errno, e.strerror))
+            raise
+
+    def _setup_configfiles(self, Testboard):
+        """ Changes config files in the already copied test directory according to test definitions
+            from elComandante's init file. """
+        # Change testboard name
+        self._config_file_content_substitute(Testboard.testdir + "/configParameters.dat", {"testboardName":Testboard.address})
+
+        # Get test specific config parameters (if available)
+        params = ()
+        try:
+            params = self.init.items("Test " + self.test.testname)
+        except:
+            return
+
+        for par in params:
+            file = par[0]
+            # Check for valid keys that represent config files
+            if "testParameters" in file or "dacParameters" in file or "configParameters" in file:
+                pass
+            elif "tbmParameters" in file or "tbParameters" in file:
+                pass
+            else:
+                continue
+
+            encoded_keys = par[1].split(",")
+            keys = {}
+            for key in encoded_keys:
+                key = key.split("=", 2)
+                if len(key) != 2:
+                    continue
+                keys[key[0]] = key[1]
+            if len(file) < 4 or file[-4:] != ".dat":
+                file += ".dat"
+            self._config_file_content_substitute(Testboard.testdir + "/" + file, keys)
+
+    def _config_file_content_substitute(self, filename, keys):
+        """ Substitutes configuration lines in a file according to the dictionary "keys" """
+        # Open the file for substitution
+        try:
+            f = open(filename, "r")
+            lines = f.readlines()
+            f.close()
+        except:
+            self.log.warning("Error reading from parameter file " + filename + ".")
+            raise
+
+        try:
+            # Backup the original file
+            f = open(filename + ".original", "w")
+            f.write("".join(lines))
+            f.close()
+        except:
+            self.log.warning("Error making a backup file of " + filename + ". Skipped.")
+
+        # Define the fields within the file
+        fields = 2
+        keyfield = 0
+        datafield = 1
+        if "dacParameters" in filename or "tbmParameters" in filename or "tbParameters" in filename:
+            fields = 3
+            keyfield = 1
+            datafield = 2
+
+        # iterate over all lines
+        for i in range(len(lines)):
+            line = lines[i].strip()
+            if len(line) == 0 or line[0] == '-' or line[0] == '#':
+                continue
+            line = line.split(None, fields - 1)
+            if len(line) != fields:
+                continue
+            # check whether this line matches a key
+            if not line[keyfield] in keys:
+                continue
+            line[datafield] = keys[line[keyfield]]
+            lines[i] = " ".join(line)
+            lines[i] += '\n'
+
+        try:
+            # Write the new file
+            f = open(filename, "w")
+            f.write("".join(lines))
+            f.close()
+        except:
+            self.log.warning("Error saving parameters in " + filename + ".")
             raise
 
     def _deldir(self,Testboard):

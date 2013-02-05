@@ -196,7 +196,6 @@ try:
 #get list of tests to do:
     testlist=init.get('Tests','Test')
     test_chain = testchain.parse_test_list(testlist)
-    print test_chain
     testlist= testlist.split(',')
     while '' in testlist:
             testlist.remove('')
