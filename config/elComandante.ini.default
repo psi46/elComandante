@@ -79,6 +79,7 @@ command: VcalVsThresholdAnalysis --output analysis_VcalVsThreshold.root *VcalVsT
 command: VcalCalibration --targets 17.49:22.16:32.19 --output VcalCalibration.root analysis_VcalVsThreshold.root analysis_XrayThresholdScanMo.root analysis_XrayThresholdScanAg.root analysis_XrayThresholdScanBa.root
 
 [Tests]
+TestDescription: FullTest
 Test: Pretest>Trim
 #Test: IV@17,Fulltest@17,IV@17
 #Test: Pretest@17,Cycle,Pretest@14,Pretest@17
