@@ -20,7 +20,7 @@ TB2: DPE00IUD
 TB3: DPE00J72
 
 [defaultParameters]
-Roc: singleRocTest
+Roc: defaultParametersRocPSI46v2
 Full: defaultParametersModule
 
 [subsystem]
