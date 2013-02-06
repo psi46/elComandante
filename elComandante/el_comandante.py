@@ -55,9 +55,9 @@ def handler(signum, frame):
 #signal.signal(signal.SIGINT, handler)
 
 try:
-#get timestamp
+    #get timestamp
     timestamp = int(time.time())
-#------------some configuration--------------
+    #------------some configuration--------------
 
     parser = argparse.ArgumentParser()
 
@@ -66,7 +66,6 @@ try:
                            default="../config/")
 
     args = parser.parse_args()
-#print args.configDir
     configDir= args.configDir
     try:
         os.access(configDir,os.R_OK)
@@ -75,10 +74,10 @@ try:
         #sys.exit()
         #raise SystemExit
 
-#load config
+    #load config
     config = BetterConfigParser()
     config.read(configDir+'/elComandante.conf')
-#load init
+    #load init
     init = BetterConfigParser()
     init.read(configDir+'/elComandante.ini')
 
@@ -97,7 +96,6 @@ try:
     for dir in Directories:
         #if "$configDir$" in Directories[dir]:
         Directories[dir] = os.path.abspath(Directories[dir].replace("$configDir$",configDir))
-#print Directories
     try:
         os.stat(Directories['dataDir'])
     except:
@@ -125,14 +123,14 @@ try:
             else:
                 raise Exception('LogDir is not empty. Please clean logDir: %s'%Directories['logDir'])
 
-#initialise Logger
+    #initialise Logger
     Logger = printer()
     Logger.timestamp = timestamp
     Logger.set_logfile('%s/elComandante.log'%(Directories['logDir']))
     Logger<<'Set LogFile to %s'%Logger.f
-#i
+
     #check if subsystem server is running, if not START subserver
-     
+
     if os.system("ps -ef | grep -v grep | grep subserver"):
         os.system("cd %s && subserver"%(Directories['subserverDir']))
         if os.system("ps -ef | grep -v grep | grep subserver"):
@@ -148,7 +146,7 @@ try:
     #        raise Exception("Could not start subserver")
     Logger << "Subserver is running."
 
-#read subserver settings
+    #read subserver settings
     serverZiel=config.get('subsystem','Ziel')
     Port = int(config.get('subsystem','Port'))
     serverPort = int(config.get('subsystem','serverPort'))
@@ -158,7 +156,7 @@ try:
     xraySubscription = config.get('subsystem','xraySubscription')
     analysisSubscription = config.get('subsystem','analysisSubscription')
 
-#create subserver client
+    #create subserver client
     client = sClient(serverZiel,serverPort,"elComandante")
 
     # Create agentes that are responsible for client processes
@@ -170,18 +168,15 @@ try:
     los_agentes.append(analysis_agente.analysis_agente(timestamp, Logger, client))
     if init.getboolean("CoolingBox", "CoolingBoxUse"):
         los_agentes.append(coolingBox_agente.coolingBox_agente(timestamp, Logger,client))
-    
-    print 'agentes: '
-    print [agente.name for agente in los_agentes]
 
     # Make the agentes read their configuration and initialization parameters
     for agente in los_agentes:
-        Logger << "setup of Agente: %s"% agente.name
+        Logger << "Setting up Agente %s ..." % agente.name
         agente.setup_dir(Directories)
         agente.setup_configuration(config)
         agente.setup_initialization(init)
-        
-#subscribe subscriptions
+
+    #subscribe subscriptions
     subscriptionList = []
     if init.getboolean("CoolingBox", "CoolingBoxUse"):
         subscriptionList.append(coolingBoxSubscription)
@@ -191,9 +186,9 @@ try:
     for agente in los_agentes:
         agente.subscribe()
 
- #directory config
+    #directory config
     Logger.printw() #welcome message
-#get list of tests to do:
+    #get list of tests to do:
     testlist=init.get('Tests','Test')
     test_chain = testchain.parse_test_list(testlist)
     testlist= testlist.split(',')
@@ -215,7 +210,7 @@ try:
             tb += 1
     test_chain.parameter_dir = dir_list
 
-#-------------------------------------
+    #-------------------------------------
     def setupParentDir(timestamp,Testboard):
             Testboard.parentDir=Directories['dataDir']+'/%s_%s_%s/'%(Testboard.module,strftime("%Y-%m-%d_%Hh%Mm",gmtime(timestamp)),timestamp)
             try:
@@ -223,9 +218,8 @@ try:
             except:
                 os.mkdir(Testboard.parentDir)
             return Testboard.parentDir
-        
-    def waitForFinished(los_agentes):
-        os.system('setterm -cursor off')
+
+    def wait_until_finished(los_agentes):
         finished = False
         while not finished:
             time.sleep(1.0)
@@ -238,36 +232,30 @@ try:
             sys.stdout.flush()
         print ''
 
-
     # Check whether the client is already running before trying to start it
-    Logger << "Check whether clients are runnning ..."
+    Logger << "Checking whether clients are runnning ..."
     for agente in los_agentes:
-        Logger << "%s: "%agente.name
         agente.check_client_running()
 
     for agente in los_agentes:
         agente.start_client(timestamp)
 
-
-#check subscriptions?
-
     # Check the client subscriptions
-    Logger<<"Check Subscription of the Clients:"
+    Logger << "Checking subscription of the clients ..."
     time.sleep(2)
     for subscription in subscriptionList:
         if not client.checkSubscription(subscription):
             raise Exception("Cannot read from %s subscription"%subscription)
         else:
-            Logger << "\t%s is answering"%subscription
+            Logger << "\t%s is answering." % subscription
     for agente in los_agentes:
         if not agente.check_subscription():
             raise Exception("Cannot read from %s subscription" % agente.subscription)
         else:
-            Logger << "\t%s is answering" % agente.subscription
-    Logger << "Subscriptions checked"
+            Logger << "\t%s is answering." % agente.subscription
 
-#-------------SETUP TESTBOARDS----------------
-    Logger << 'I found the following Testboards with Modules:'
+    #-------------SETUP TESTBOARDS----------------
+    Logger << 'The following Testboards with Modules were found:'
     Logger.printn()
     #ToDo:
     for Testboard in los_agentes[0].Testboards:
@@ -276,7 +264,7 @@ try:
 
 
     Logger.printv()
-    Logger << 'I found the following Tests to be executed:'
+    Logger << 'The following Tests will be executed:'
     Logger.printn()
     testlist2 = []
     #for item in testlist:
@@ -299,14 +287,12 @@ try:
         test = test.next()
 #------------------------------------------
 
-
     Logger.printv()
 
 #--------------LOOP over TESTS-----------------
 
     test = test_chain.next()
     while test:
-        Logger << test.test_str
         env = environment.environment(test.test_str, init)
         test.environment = env
         test.testname = test.test_str.split("@")[0]
@@ -316,64 +302,54 @@ try:
             agente.set_test(test)
 
         # Prepare for the tests
-        Logger << "Prepare Test: %s" % test.test_str
+        Logger << "Preparing test %s ..." % test.test_str
         for agente in los_agentes:
             agente.prepare_test(test.test_str, env)
         # Wait for preparation to finish
-        Logger << "Wait for preparation to finish"
         finished = False
-        waitForFinished(los_agentes)
-
-                
-        Logger << "Prepared for test %s" % test.test_str
+        wait_until_finished(los_agentes)
 
         # Execute tests
         Logger.printv()
-        Logger << "Execute Test: %s" % test.test_str
+        Logger << "Executing test %s ..." % test.test_str
         for agente in los_agentes:
             agente.execute_test()
-            time.sleep(1.0)            
-
+            time.sleep(1.0)
         # Wait for test execution to finish
-        Logger << "Wait for test execution to finish"
-        waitForFinished(los_agentes)
-        Logger << "Test %s has been finished." % test.test_str
+        wait_until_finished(los_agentes)
 
         # Cleanup tests
-        Logger << "start with Clean Up tests."
+        Logger << "Cleaning up after test %s ...." % test.test_str
         for agente in los_agentes:
             agente.cleanup_test()
 
         # Wait for cleanup to finish
-        waitForFinished(los_agentes)
-        Logger << " Clean Up tests Done"
+        wait_until_finished(los_agentes)
         Logger.printv()
 
         test = test.next()
 
     # Final cleanup
-    Logger << "Do final Clean Up after all tests"
+    Logger << "Final cleanup after all tests ..."
     for agente in los_agentes:
         agente.final_test_cleanup()
-
     # Wait for final cleanup to finish
-    Logger << "Wait for final clean up to finish"
-    waitForFinished(los_agentes)
-    Logger << "Final Clean up has been done"
+    wait_until_finished(los_agentes)
 
-#-------------Heat up---------------
-    #client.send(psiSubscription,':prog:exit\n')
+    #-------------EXIT----------------
+
+    Logger.printv()
 
     for agente in los_agentes:
         agente.request_client_exit()
 
     client.closeConnection()
-    Logger << 'I am done for now!'
+    Logger << 'Subsystem connection closed.'
 
     time.sleep(1)
     killChildren()
     time.sleep(1)
-#-------------EXIT----------------
+
     while client.anzahl_threads > 0:
         pass
     Logger.printv()
