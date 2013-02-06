@@ -16,7 +16,8 @@ import subprocess
 class psi_agente(el_agente.el_agente):
     def __init__(self, timestamp,log, sclient):
         el_agente.el_agente.__init__(self,timestamp, log, sclient)
-        self.name = "psiClient"
+        self.agente_name = "psiAgente"
+        self.client_name = "psiClient"
         self.currenttest=None
         self.init = None
     def setup_configuration(self, conf):
@@ -38,7 +39,7 @@ class psi_agente(el_agente.el_agente):
     def check_client_running(self):
         if not self.active:
             return False
-        process = os.system("ps aux | grep -v grep | grep -v vim | grep -v emacs | grep %s" % self.name)
+        process = os.system("ps aux | grep -v grep | grep -v vim | grep -v emacs | grep %s" % self.client_name)
         if type(process) == str and process != "":
             raise Exception("Another %s self.sclient is already running. Please close this self.sclient first." % self.sclient.name)
             return True
@@ -46,7 +47,6 @@ class psi_agente(el_agente.el_agente):
     def subscribe(self):
         if (self.active):
             self.sclient.subscribe(self.subscription)
-                            
 
     def start_client(self, timestamp):
         self.timestamp = timestamp
@@ -56,7 +56,7 @@ class psi_agente(el_agente.el_agente):
         command += "python ../psiClient/psi46master.py "
         command += "-dir %s "%(self.Directories['logDir'])
         command += "-num %s"%self.numTestboards
-        self.log << "Starting " + self.name + " ..."
+        self.log << "Starting " + self.client_name + " ..."
         self.child = subprocess.Popen(command, shell = True, preexec_fn = preexec)
         return True
 
@@ -88,7 +88,6 @@ class psi_agente(el_agente.el_agente):
                 self.currenttest = 'IV'
                 self.activeTestboard = int(activeTestboard[1].strip('TB'))
                 #print 'active testboard for IV is: %s'%self.activeTestboard
-        self.log << "%s: Preparing %s, TB%s ..."%(self.name, self.currenttest,self.activeTestboard)
         for Testboard in self.Testboards:
             self._prepare_testboard(Testboard)    
         self.pending = False
@@ -101,7 +100,7 @@ class psi_agente(el_agente.el_agente):
         Testboard.testdir=Testboard.parentDir+'/%s_%s/'%(str(Testboard.numerator).zfill(3),self.currenttest)
         self._setupdir_testboard(Testboard)
         if 'IV' in self.currenttest:
-            self.log <<" %s: send testdir to highVoltageClient: %s"%(self.name,Testboard.testdir)
+            self.log <<" %s: send testdir to %s: %s"%(self.agente_name, self.client_name, Testboard.testdir)
             self.sclient.send(self.highVoltageSubscription,":PROG:IV:TESTDIR %s\n"%Testboard.testdir)
             self.open_testboard(Testboard)
 
@@ -124,7 +123,7 @@ class psi_agente(el_agente.el_agente):
             self.pending = False
             return True
         elif not self.currenttest == 'powercycle':
-            self.log << self.name + ": Executing " + self.currenttest + " ..."
+            self.log << self.agente_name + ": Executing " + self.currenttest + " ..."
         else:
             self.log << 'Powercycling Testboards'
         for Testboard in self.Testboards:
@@ -209,7 +208,7 @@ class psi_agente(el_agente.el_agente):
     def _setupdir_testboard(self,Testboard):
         self.log.printn()
         if not self.currenttest == 'powercycle':
-            self.log << 'I setup the directories:'
+            self.log << 'Setting up the directory:'
             self.log << '\t- %s'%Testboard.testdir
             self.log << '\t  with Parameters from %s' % self.test.parent.parameter_dir[Testboard.slot]
         #copy directory
@@ -319,9 +318,9 @@ class psi_agente(el_agente.el_agente):
 
     def open_testboard(self,Testboard):
         self.sclient.clearPackets(self.subscription)
-        self.log << "%s: Opening Testboard %s ..."%(self.name,Testboard.slot)
+        self.log << "%s: Opening Testboard %s ..." % (self.agente_name, Testboard.slot)
         self.sclient.send(self.subscription,':prog:TB%s:open %s, %s\n'%(Testboard.slot,Testboard.testdir,Testboard.currenttest)) 
     
     def close_testboard(self,Testboard):
-        self.log << "%s: Closing Testboard %s ..."%(self.name,Testboard.slot)
+        self.log << "%s: Closing Testboard %s ..." % (self.agente_name, Testboard.slot)
         self.sclient.send(self.subscription,':prog:TB%s:close %s\n'%(Testboard.slot,Testboard.testdir))

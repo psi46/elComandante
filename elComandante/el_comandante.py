@@ -45,7 +45,7 @@ def killChildren():
         try:
             agente.kill_client()
         except:
-            agente.log.warning("Could not kill %s" % agente.name)
+            agente.log.warning("Could not kill %s" % agente.client_name)
 
 def handler(signum, frame):
     print 'Signal handler called with signal %s' % signum
@@ -171,7 +171,7 @@ try:
 
     # Make the agentes read their configuration and initialization parameters
     for agente in los_agentes:
-        Logger << "Setting up Agente %s ..." % agente.name
+        Logger << "Setting up agente %s ..." % agente.agente_name
         agente.setup_dir(Directories)
         agente.setup_configuration(config)
         agente.setup_initialization(init)
@@ -226,7 +226,7 @@ try:
             finished = all([agente.check_finished() for agente in los_agentes])
             output = ' \t'
             for agente in los_agentes:
-                output += '%s: %s\t'%(agente.name,int(agente.check_finished()))
+                output += '%s: %s\t'%(agente.agente_name,int(agente.check_finished()))
             if not finished:
                 sys.stdout.write('%s\r' %output)
             sys.stdout.flush()
@@ -285,18 +285,16 @@ try:
     while test:
         Logger << "\t- %s" % test.test_str
         test = test.next()
-#------------------------------------------
 
     Logger.printv()
 
-#--------------LOOP over TESTS-----------------
+    #--------------LOOP over TESTS-----------------
 
     test = test_chain.next()
     while test:
         env = environment.environment(test.test_str, init)
         test.environment = env
         test.testname = test.test_str.split("@")[0]
-        temp = env.temperature
 
         for agente in los_agentes:
             agente.set_test(test)
@@ -305,28 +303,22 @@ try:
         Logger << "Preparing test %s ..." % test.test_str
         for agente in los_agentes:
             agente.prepare_test(test.test_str, env)
-        # Wait for preparation to finish
-        finished = False
         wait_until_finished(los_agentes)
 
         # Execute tests
-        Logger.printv()
         Logger << "Executing test %s ..." % test.test_str
         for agente in los_agentes:
             agente.execute_test()
             time.sleep(1.0)
-        # Wait for test execution to finish
         wait_until_finished(los_agentes)
 
         # Cleanup tests
         Logger << "Cleaning up after test %s ...." % test.test_str
         for agente in los_agentes:
             agente.cleanup_test()
-
-        # Wait for cleanup to finish
         wait_until_finished(los_agentes)
-        Logger.printv()
 
+        Logger.printv()
         test = test.next()
 
     # Final cleanup

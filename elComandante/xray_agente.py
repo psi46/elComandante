@@ -9,7 +9,8 @@ def preexec():
 class xray_agente(el_agente.el_agente):
 	def __init__(self, timestamp, log, sclient):
 		el_agente.el_agente.__init__(self, timestamp, log, sclient)
-		self.name = "xrayClient"
+		self.agente_name = "xrayAgente"
+		self.client_name = "xrayClient"
 		self.hvon = False
 		self.beamon = False
 		self.voltage = None
@@ -31,7 +32,7 @@ class xray_agente(el_agente.el_agente):
 		if not self.active:
 			return False
 		# FIXME: this is clumsy
-		process = os.system("ps aux | grep -v grep | grep -v vim | grep -v emacs | grep %s" % self.name)
+		process = os.system("ps aux | grep -v grep | grep -v vim | grep -v emacs | grep %s" % self.client_name)
 		if type(process) == str and process != "":
 			raise Exception("Another %s client is already running. Please close this client first." % client.name)
 			return True
@@ -48,7 +49,7 @@ class xray_agente(el_agente.el_agente):
 		command += "--stage-device {0:s} ".format(self.xrf_device)
 		command += "--stage-type {0:s} ".format(self.xrf_type)
 		command += "--targets {0:s}".format(self.targets)
-		self.log << "Starting " + self.name + " ..."
+		self.log << "Starting " + self.client_name + " ..."
 		self.child = subprocess.Popen(command, shell = True, preexec_fn = preexec)
 		return True
 	def subscribe(self):
@@ -75,7 +76,6 @@ class xray_agente(el_agente.el_agente):
 		# Run before a test is executed
 		if not self.active:
 			return True
-		self.log << self.name + ": Preparing " + test + " ..."
 		if environment.xray:
 			if environment.xray_voltage != self.voltage:
 				self.sclient.send(self.subscription, ":SET:VOLTAGE %d\n" % environment.xray_voltage)
@@ -106,14 +106,12 @@ class xray_agente(el_agente.el_agente):
 		# Runs a test
 		if not self.active:
 			return True
-		#self.log << self.name + ": Executing " + test + " ..."
 		return True
 	def cleanup_test(self):
 		# Run after a test has executed
 		if not self.active:
 			return True
 		if self.beamon:
-			self.log << self.name + ": Cleaning up ..."
 			self.sclient.send(self.subscription, ":SET:BEAM OFF\n")
 			self.beamon = False
 			self.set_pending()
@@ -122,7 +120,6 @@ class xray_agente(el_agente.el_agente):
 		# Run after a test has executed
 		if not self.active:
 			return True
-		self.log << self.name + ": Final cleanup ..."
 		self.sclient.send(self.subscription, ":SET:BEAM OFF\n")
 		self.sclient.send(self.subscription, ":SET:HV OFF\n")
 		self.set_pending()
@@ -137,7 +134,7 @@ class xray_agente(el_agente.el_agente):
 				self.pending = False
 			elif "ERROR" in packet.data.upper():
 				self.pending = False
-				raise Exception("Error from %s!" % self.name)
+				raise Exception("Error from %s!" % self.client_name)
 
 		return not self.pending
 	def set_pending(self):

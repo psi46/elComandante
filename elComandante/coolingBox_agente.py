@@ -10,7 +10,8 @@ import time
 class coolingBox_agente(el_agente.el_agente):
     def __init__(self, timestamp, log, sclient):
         el_agente.el_agente.__init__(self, timestamp, log, sclient)
-        self.name = "coolingBoxClient"
+        self.agente_name = "coolingBoxAgente"
+        self.client_name = "coolingBoxClient"
         self.log = log
         self.sclient = sclient
         self.active = False
@@ -42,7 +43,7 @@ class coolingBox_agente(el_agente.el_agente):
         # Check whether a client process is running
         if not self.active:
             return False
-        process = os.system("ps aux | grep -v grep | grep -v vim | grep -v emacs | grep %s"%self.name)
+        process = os.system("ps aux | grep -v grep | grep -v vim | grep -v emacs | grep %s" % self.client_name)
         if type(process) == str and process != "":
             raise Exception("Another %s client is already running. Please close client first." %client.name)
             return True
@@ -56,8 +57,7 @@ class coolingBox_agente(el_agente.el_agente):
         command += "-d %s"%self.port
         #command += "|tee %s/%s'"%(self.logDir,self.logFileName)
         command += "'"
-        self.log << "Starting %s ..."%self.name
-        self.log << "Command: %s"%command
+        self.log << "Starting %s ..." % self.client_name
         self.child = subprocess.Popen(command, shell = True, preexec_fn = preexec)
         return True;
 
@@ -87,9 +87,8 @@ class coolingBox_agente(el_agente.el_agente):
         # Run before a test is executed
         if not self.active:
             return True
-        self.log << "%s: Preparing %s @ %s..."%(self.name,test,environment.name)
         self.Temperature = environment.temperature
-        self.log << "Target temperature: %s"%self.Temperature
+        self.log << "%s: Setting temperature to %s" % (self.agente_name, self.Temperature)
         self.sclient.clearPackets(self.subscription)
         self.currentTest = test
         if "cycle" in test.lower():
@@ -100,14 +99,13 @@ class coolingBox_agente(el_agente.el_agente):
 
     def execute_test(self):
         # Initiate a test
-        self.log << "%s: execute Test \'%s\'"%(self.name,self.currentTest)
         if not self.active:
             return True
         if "cycle" in self.currentTest.lower():
             self.sclient.clearPackets(self.subscription)
             time.sleep(1.0)
             self.set_pending()
-            self.log << "%s: Starting Cycle"%self.name
+            self.log << "%s: Starting Cycle" % self.agente_name
             self.log << "\tHighTemp: %s"%self.cycleHigh
             self.log << "\tLowTemp:  %s"%self.cycleLow
             self.log << "\tnCycles:  %s"%self.nCycles
@@ -122,7 +120,7 @@ class coolingBox_agente(el_agente.el_agente):
         if not self.active:
             return True
         #if 'waiting' not in self.status()
-        #    self.log << "%s: Cleaning up %s ..."%(self.name,test)
+        #    self.log << "%s: Cleaning up %s ..." % (self.agente_name, test)
         return False
 
     def final_test_cleanup(self):
@@ -130,7 +128,7 @@ class coolingBox_agente(el_agente.el_agente):
         # everything to the state before the test
         #Heat Up again
         self.currentTest = "final_heating"
-        self.log << "%s: Heating up Cooling Box..."%self.name
+        self.log << "%s: Heating up ..." % self.agente_name
         self.sclient.send(self.subscription,":PROG:HEAT\n")
         self.set_pending()
         return False
@@ -139,7 +137,7 @@ class coolingBox_agente(el_agente.el_agente):
         self.currentTest = "stabalizeTemp"
         self.sclient.send(self.subscription,":PROG:START 0\n")
         self.sclient.send(self.subscription,":PROG:TEMP %s\n"%Temperature)
-        
+
     def check_finished(self):
         # Check whether the client has finished its task
         # but also check for errors and raise an exception
@@ -172,7 +170,7 @@ class coolingBox_agente(el_agente.el_agente):
                         if "stat" in coms[1].lower() and typ == 'a':
                             bGotAnswer = True
                             if 'waiting' in msg.lower():
-                                self.log << "%s: CoolingBox is heated up."%self.name
+                                self.log << "%s: CoolingBox is heated up." % self.agente_name
                                 self.pending = False
                             elif not 'heating' in msg.lower():
                                 self.final_test_cleanup()
@@ -195,7 +193,7 @@ class coolingBox_agente(el_agente.el_agente):
                         if "stat" in coms[1].lower() and typ == 'a':
                             bGotAnswer = True
                             if 'stable' in msg.lower():
-                                self.log << "%s: Temperature stable at %s"%(self.name,Time)
+                                self.log << "%s: Temperature stable at %s" % (self.agente_name, Time)
                                 self.pending = False
                             elif 'waiting' in msg.lower():
                                 self.stabalizeTemperature(self.Temperature)
@@ -218,15 +216,15 @@ class coolingBox_agente(el_agente.el_agente):
                 if "prog" in coms[0].lower():
                     if  "cycle" in coms[1].lower() and typ == 'a' and 'finished' in msg.lower():
                         self.pending = False
-                        self.log << "%s: Cycle has been finished"%self.name
+                        self.log << "%s: Cycle has been finished" % self.agente_name
                     elif "stat" in coms[1].lower() and typ == 'a':
                         if "cycle_restart" in msg.lower():
                             message = msg.split(' ')
                             if len(message)==2:
                                 if is_number(message[1]):
-                                        self.log <<"%s: %s more Cycles to finish"%(self.name,int(message[1])+1)
+                                        self.log <<"%s: %s more Cycles to finish" % (self.agente_name,int(message[1])+1)
                             else:
-                                self.log <<"%s: couldn't extract cycles out of msg '%s'"%(self.name,msg)
+                                self.log <<"%s: couldn't extract cycles out of msg '%s'" % (self.agente_name, msg)
         return not self.pending
 
     def set_pending(self):

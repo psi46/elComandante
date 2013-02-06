@@ -11,7 +11,8 @@ import el_agente
 class watchDog_agente(el_agente.el_agente):
     def __init__(self,timestamp,log,sclient):
         el_agente.el_agente.__init__(self, timestamp, log, sclient) 
-        self.name = "watchDog"
+        self.agente_name = "watchDogAgente"
+        self.client_name = "watchDog"
         self.log = printer()
         self.sclient = sclient
         self.active = True
@@ -68,14 +69,14 @@ class watchDog_agente(el_agente.el_agente):
         # Run before a test is executed
         if not self.active:
             return True
-        #self.log << "%s: Preparing %s @ %s..."%(self.name,test,environment.name)
+        #self.log << "%s: Preparing %s @ %s..." % (self.agente_name, test,environment.name)
         self.currentTest = test
         self.readTemperatures()
         return True
 
     def execute_test(self):
         # Initiate a test
-        #self.log << "%s: execute Test \'%s\'"%(self.name,self.currentTest)
+        #self.log << "%s: execute Test \'%s\'" % (self.agente_name, self.currentTest)
         self.readTemperatures()
 #        self.currentTestTempLogger = logging.getLogger('%sTemplog'%self.currentTest)
 #        self.currentTestTempLogger.handler = logging.FileHandler('%s/temperature.log')
@@ -89,7 +90,7 @@ class watchDog_agente(el_agente.el_agente):
         if not self.active:
             return True
         #if 'waiting' not in self.status()
-        #    self.log << "%s: Cleaning up %s ..."%(self.name,test)
+        #    self.log << "%s: Cleaning up %s ..."%(self.agente_name,test)
         return False
 
     

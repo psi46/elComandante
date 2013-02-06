@@ -16,7 +16,8 @@ import subprocess
 class highVoltage_agente(el_agente.el_agente):
     def __init__(self, timestamp,log, sclient):
         el_agente.el_agente.__init__(self,timestamp, log, sclient)
-        self.name = "keithleyClient"
+        self.agente_name = "highVoltageAgente"
+        self.client_name = "keithleyClient"
         self.currenttest=None
         self.ivDone = True
         self.log = log
@@ -40,16 +41,15 @@ class highVoltage_agente(el_agente.el_agente):
     def check_client_running(self):
         if not self.active:
             return False
-        process = os.system("ps aux | grep -v grep | grep -v vim | grep -v emacs | grep %s" % self.name)
+        process = os.system("ps aux | grep -v grep | grep -v vim | grep -v emacs | grep %s" % self.client_name)
         if type(process) == str and process != "":
             raise Exception("Another %s self.sclient is already running. Please close this self.sclient first." % self.sclient.name)
             return True
         return False
-    
+
     def subscribe(self):
         if (self.active):
             self.sclient.subscribe(self.subscription)
-                            
 
     def start_client(self, timestamp):
         self.timestamp = timestamp
@@ -60,9 +60,8 @@ class highVoltage_agente(el_agente.el_agente):
         command += "-d %s "%(self.keithleyPort)
         command += "-dir %s "%(self.logDir)
         command += "-ts %s"%(self.timestamp)
-        self.log << "%s: Starting %s..."%(self.name,self.name)
-        
-        print "Starting " + self.name + " ..."
+        self.log << "%s: Starting %s..." % (self.agente_name, self.client_name)
+
         self.child = subprocess.Popen(command, shell = True, preexec_fn = preexec)
         return True
 
@@ -83,7 +82,6 @@ class highVoltage_agente(el_agente.el_agente):
             return False
         # Run before a test is executed
         self.currenttest = whichtest.split('@')[0]
-        self.log << self.name + ": Preparing " + self.currenttest + " ..."
         #todo
         if 'IV' in self.currenttest:
             self.prepareIVCurve();
@@ -99,7 +97,6 @@ class highVoltage_agente(el_agente.el_agente):
         # Runs a test
         self.pending = True
         self.sclient.clearPackets(self.subscription)
-        self.log << self.name + ": Executing " + self.currenttest + " ..."
         if 'IV' in self.currenttest:
             self.doIVCurve()
         return True    

@@ -12,7 +12,8 @@ class analysis_agente(el_agente.el_agente):
         el_agente.el_agente.__init__(self, timestamp, log, sclient)
         self.active = 1
         self.pending = False
-        self.name = "analysisClient"
+        self.agente_name = "analysisAgente"
+        self.client_name = "analysisClient"
         self.currentTest = 'none'
     def setup_configuration(self, conf):
         self.subscription = conf.get("subsystem", "analysisSubscription")
@@ -47,7 +48,7 @@ class analysis_agente(el_agente.el_agente):
         if not self.active:
             return False
         # FIXME: this is clumsy
-        process = os.system("ps aux | grep -v grep | grep -v vim | grep -v emacs | grep %s" % self.name)
+        process = os.system("ps aux | grep -v grep | grep -v vim | grep -v emacs | grep %s" % self.client_name)
         if type(process) == str and process != "":
             raise Exception("Another %s client is already running. Please close this client first." % client.name)
             return True
@@ -61,7 +62,7 @@ class analysis_agente(el_agente.el_agente):
         command += "--exec-dir {0:s} ".format(self.exec_dir)
         command += "--script-dir {0:s} ".format(self.script_dir)
         command += "--log-dir {0:s} ".format(self.log_dir)
-        self.log << "Starting " + self.name + " ..."
+        self.log << "Starting " + self.client_name + " ..."
         self.child = subprocess.Popen(command, shell = True, preexec_fn = preexec)
         return True
     def subscribe(self):
@@ -93,7 +94,7 @@ class analysis_agente(el_agente.el_agente):
             command = self.init.get("Analysis " + self.currentTest, "command").split()
         except:
             # This is not an analysis
-            self.log << "%s: Not an analysis" % self.name
+            self.log << "%s: Not an analysis" % self.agente_name
             return True
         self.log << command
         command = ",".join(command)
@@ -120,7 +121,7 @@ class analysis_agente(el_agente.el_agente):
                     self.pending = False
             elif "ERROR" in packet.data.upper():
                 self.pending = False
-                #raise Exception("Error from client of %s" % self.name)
+                #raise Exception("Error from %s" % self.client_name)
 
         return not self.pending
     def set_pending(self):

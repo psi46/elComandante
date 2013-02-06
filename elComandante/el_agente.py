@@ -10,7 +10,8 @@ class el_agente():
         self.sclient = sclient
         self.active = 0
         self.pending = False
-        self.name = "el_agente"
+        self.agente_name = "el_agente"
+        self.client_name = "client"
         self.subscription = "/el_agente"
         self.Directories={}
         self.test = None
