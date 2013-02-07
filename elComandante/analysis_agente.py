@@ -2,6 +2,8 @@ import os
 import time
 import subprocess
 
+from myutils import process
+
 import el_agente
 
 def preexec():
@@ -47,10 +49,8 @@ class analysis_agente(el_agente.el_agente):
         # Check whether a client process is running
         if not self.active:
             return False
-        # FIXME: this is clumsy
-        process = os.system("ps aux | grep -v grep | grep -v vim | grep -v emacs | grep %s" % self.client_name)
-        if type(process) == str and process != "":
-            raise Exception("Another %s client is already running. Please close this client first." % client.name)
+        if process.check_process_running(self.client_name + ".py"):
+            raise Exception("Another %s is already running. Please close this client first." % self.client_name)
             return True
         return False
     def start_client(self, timestamp):
