@@ -94,9 +94,8 @@ class analysis_agente(el_agente.el_agente):
             command = self.init.get("Analysis " + self.currentTest, "command").split()
         except:
             # This is not an analysis
-            self.log << "%s: Not an analysis" % self.agente_name
             return True
-        self.log << command
+        self.log << "%s: Executing %s" % (self.client_name, " ".join(command))
         command = ",".join(command)
         for dir in self.directories:
             self.sclient.send(self.subscription, ":ANALYZE:EXECDIR " + dir + "\n")
@@ -121,6 +120,7 @@ class analysis_agente(el_agente.el_agente):
                     self.pending = False
             elif "ERROR" in packet.data.upper():
                 self.pending = False
+                self.log.warning("Error from %s" % self.client_name)
                 #raise Exception("Error from %s" % self.client_name)
 
         return not self.pending

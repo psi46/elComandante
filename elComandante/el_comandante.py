@@ -125,6 +125,7 @@ try:
     Logger = printer()
     Logger.timestamp = timestamp
     Logger.set_logfile('%s/elComandante.log'%(Directories['logDir']))
+    Logger.printw()
     Logger<<'Set LogFile to %s'%Logger.f
 
     #check if subsystem server is running, if not START subserver
@@ -143,6 +144,7 @@ try:
     #    if not "subserver.pid" in os.listdir("/var/tmp"):
     #        raise Exception("Could not start subserver")
     Logger << "Subserver is running."
+    Logger.printn()
 
     #read subserver settings
     serverZiel=config.get('subsystem','Ziel')
@@ -173,6 +175,7 @@ try:
         agente.setup_dir(Directories)
         agente.setup_configuration(config)
         agente.setup_initialization(init)
+    Logger.printn()
 
     #subscribe subscriptions
     subscriptionList = []
@@ -185,7 +188,6 @@ try:
         agente.subscribe()
 
     #directory config
-    Logger.printw() #welcome message
     #get list of tests to do:
     testlist=init.get('Tests','Test')
     test_chain = testchain.parse_test_list(testlist)
@@ -236,9 +238,10 @@ try:
 
     for agente in los_agentes:
         agente.start_client(timestamp)
+    Logger.printn()
 
     # Check the client subscriptions
-    Logger << "Checking subscription of the clients ..."
+    Logger << "Checking subscriptions of the clients ..."
     time.sleep(2)
     for subscription in subscriptionList:
         if not client.checkSubscription(subscription):
@@ -253,16 +256,16 @@ try:
 
     #-------------SETUP TESTBOARDS----------------
     Logger.printv()
-    Logger << 'The following Testboards with Modules were found:'
+    Logger << 'The following testboards with modules were found:'
     Logger.printn()
     #ToDo:
     for Testboard in los_agentes[0].Testboards:
             parentDir=setupParentDir(timestamp,Testboard)
-            Logger << '\t- Testboard %s at address %s with Module %s'%(Testboard.slot,Testboard.address,Testboard.module)
+            Logger << '\t- Testboard %s at address %s with module %s'%(Testboard.slot,Testboard.address,Testboard.module)
 
+    Logger.printn()
 
-    Logger.printv()
-    Logger << 'The following Tests will be executed:'
+    Logger << 'The following tests will be executed:'
     Logger.printn()
     testlist2 = []
     #for item in testlist:

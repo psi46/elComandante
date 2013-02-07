@@ -89,7 +89,7 @@ class psi_agente(el_agente.el_agente):
                 self.activeTestboard = int(activeTestboard[1].strip('TB'))
                 #print 'active testboard for IV is: %s'%self.activeTestboard
         for Testboard in self.Testboards:
-            self._prepare_testboard(Testboard)    
+            self._prepare_testboard(Testboard)
         self.pending = False
         return True
 
@@ -97,7 +97,7 @@ class psi_agente(el_agente.el_agente):
         if 'IV' in self.currenttest:
             if Testboard.slot != self.activeTestboard:
                 return
-        Testboard.testdir=Testboard.parentDir+'/%s_%s/'%(str(Testboard.numerator).zfill(3),self.currenttest)
+        Testboard.testdir = Testboard.parentDir + '/%s_%s_%s/' % (str(Testboard.numerator).zfill(3), self.currenttest, self.test.environment.name)
         self._setupdir_testboard(Testboard)
         if 'IV' in self.currenttest:
             self.log <<" %s: send testdir to %s: %s"%(self.agente_name, self.client_name, Testboard.testdir)
@@ -123,7 +123,7 @@ class psi_agente(el_agente.el_agente):
             self.pending = False
             return True
         elif not self.currenttest == 'powercycle':
-            self.log << self.agente_name + ": Executing " + self.currenttest + " ..."
+            pass
         else:
             self.log << 'Powercycling Testboards'
         for Testboard in self.Testboards:
@@ -152,7 +152,6 @@ class psi_agente(el_agente.el_agente):
         Testboard.busy=True
         self.sclient.send(self.subscription,':prog:TB%s:start %s,%s,commander_%s\n'%(Testboard.slot,self.Directories['testdefDir']+'/'+ self.currenttest,Testboard.testdir,self.currenttest))
         if not self.currenttest == 'powercycle':
-            self.log.printn()
             self.log << 'psi46 at Testboard %s is now started'%Testboard.slot
 
     def cleanup_test(self):
@@ -206,7 +205,6 @@ class psi_agente(el_agente.el_agente):
         return not self.pending
 
     def _setupdir_testboard(self,Testboard):
-        self.log.printn()
         if not self.currenttest == 'powercycle':
             self.log << 'Setting up the directory:'
             self.log << '\t- %s'%Testboard.testdir

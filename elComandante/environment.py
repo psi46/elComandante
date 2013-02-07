@@ -5,8 +5,8 @@ class environment():
         self.xray_voltage = 30
         self.xray_current = 10
         self.xray_target = ""
+        self.name = str(self.temperature)
         self.decode(test_str, init)
-        self.name = "default"
     def decode(self, test_str, init):
         # Test should be a string like bla@Env
         env = test_str.split("@")
