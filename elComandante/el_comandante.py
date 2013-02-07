@@ -105,14 +105,12 @@ try:
     except:
         os.mkdir(Directories['subserverDir'])
 
-    print 'check logdirectory'
     try:
         logFiles = (os.listdir(Directories['logDir']))
         nLogFiles = len(logFiles)
         print nLogFiles
     except:
         os.mkdir(Directories['logDir'])
-        print 'mkdir'
     else:
         print nLogFiles
         if nLogFiles>0:
@@ -131,7 +129,7 @@ try:
 
     #check if subsystem server is running, if not START subserver
 
-    if os.system("ps -ef | grep -v grep | grep subserver"):
+    if os.system("ps -ef | grep -v grep | grep subserver > /dev/null"):
         os.system("cd %s && subserver"%(Directories['subserverDir']))
         if os.system("ps -ef | grep -v grep | grep subserver"):
             raise Exception("Could not start subserver");
@@ -230,7 +228,6 @@ try:
             if not finished:
                 sys.stdout.write('%s\r' %output)
             sys.stdout.flush()
-        print ''
 
     # Check whether the client is already running before trying to start it
     Logger << "Checking whether clients are runnning ..."
@@ -255,6 +252,7 @@ try:
             Logger << "\t%s is answering." % agente.subscription
 
     #-------------SETUP TESTBOARDS----------------
+    Logger.printv()
     Logger << 'The following Testboards with Modules were found:'
     Logger.printn()
     #ToDo:
@@ -305,6 +303,8 @@ try:
             agente.prepare_test(test.test_str, env)
         wait_until_finished(los_agentes)
 
+        Logger.printn()
+
         # Execute tests
         Logger << "Executing test %s ..." % test.test_str
         for agente in los_agentes:
@@ -312,8 +312,10 @@ try:
             time.sleep(1.0)
         wait_until_finished(los_agentes)
 
+        Logger.printn()
+
         # Cleanup tests
-        Logger << "Cleaning up after test %s ...." % test.test_str
+        Logger << "Cleaning up after test %s ..." % test.test_str
         for agente in los_agentes:
             agente.cleanup_test()
         wait_until_finished(los_agentes)
