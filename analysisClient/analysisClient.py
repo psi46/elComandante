@@ -9,6 +9,9 @@ import myutils
 import signal
 import subprocess
 import shlex
+from myutils import process
+
+process.create_pid_file()
 
 log = myutils.printer()
 
@@ -39,6 +42,7 @@ def handler(signal, frame):
 	client.closeConnection()
 	if client.isClosed == True:
 		log << "Client connection closed."
+	process.remove_pid_file()
 
 signal.signal(signal.SIGINT, handler)
 
@@ -97,3 +101,4 @@ client.closeConnection()
 if client.isClosed == True:
 	log << "Client connection closed."
 log << "Exit."
+process.remove_pid_file()

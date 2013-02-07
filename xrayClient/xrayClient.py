@@ -8,14 +8,17 @@ import zaber
 import id3003
 import myutils
 import signal
+from myutils import process
+
+process.create_pid_file()
 
 log = myutils.printer()
 
 # Parse command line arguments
 parser = argparse.ArgumentParser()
-parser.add_argument("-xd",	"--xray-device",	dest="xray_device",	help="Xray generator device, e.g. /dev/ttyS0",	default="/dev/ttyS0")
+parser.add_argument("-xd",	"--xray-device",	dest="xray_device",	help="Xray generator device, e.g. /dev/ttyS0",	default="/dev/ttyF0")
 parser.add_argument("-xt",	"--xray-type",		dest="xray_type",	help="Xray generator device type, e.g. id3003",	default="id3003")
-parser.add_argument("-sd",	"--stage-device",	dest="stage_device",	help="Fluorescence device, e.g. /dev/ttyS0",	default="/dev/ttyS1")
+parser.add_argument("-sd",	"--stage-device",	dest="stage_device",	help="Fluorescence device, e.g. /dev/ttyS0",	default="/dev/ttyF1")
 parser.add_argument("-st",	"--stage-type",		dest="stage_type",	help="Fluorescence device type, e.g. zaber",	default="zaber")
 parser.add_argument("-dir",	"--directory",		dest="directory",	help="Directory for log files",			default=".")
 parser.add_argument("-ts",	"--timestamp",		dest="timestamp",	help="Timestamp for creation of file",		default=0)
@@ -28,7 +31,8 @@ log.set_logfile(args.directory + "/xrayClient.log")
 log.set_prefix = ""
 
 # Print welcome
-log.printw()
+log << "Xray Client"
+log.printv()
 
 # Setup Subsystem
 abo = "/xray"
@@ -150,6 +154,7 @@ def handler(signal, frame):
 	client.closeConnection()
 	if client.isClosed == True:
 		log << "Client connection closed."
+	process.remove_pid_file()
 
 signal.signal(signal.SIGINT, handler)
 
@@ -290,3 +295,4 @@ client.closeConnection()
 if client.isClosed == True:
 	log << "Client connection closed."
 log << "Exit."
+process.remove_pid_file()
