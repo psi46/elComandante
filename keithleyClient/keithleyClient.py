@@ -27,7 +27,7 @@ doingSweep = False
 
 defSerialPort = '/dev/tty.usbserial-FTG7MJTY'
 serialPort = defSerialPort
-#optParser = argparse.ArgumentParser(description='keithley communication client for Subsytem')
+
 parser = argparse.ArgumentParser()
 
 parser.add_argument("-d", "--device", dest="serialPort",
@@ -39,13 +39,7 @@ parser.add_argument("-dir","--directory", dest='dataDir',
 parser.add_argument('-ts','--timestamp', dest='timestamp',
                        help='Timestamp for creation of file',
                        default=0)
-#                       type=string,
-#                        type=file,
-#                       action='store_const',
-#                       const = serialPort)
-#                       default=defSerialPort)
-#                       action='store_const',
-#                       metavar="SERIALPORT")
+
 args = parser.parse_args()
 serialPort= args.serialPort
 try:
@@ -61,6 +55,7 @@ testDir = '%s'%(args.dataDir)
 IVLogger.set_logfile('%s/IV.log'%(args.dataDir))
 IVLogger.set_prefix('')
 IVLogger.timestamp = float(args.timestamp)
+IVLogger.DisablePrint()
 if not os.access(serialPort,os.R_OK):
     Logger.warning('serialPort \'%s\' is not accessible'%serialPort)
     sys.exit()
@@ -143,6 +138,7 @@ def sweep():
     npoint = 0
     nPoints = len(keithley.measurments)
     ivCurveLogger = printer()
+    ivCurveLogger.DisablePrint()
     ivCurveLogger.timestamp = float(args.timestamp)
     ivCurveLogger.set_prefix('')
     ivCurveLogger.set_logfile('%s/ivCurve.log'%testDir)
@@ -160,7 +156,7 @@ def sweep():
         client.sendData(voltageAbo,'%s %s\n'%(timestamp,voltage))
         client.sendData(currentAbo,'%s %s\n'%(timestamp,current))
         ivCurveLogger << '%s\t%s\t%s'%(timestamp,voltage,current)
-        IVLogger << '%s\t%s\t%s'%(timestamp,voltage,current)
+#        IVLogger << '%s\t%s\t%s'%(timestamp,voltage,current)
 #        client.sendData(resistanceAbo,'%s %s\n'%(timestamp,resistance))
     client.send(IVAbo,'Results End\n')
     client.send(aboName,':PROG:IV! FINISHED\n')
