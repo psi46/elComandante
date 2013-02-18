@@ -8,6 +8,7 @@ class test_chain:
             return self.children[0]
         elif self.parent:
             return self.parent.up_next(self)
+        return None
     def up_next(self, child):
         if not child in self.children:
             return None
@@ -34,6 +35,35 @@ class test_chain:
             str += ">"
             str += `self.children[0]`
         return str
+    def clone(self, new_parent):
+        c = test_chain(self.test_str, new_parent)
+        c.children = []
+        for d in self.children:
+            c.children.append(d.clone(c))
+        return c
+    def multiply(self, test_str_list):
+        if len(test_str_list) < 1:
+            return
+        self.parent.multiply_child(self, test_str_list)
+    def multiply_child(self, child, test_str_list):
+        if len(test_str_list) < 1:
+            return
+        if not child in self.children:
+            return False
+
+        index = 0
+        for i in range(len(self.children)):
+            if self.children[i] is child:
+                index = i
+                break
+
+        self.children[index].test_str = test_str_list[0]
+        if len(test_str_list) < 2:
+            return
+        for i in range(1, len(test_str_list)):
+            c = self.children[index].clone(self)
+            c.test_str = test_str_list[i]
+            self.children.insert(index + i, c)
 
 # Context-free grammar used for parsing
 # -------------------------------------
