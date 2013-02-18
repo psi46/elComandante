@@ -265,23 +265,22 @@ try:
 
     Logger.printn()
 
+    test = test_chain.next()
+    while test:
+        if test.test_str.find('@')>=0:
+            whichtest, env = test.test_str.split('@')
+        else:
+            whichtest = test.test_str
+            env = 17.0
+        if test.test_str == "IV":
+            test_str_list = []
+            for Testboard in los_agentes[0].Testboards:
+                test_str_list.append('%s_TB%s@%s' % (whichtest, Testboard.slot, env))
+            test.multiply(test_str_list)
+        test = test.next()
+
     Logger << 'The following tests will be executed:'
     Logger.printn()
-    testlist2 = []
-    #for item in testlist:
-    #    if item.find('@')>=0:
-    #        whichtest, env = item.split('@')
-    #    else:
-    #        whichtest = item
-    #        env = 17.0
-    #    if 'IV' in item:
-    #        for Testboard in los_agentes[0].Testboards:
-    #            testlist2.append('%s_TB%s@%s'%(whichtest,Testboard.slot,env))
-    #            Logger << '\t- %s_TB%s at %s degrees'%(whichtest,Testboard.slot, env)
-    #    else:
-    #        testlist2.append(item)
-    #        Logger << '\t- %s at %s degrees'%(whichtest, env)
-    #testlist = testlist2
     test = test_chain.next()
     while test:
         Logger << "\t- %s" % test.test_str
