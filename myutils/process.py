@@ -15,19 +15,25 @@ def remove_pid_file():
     except:
         pass
 
-def check_process_running(executable_name):
+def get_process_pid(executable_name):
     # Check for a PID file
     pidfile = executable_name + ".pid"
     if not pidfile in os.listdir("/var/tmp"):
-        return False
+        return -1
 
     # Open the PID file and read the PID
-    pid = 0
+    pid = -1
     try:
         f = open("/var/tmp/" + pidfile)
         pid = int(f.read())
         f.close()
     except:
+        return -1
+    return pid
+
+def check_process_running(executable_name):
+    pid = get_process_pid(executable_name)
+    if pid <= 0:
         return False
 
     # Read the command line of that process
