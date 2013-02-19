@@ -16,6 +16,8 @@ OFF = 0
 End = False
 Logger = printer()
 IVLogger = printer()
+Logger.set_name("KeithleyLog")
+IVLogger.set_name("ivLog")
 #sweep parameters TODO anpassen
 startValue = -100
 stopValue = -200
@@ -55,7 +57,7 @@ testDir = '%s'%(args.dataDir)
 IVLogger.set_logfile('%s/IV.log'%(args.dataDir))
 IVLogger.set_prefix('')
 IVLogger.timestamp = float(args.timestamp)
-IVLogger.DisablePrint()
+IVLogger.disable_print()
 if not os.access(serialPort,os.R_OK):
     Logger.warning('serialPort \'%s\' is not accessible'%serialPort)
     sys.exit()
@@ -138,7 +140,8 @@ def sweep():
     npoint = 0
     nPoints = len(keithley.measurments)
     ivCurveLogger = printer()
-    ivCurveLogger.DisablePrint()
+    ivCurveLogger.set_name("ivCurveLogger")
+    ivCurveLogger.disable_print()
     ivCurveLogger.timestamp = float(args.timestamp)
     ivCurveLogger.set_prefix('')
     ivCurveLogger.set_logfile('%s/ivCurve.log'%testDir)
@@ -151,7 +154,7 @@ def sweep():
         voltage = float(measurement[1])
         current = float(measurement[2])
 #        resistance = float(measurement[3])
-        client.sendData(aboName,':IV! %s/%s'%(npoint,nPoints) +" ".join(map(str, measurement[:3]))+'\n')
+        client.sendData(aboName,':IV! %s/%s '%(npoint,nPoints) +" ".join(map(str, measurement[:3]))+'\n')
         client.sendData(IVAbo," ".join(map(str, measurement[:3]))+'\n')
         client.sendData(voltageAbo,'%s %s\n'%(timestamp,voltage))
         client.sendData(currentAbo,'%s %s\n'%(timestamp,current))
@@ -205,7 +208,7 @@ def  analyseIV(coms,typ,msg):
 #    Logger <<'analyse :IV'
     if len(coms)==0:
         if msg.lower().find('meas')>=0 and typ=='c':
-            outMsg= 'Do Sweep from %.2f V to %.2f'%(startValue,stopValue)
+            outMsg= ':MSG! Do Sweep from %.2f V to %.2f'%(startValue,stopValue)
             outMsg+=' in steps of %.2fV with a delay of %.f\n'%(stepValue,delay)
             outMsg+='\tTestDirectory is "%s"\n'%testDir
             Logger << outMsg

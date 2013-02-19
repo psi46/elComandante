@@ -1,22 +1,26 @@
 #!/usr/bin/env python
 import sys
 sys.path.insert(1, "../")
-from myutils import BetterConfigParser, sClient, decode, printer, preexec, testchain
+from myutils import BetterConfigParser, sClient, decode, printer, preexec, testchain,scp
 from myutils import Testboard as Testboarddefinition
-from time import strftime, gmtime
+from time import strftime, localtime
 import time
-from shutil import copytree,rmtree
+from shutil import copytree,rmtree, copyfile
+import paramiko
 import os
 import subprocess
 import argparse
 import environment
 import xray_agente
 import psi_agente
+import shutil
 import coolingBox_agente
 import analysis_agente
 import highVoltage_agente
 import watchDog_agente
 import signal
+import tarfile
+#import scp
 
 los_agentes = []
 
@@ -75,23 +79,26 @@ try:
         #raise SystemExit
 
     #load config
+    configFile = configDir+'/elComandante.conf'
     config = BetterConfigParser()
-    config.read(configDir+'/elComandante.conf')
+    config.read(configFile)
     #load init
+    iniFile = configDir+'/elComandante.ini'
     init = BetterConfigParser()
-    init.read(configDir+'/elComandante.ini')
+    init.read(iniFile)
 
     Directories={}
 
-    Directories['configDir']=configDir
-    Directories['baseDir']=config.get('Directories','baseDir')
-    Directories['testdefDir']=config.get('Directories','testDefinitions')
-    Directories['dataDir']=config.get('Directories','dataDir')
-    Directories['defaultParameters']=config.get('Directories','defaultParameters')
-    Directories['subserverDir']=config.get('Directories','subserverDir')
-    Directories['keithleyDir']=config.get('Directories','keithleyDir')
-    Directories['jumoDir']=config.get('Directories','jumoDir')
-    Directories['logDir']=Directories['dataDir']+'/logfiles/'
+    Directories['configDir'] = configDir
+    Directories['baseDir'] = config.get('Directories','baseDir')
+    Directories['testdefDir'] = config.get('Directories','testDefinitions')
+    Directories['dataDir'] = config.get('Directories','dataDir')
+    Directories['defaultParameters'] = config.get('Directories','defaultParameters')
+    Directories['subserverDir'] = config.get('Directories','subserverDir')
+    Directories['keithleyDir'] = config.get('Directories','keithleyDir')
+    Directories['jumoDir'] = config.get('Directories','jumoDir')
+    Directories['logDir'] = Directories['dataDir']+'/logfiles/'
+    config.Directories = Directories
 
     for dir in Directories:
         #if "$configDir$" in Directories[dir]:
@@ -123,6 +130,7 @@ try:
 
     #initialise Logger
     Logger = printer()
+    Logger.set_name("elComandanteLog")
     Logger.timestamp = timestamp
     Logger.set_logfile('%s/elComandante.log'%(Directories['logDir']))
     Logger.printw()
@@ -211,13 +219,18 @@ try:
     test_chain.parameter_dir = dir_list
 
     #-------------------------------------
-    def setupParentDir(timestamp,Testboard):
-            Testboard.parentDir=Directories['dataDir']+'/%s_%s_%s/'%(Testboard.module,strftime("%Y-%m-%d_%Hh%Mm",gmtime(timestamp)),timestamp)
-            try:
-                os.stat(Testboard.parentDir)
-            except:
-                os.mkdir(Testboard.parentDir)
-            return Testboard.parentDir
+
+    def setupParentDir(timestamp,Testboard,init):
+        Testboard.dataDir = Directories['dataDir']
+        if init.has_option('Tests','TestDescription'):
+            Testboard.moduleDir = '%s_%s_%s_%s'%(Testboard.module,init.get('Tests','TestDescription'),strftime("%Y-%m-%d_%Hh%Mm",localtime(timestamp)),timestamp)
+        else:
+            Testboard.moduleDir = '%s_%s_%s'%(Testboard.module,strftime("%Y-%m-%d_%Hh%Mm",localtime(timestamp)),timestamp)
+        try:
+            os.stat(Testboard.parentDir)
+        except:
+            os.mkdir(Testboard.parentDir)
+        return Testboard.parentDir
 
     def wait_until_finished(los_agentes):
         finished = False
@@ -238,7 +251,7 @@ try:
 
     for agente in los_agentes:
         agente.start_client(timestamp)
-    Logger.printn()
+    Logger.printn()#        self.parentDir='.'
 
     # Check the client subscriptions
     Logger << "Checking subscriptions of the clients ..."
@@ -260,7 +273,7 @@ try:
     Logger.printn()
     #ToDo:
     for Testboard in los_agentes[0].Testboards:
-            parentDir=setupParentDir(timestamp,Testboard)
+            parentDir=setupParentDir(timestamp,Testboard,init)
             Logger << '\t- Testboard %s at address %s with module %s'%(Testboard.slot,Testboard.address,Testboard.module)
 
     Logger.printn()
@@ -272,7 +285,7 @@ try:
         else:
             whichtest = test.test_str
             env = 17.0
-        if test.test_str == "IV":
+        if whichtest== "IV":
             test_str_list = []
             for Testboard in los_agentes[0].Testboards:
                 test_str_list.append('%s_TB%s@%s' % (whichtest, Testboard.slot, env))
@@ -360,7 +373,13 @@ try:
     #todo
     for Testboard in los_agentes[0].Testboards:
             try:
-                copytree(Directories['logDir'],Testboard.parentDir+'logfiles')
+                dest = Testboard.parentDir+'logfiles'
+                copytree(Directories['logDir'],dest)
+                dest = Testboard.parentDir+'/configfiles/'
+                if not os.path.exists(dest):
+                    os.mkdir(dest)
+                shutil.copy2(iniFile,dest)
+                shutil.copy2(configFile,dest)
             except:
                 raise
                 #raise Exception('Could not copy Logfiles into testDirectory of Module %s\n%s ---> %s'%(Testboard.module,Directories['logDir'],Testboard.parentdir))
@@ -372,6 +391,53 @@ try:
     for Testboard in los_agentes[0].Testboards:
         try: rmtree(Testboard.parentDir+'/tmp/')
         except: pass
+    #create tar.gz files
+    for Testboard in los_agentes[0].Testboards:
+        tarFileName = Testboard.parentDir
+        if tarFileName.endswith('/'):
+            tarFileName=tarFileName[:-1]
+        tarFileName += '.tar.gz'
+        tar = tarfile.open(tarFileName, "w:gz")
+        tar.add(Testboard.parentDir, arcname=Testboard.moduleDir);
+#        for name in ["file1", "file2", "file3"]:
+#    tar.add(name)
+        tar.close()
+        pass
+    #copy files to server
+    checkConfig = config.has_option('Transfer','host')
+    checkConfig = checkConfig and config.has_option('Transfer','port')
+    checkConfig = checkConfig and config.has_option('Transfer','user')
+    checkConfig = checkConfig and config.has_option('Transfer','destination')
+    if  checkConfig:
+        host = config.get('Transfer','host')
+        port = config.get('Transfer','port')
+        user = config.get('Transfer','user')
+        dest = config.get('Transfer','destination')
+        ssh = paramiko.SSHClient()
+        try:
+            ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh.connect(host,port,username=user)
+            transport = ssh.get_transport()
+            ssh_client = scp.SCPClient(transport)
+            if not dest.endswith('/'):
+                dest+='/'
+            for Testboard in los_agentes[0].Testboards:
+                try:
+                    tarFileName = Testboard.parentDir
+                    if tarFileName.endswith('/'):
+                        tarFileName=tarFileName[:-1]
+                        tarFileName += '.tar.gz'
+                    print 'copy file: %s --> %s:%s' % (tarFileName, host,dest)
+                    try:
+                        ssh_client.put(tarFileName, dest, preserve_times=True)
+                    except scp.ScpError, e:
+                        raise notch.agent.errors.DownloadError(str(e))
+                except:
+                    pass
+        except:
+            raise
+    
 except:
     killChildren()
     raise

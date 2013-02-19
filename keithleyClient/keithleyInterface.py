@@ -413,7 +413,7 @@ class keithleyInterface:
             self.measurments.append(measurment)
             self.lastVoltage = measurment[0]
             tripped = self.isTriped(measurment[5])
-            print '%s:\tMeasured at %s V: %s A, %s \t=> new Length of Queue: %s/%s'%(measurment[0],measurment[1],measurment[2],tripped,len(self.measurments),self.nTrigs)
+            print '%s:\t Measured at %s V: %s A, %s \t=> new Length of Queue: %s/%s'%(measurment[0],measurment[1],measurment[2],tripped,len(self.measurments),self.nTrigs)
             if tripped:
                 return False
             else:

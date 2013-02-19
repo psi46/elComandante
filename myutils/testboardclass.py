@@ -11,6 +11,10 @@ class Testboard:
         self.powerdup=False
         self.busy=False
         self.timestamp=0
-        self.parentDir='.'
         self.active=True
         self.numerator = 0
+        self.dataDir ='.'
+        self.moduleDir ='MXXXX'
+    @property
+    def parentDir(self):
+        return '%s/%s/'%(self.dataDir,self.moduleDir)

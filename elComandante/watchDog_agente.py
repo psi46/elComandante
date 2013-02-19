@@ -4,6 +4,7 @@ import subprocess
 import sys
 sys.path.insert(1,"../")
 from myutils import sClient,decode,printer,preexec
+from shutil import copyfile
 import time
 import el_agente
 
@@ -18,15 +19,19 @@ class watchDog_agente(el_agente.el_agente):
         self.active = True
         self.pending = False
         self.currentTestTempLogger = None
+        
     def setup_configuration(self, conf):
         #self.port = conf.get("jumoClient","port")
-        self.logDir = conf.get("Directories","dataDir")+"logfiles"
+        self.logDir = conf.Directories['logDir']
+        self.configFile = conf.Directories['configDir']+'/elComandante.conf'
+        self.initFile = conf.Directories['configDir']+'/elComandante.ini'
+#                                       get("Directories","dataDir")+"logfiles"
         self.logFileName = "temperature.log"
         self.subscription = "/temperature/jumo"
         self.tempLog = printer()
-        self.tempLog.setName('Temperature')
+        self.tempLog.set_name('Temperature')
         self.tempLog.set_logfile('%s/%s'%(self.logDir,self.logFileName))
-        self.tempLog.DisablePrint()
+        self.tempLog.disable_print()
         return True
     
     def setup_initialization(self, init):
@@ -97,7 +102,8 @@ class watchDog_agente(el_agente.el_agente):
     def final_test_cleanup(self):
         # Cleanup after all tests have finished to return
         # everything to the state before the test
-        #Heat Up again
+
+        # create Config directory
         return False
     def check_finished(self):
         # Check whether the client has finished its task
@@ -119,4 +125,5 @@ class watchDog_agente(el_agente.el_agente):
     def set_pending(self):
         #self.sclient.send(self.subscription,":FINISHED\n")
         self.pending = True
+        
 

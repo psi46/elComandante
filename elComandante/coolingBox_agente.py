@@ -101,7 +101,7 @@ class coolingBox_agente(el_agente.el_agente):
         # Initiate a test
         if not self.active:
             return True
-        if "cycle" in self.currentTest.lower():
+        if self.currentTest.lower().startswith('cycle'):
             self.sclient.clearPackets(self.subscription)
             time.sleep(1.0)
             self.set_pending()
@@ -214,7 +214,7 @@ class coolingBox_agente(el_agente.el_agente):
             Time,coms,typ,msg = decode(data)[:4]
             if len(coms)>1:
                 if "prog" in coms[0].lower():
-                    if  "cycle" in coms[1].lower() and typ == 'a' and 'finished' in msg.lower():
+                    if  coms[1].lower().startswith("cycle") and typ == 'a' and 'finished' in msg.lower():
                         self.pending = False
                         self.log << "%s: Cycle has been finished" % self.agente_name
                     elif "stat" in coms[1].lower() and typ == 'a':

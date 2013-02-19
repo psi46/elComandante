@@ -28,6 +28,7 @@ parser.add_argument("-num","--numTB", dest="numTB",
 #parse args and setup logdir
 args = parser.parse_args()
 Logger = printer()
+Logger.set_name("Psi46Log")
 Logger.set_prefix('')
 Logger.set_logfile('%s/psi46Handler.log'%(args.loggingDir))
 #Logger <<'ConfigDir: "%s"'%args.configDir

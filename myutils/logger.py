@@ -14,13 +14,27 @@ class printer:
         self.logger1 = None
         self.logFileHandler = None
         self.name = 'none'
-    def setName(self,name):
+        
+    def __del__(self):
+        print "Closing Logger with name %s"%self.name
+        if (self.showOutput):
+            print '    |'
+        if (self.showOutput):
+            print '----+-----------------------------------------------------------------------'
+        if (self.showOutput):
+            print '    |'
+        if self.f:
+            self.f.write('#---------------------------------------------------------\n\n')
+            self.f.close()
+            
+            
+    def set_name(self,name):
         self.name = name
     def SetShowOutput(self):
         self.showOutput = True
     def UnsetShowOutput(self):
         self.showOutput = False
-    def DisablePrint(self):
+    def disable_print(self):
         self.UnsetShowOutput()
         
     def __lshift__(self,*arg):
@@ -81,7 +95,7 @@ class printer:
         self.loglevel=loglevel
 
     def set_logfile(self,path):
-        print 'Set Logfile to "%s"'%path
+        print '%s: Set Logfile to "%s"'%(self.name,path)
         self.logger1 = logging.getLogger('log%s'%self.name)
         self.logFileHandler = logging.FileHandler(path)
         self.logger1.addHandler(self.logFileHandler)
@@ -92,16 +106,7 @@ class printer:
         #if self.f and self.loglevel > 0: self.f.write(x+'\n')
         #self.f.write()
 
-    def __del__(self):
-        if (self.showOutput):
-            print '    |'
-        if (self.showOutput):
-            print '----+-----------------------------------------------------------------------'
-        if (self.showOutput):
-            print '    |'
-        if self.f:
-            self.f.write('#---------------------------------------------------------\n\n')
-            self.f.close()
+
     def printv(self):
         if (self.showOutput):
             print '    |'
