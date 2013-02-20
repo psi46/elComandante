@@ -24,6 +24,7 @@ import glob
 #import scp
 
 los_agentes = []
+Directories={}
 
 def killChildren():
 #    print "Killing clients ..."
@@ -83,7 +84,7 @@ def uploadTarFiles(tarList,Logger):
             dest = config.get('Transfer','destination')
             ssh = paramiko.SSHClient()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            ssh.connect(config.get('Transfer','host'),config.get('Transfer','port'),username=config.get('Transfer','user'))
+            ssh.connect(config.get('Transfer','host'),config.getint('Transfer','port'),username=config.get('Transfer','user'))
             transport = ssh.get_transport()
             ssh_client = scp.SCPClient(transport)
             if not dest.endswith('/'):
@@ -96,17 +97,40 @@ def uploadTarFiles(tarList,Logger):
                     ssh_client.put(item, dest, preserve_times=False)
                     Logger.printn()
                     #TODO checksum
+                    checkTransfer = True
+                    if checkTransfer:
+                        Logger << 'Transfer of %s was successful, delte tar file'%fileName
+                        os.remove(item)
                     #remove TAR
                     #move Dir to localStorage
+                localStorage = Directories['storageDir']
+                dir = fileName.rstrip('.tar.gz')
+                moveDirToStorage(dir,localStorage,Logger)
             ssh.close()                
         except:
             raise
     else:
         print "cannot upload data since no alll needed options are defined: section 'Transfer', options: 'host,'port','user','destination'"
 
+def moveDirToStorage(dir,storage,Logger):
+    Logger << " move %s ---> %s"%(dir,storage)
+    try:
+        os.stat(storage)
+    except:
+        if not userQueries.query_yes_no("Do you want to create the storage dir '%s/?"%storage,"yes",Logger):
+            raise
+        else:
+            Logger<<"Make directory: %s"%storage
+            os.mkdir(storage)
+    dir = '%s/%s'%(Directories['dataDir'],dir)
+    dir.rstrip('/')
+    Logger<< "Move %s --> %s"%(dir,storage)
+    shutil.move(dir,storage)
+    pass
+
 def check_for_tar(dataDir, Logger):
     if config.has_option('Transfer','checkForTars'):
-       if not config.getBoolean('Transfer','checkForTars'):
+       if not config.getboolean('Transfer','checkForTars'):
            return 
     tarList = glob.glob('%s/*.tar.gz'%dataDir)
 #    tarList = ['%s/%s'%(dataDir,item) for item in tarList]
@@ -141,8 +165,6 @@ try:
     init = BetterConfigParser()
     init.read(iniFile)
 
-    Directories={}
-
     Directories['configDir'] = configDir
     Directories['baseDir'] = config.get('Directories','baseDir')
     Directories['testdefDir'] = config.get('Directories','testDefinitions')
@@ -152,6 +174,10 @@ try:
     Directories['keithleyDir'] = config.get('Directories','keithleyDir')
     Directories['jumoDir'] = config.get('Directories','jumoDir')
     Directories['logDir'] = Directories['dataDir']+'/logfiles/'
+    if config.has_option('Directories','storageDir'):
+         Directories['storageDir'] = config.get('Directories','storageDir')
+    else:
+        Directories['storageDir']= Directories['dataDir']+'/storage/'
     config.Directories = Directories
 
     for dir in Directories:
@@ -437,7 +463,7 @@ try:
             except:
                 raise
     createTarFiles(los_agentes[0])
-    tarList =['%s.tar.gz'%Testboard.parentDir.rstrip('/') for Tesboard in los_agentes[0]]
+    tarList =['%s.tar.gz'%Testboard.parentDir.rstrip('/') for Tesboard in los_agentes[0].Testboards]
     uploadTarFiles(tarList,Logger)
                 #raise Exception('Could not copy Logfiles into testDirectory of Module %s\n%s ---> %s'%(Testboard.module,Directories['logDir'],Testboard.parentdir))
     del Logger
