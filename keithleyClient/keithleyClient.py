@@ -295,7 +295,7 @@ def analyseProg(coms,typ,msg):
 #        Logger << 'end program'
         client.closeConnection();
     else:
-        Logger << Help()
+        printHelp()
     pass
 
 def analyseOutp(coms,typ,msg): #pretty much ok
