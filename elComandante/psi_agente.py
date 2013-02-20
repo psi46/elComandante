@@ -97,7 +97,13 @@ class psi_agente(el_agente.el_agente):
         if 'IV' in self.currenttest:
             if Testboard.slot != self.activeTestboard:
                 return
-        Testboard.testdir = Testboard.parentDir + '/%s_%s_%s/' % (str(Testboard.numerator).zfill(3), self.currenttest, self.test.environment.name)
+        if self.test.environment.temperature >=0:
+            tempString = "p%s"%self.test.environment.temperature
+        else:
+            tempString = "m%s"%(-1*self.test.environment.temperature)
+             
+        Testboard.testdir = Testboard.parentDir + '/%s_%s_%s/' % (str(Testboard.numerator).zfill(3), self.currenttest, tempString)
+        self.log <<"%s: set testdir '%s'"%(self.agente_name,Testboard.testdir)
         self._setupdir_testboard(Testboard)
         if 'IV' in self.currenttest:
             self.log <<" %s: send testdir to %s: %s"%(self.agente_name, self.client_name, Testboard.testdir)

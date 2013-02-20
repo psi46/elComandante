@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import sys
 sys.path.insert(1, "../")
-from myutils import BetterConfigParser, sClient, decode, printer, preexec, testchain,scp
+from myutils import BetterConfigParser, sClient, decode, printer, preexec, testchain,scp,userQueries
 from myutils import Testboard as Testboarddefinition
 from time import strftime, localtime
 import time
@@ -20,12 +20,13 @@ import highVoltage_agente
 import watchDog_agente
 import signal
 import tarfile
+import glob
 #import scp
 
 los_agentes = []
 
 def killChildren():
-    print "Killing clients ..."
+#    print "Killing clients ..."
 
     # Ask the client processes to exit
     for agente in los_agentes:
@@ -56,8 +57,61 @@ def handler(signum, frame):
     killChildren();
     sys.exit(0)
 
+def createTarFiles(psi_agente):
+     #create tar.gz files
+    for Testboard in psi_agente.Testboards:
+        tarFileName = Testboard.parentDir
+        if tarFileName.endswith('/'):
+            tarFileName=tarFileName[:-1]
+        tarFileName += '.tar.gz'
+        tar = tarfile.open(tarFileName, "w:gz")
+        tar.add(Testboard.parentDir, arcname=Testboard.moduleDir);
+#        for name in ["file1", "file2", "file3"]:
+#    tar.add(name)
+        tar.close()
+        pass
 #signal.signal(signal.SIGINT, handler)
 
+def uploadTarFiles(tarList,Logger):
+    #check if all needed options are defined
+    checkConfig = config.has_option('Transfer','host')
+    checkConfig = checkConfig and config.has_option('Transfer','port')
+    checkConfig = checkConfig and config.has_option('Transfer','user')
+    checkConfig = checkConfig and config.has_option('Transfer','destination')
+    if  checkConfig:
+        try:
+            dest = config.get('Transfer','destination')
+            ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh.connect(config.get('Transfer','host'),config.get('Transfer','port'),username=config.get('Transfer','user'))
+            transport = ssh.get_transport()
+            ssh_client = scp.SCPClient(transport)
+            if not dest.endswith('/'):
+                dest+='/'
+            Logger << 'copy files:'
+            for item in tarList:
+                fileName = item.split('/')[-1]
+                if userQueries.query_yes_no("Do you want to upload the data of %s?"%(fileName),"yes",Logger):
+                    Logger << 'uploading: \t%s --> %s:%s' % (fileName, config.get('Transfer','host'),dest)
+                    ssh_client.put(item, dest, preserve_times=False)
+                    Logger.printn()
+                    #TODO checksum
+                    #remove TAR
+                    #move Dir to localStorage
+            ssh.close()                
+        except:
+            raise
+    else:
+        print "cannot upload data since no alll needed options are defined: section 'Transfer', options: 'host,'port','user','destination'"
+
+def check_for_tar(dataDir, Logger):
+    if config.has_option('Transfer','checkForTars'):
+       if not config.getBoolean('Transfer','checkForTars'):
+           return 
+    tarList = glob.glob('%s/*.tar.gz'%dataDir)
+#    tarList = ['%s/%s'%(dataDir,item) for item in tarList]
+    uploadTarFiles(tarList,Logger)
+    
 try:
     #get timestamp
     timestamp = int(time.time())
@@ -76,7 +130,7 @@ try:
     except:
         raise Exception('configDir \'%s\' is not accessible'%configDir)
         #sys.exit()
-        #raise SystemExit
+        #raise SystemExittimes
 
     #load config
     configFile = configDir+'/elComandante.conf'
@@ -121,8 +175,7 @@ try:
     else:
         print nLogFiles
         if nLogFiles>0:
-            answer = raw_input('Do you want to overwrite \'%s\'? [y]es or [n]o\n\t'%logFiles)
-            if 'y' in answer.lower():
+            if userQueries.query_yes_no('Do you want to overwrite \'%s\'?'%logFiles,default='no'):
                 rmtree(Directories['logDir'])
                 os.mkdir(Directories['logDir'])
             else:
@@ -135,6 +188,7 @@ try:
     Logger.set_logfile('%s/elComandante.log'%(Directories['logDir']))
     Logger.printw()
     Logger<<'Set LogFile to %s'%Logger.f
+    check_for_tar(Directories['dataDir'],Logger)
 
     #check if subsystem server is running, if not START subserver
 
@@ -369,7 +423,7 @@ try:
         raise Exception("Couldn't find logDir %s"%Directories['logDir'])
     killChildren();
 
-    del Logger
+   
     #todo
     for Testboard in los_agentes[0].Testboards:
             try:
@@ -382,7 +436,12 @@ try:
                 shutil.copy2(configFile,dest)
             except:
                 raise
+    createTarFiles(los_agentes[0])
+    tarList =['%s.tar.gz'%Testboard.parentDir.rstrip('/') for Tesboard in los_agentes[0]]
+    uploadTarFiles(tarList,Logger)
                 #raise Exception('Could not copy Logfiles into testDirectory of Module %s\n%s ---> %s'%(Testboard.module,Directories['logDir'],Testboard.parentdir))
+    del Logger
+    
     try:
         rmtree(Directories['logDir'])
     except:
@@ -391,53 +450,7 @@ try:
     for Testboard in los_agentes[0].Testboards:
         try: rmtree(Testboard.parentDir+'/tmp/')
         except: pass
-    #create tar.gz files
-    for Testboard in los_agentes[0].Testboards:
-        tarFileName = Testboard.parentDir
-        if tarFileName.endswith('/'):
-            tarFileName=tarFileName[:-1]
-        tarFileName += '.tar.gz'
-        tar = tarfile.open(tarFileName, "w:gz")
-        tar.add(Testboard.parentDir, arcname=Testboard.moduleDir);
-#        for name in ["file1", "file2", "file3"]:
-#    tar.add(name)
-        tar.close()
-        pass
-    #copy files to server
-    checkConfig = config.has_option('Transfer','host')
-    checkConfig = checkConfig and config.has_option('Transfer','port')
-    checkConfig = checkConfig and config.has_option('Transfer','user')
-    checkConfig = checkConfig and config.has_option('Transfer','destination')
-    if  checkConfig:
-        host = config.get('Transfer','host')
-        port = config.get('Transfer','port')
-        user = config.get('Transfer','user')
-        dest = config.get('Transfer','destination')
-        ssh = paramiko.SSHClient()
-        try:
-            ssh = paramiko.SSHClient()
-            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            ssh.connect(host,port,username=user)
-            transport = ssh.get_transport()
-            ssh_client = scp.SCPClient(transport)
-            if not dest.endswith('/'):
-                dest+='/'
-            for Testboard in los_agentes[0].Testboards:
-                try:
-                    tarFileName = Testboard.parentDir
-                    if tarFileName.endswith('/'):
-                        tarFileName=tarFileName[:-1]
-                        tarFileName += '.tar.gz'
-                    print 'copy file: %s --> %s:%s' % (tarFileName, host,dest)
-                    try:
-                        ssh_client.put(tarFileName, dest, preserve_times=True)
-                    except scp.ScpError, e:
-                        raise notch.agent.errors.DownloadError(str(e))
-                except:
-                    pass
-        except:
-            raise
-    
+   
 except:
     killChildren()
     raise

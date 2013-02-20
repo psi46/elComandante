@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from time import strftime,time, gmtime
 import logging
 class printer:
@@ -16,9 +15,9 @@ class printer:
         self.name = 'none'
         
     def __del__(self):
-        print "Closing Logger with name %s"%self.name
+        #print "Closing Logger with name %s"%self.name
         if (self.showOutput):
-            print '    |'
+            print self.prefix
         if (self.showOutput):
             print '----+-----------------------------------------------------------------------'
         if (self.showOutput):
@@ -39,22 +38,24 @@ class printer:
         
     def __lshift__(self,*arg):
         x = ' '.join(str(i) for i in arg)
-        if (self.showOutput):
-            print self.prefix + self.A + x + self.B
+        self._print(x)
         self.logToFile(x)
+    
+    def _print(self,output):
+        if (self.showOutput):
+            print self.prefix + self.A + output + self.B
+        
 
     def printcolor(self,x,color=''):
         A='\033[1;3%sm'%(self.identifyer(color))
         B='\033[1;m'
-        if (self.showOutput):
-            print self.prefix + A + x + B
+        self._print(A + x + B)
         self.logToFile(x)
 
     def warning(self,x):
         A='\033[1;31m'
         B='\033[1;m'
-        if (self.showOutput):
-            print self.prefix + A + x + B
+        self._print(A + x + B)
         self.warningToFile(x)
 
     def warningToFile(self,log):
@@ -67,7 +68,8 @@ class printer:
             self.logger1.info(log)
             self.logFileHandler.flush()
 
-    def identifyer(self,color):
+    @staticmethod
+    def identifyer(color):
         if color == 'black': return 0
         elif color == 'red': return 1
         elif color == 'green': return 2
@@ -95,7 +97,7 @@ class printer:
         self.loglevel=loglevel
 
     def set_logfile(self,path):
-        print '%s: Set Logfile to "%s"'%(self.name,path)
+        self._print('%s: Set Logfile to "%s"'%(self.name,path))
         self.logger1 = logging.getLogger('log%s'%self.name)
         self.logFileHandler = logging.FileHandler(path)
         self.logger1.addHandler(self.logFileHandler)
@@ -108,56 +110,42 @@ class printer:
 
 
     def printv(self):
-        if (self.showOutput):
-            print '    |'
-        if (self.showOutput):
-            print '----+-----------------------------------------------------------------------'
-        if (self.showOutput):
-            print '    |'
-        if self.f and self.loglevel > 0: self.f.write('----------------\n')
+        if not self.showOutput:
+            return
+        self._print('')
+        print '----+-----------------------------------------------------------------------'
+        self._print('')
+        if self.f and self.loglevel > 0:
+            self.logToFile('----------------\n') 
+   
     def printn(self):
         if (self.showOutput):
             print '    |'
-        if self.f and self.loglevel > 0: self.f.write('\n')
+        if self.f and self.loglevel > 0: 
+            self.logToFile('')
+    
     def printw(self):
-        if (self.showOutput):
-            print '    |'
-        if (self.showOutput):
-            print '----+-----------------------------------------------------------------------'
-        if (self.showOutput):
-            print '    |'
-        if (self.showOutput):
-            print '    | \033[1;34mdBBBBBBBBBBBBBBBBBBP  dBP\033[1;m'
-        if (self.showOutput):
-            print '    |\033[1;34mdBP       dBP    dBP  dBP\033[1;m'
-        if (self.showOutput):
-            print '    \033[1;34mdBBBBP    dBP    dBBBBBBP\033[1;m'
-        if (self.showOutput):
-            print '   \033[1;34mdBP       dBP    dBP  dBP\033[1;m'
-        if (self.showOutput):
-            print '  \033[1;34mdBBBBBP   dBP    dBP  dBP\033[1;m  \033[1;30mSwiss Federal Institute of Technology Zurich\033[1;m'
-        if (self.showOutput):
-            print '    |'
-        if (self.showOutput):
-            print '----+-----------------------------------------------------------------------'
-        if (self.showOutput):
-            print '    |'
-        if (self.showOutput):
-            print '    |  \033[1;30mEL COMANDANTE\033[1;m - CMS Pixel Detector Module Testing Software'
-        if (self.showOutput):
-            print '    |  \033[1;30mElComandante:\033[1;m An \033[1;30mEL\033[1;maborate \033[1;30mC\033[1;momputer \033[1;30mO\033[1;mperated \033[1;30mM\033[1;modular \033[1;30mA\033[1;mccessible' 
-        if (self.showOutput):
-            print '    |                   \033[1;30mN\033[1;mested \033[1;30mD\033[1;mata \033[1;30mA\033[1;mggregation \033[1;30mN\033[1;metwork \033[1;30mT\033[1;mesting \033[1;30mE\033[1;mnvironment'
-        if (self.showOutput):
-            print '    |  Developped at ETHZ in 2012'
-        if (self.showOutput):
-            print '    |  Felix Bachmair & Philipp Eller'
-        if (self.showOutput):
-            print '    |'
-        if (self.showOutput):
-            print '----+-----------------------------------------------------------------------'
-        if (self.showOutput):
-            print '    |'
+        if not self.showOutput:
+            return
+        print '    |'
+        print '----+-----------------------------------------------------------------------'
+        print '    |'
+        print '    | \033[1;34mdBBBBBBBBBBBBBBBBBBP  dBP\033[1;m'
+        print '    |\033[1;34mdBP       dBP    dBP  dBP\033[1;m'
+        print '    \033[1;34mdBBBBP    dBP    dBBBBBBP\033[1;m'
+        print '   \033[1;34mdBP       dBP    dBP  dBP\033[1;m'
+        print '  \033[1;34mdBBBBBP   dBP    dBP  dBP\033[1;m  \033[1;30mSwiss Federal Institute of Technology Zurich\033[1;m'
+        print '    |'
+        print '----+-----------------------------------------------------------------------'
+        print '    |'
+        print '    |  \033[1;30mEL COMANDANTE\033[1;m - CMS Pixel Detector Module Testing Software'
+        print '    |  \033[1;30mElComandante:\033[1;m An \033[1;30mEL\033[1;maborate \033[1;30mC\033[1;momputer \033[1;30mO\033[1;mperated \033[1;30mM\033[1;modular \033[1;30mA\033[1;mccessible' 
+        print '    |                   \033[1;30mN\033[1;mested \033[1;30mD\033[1;mata \033[1;30mA\033[1;mggregation \033[1;30mN\033[1;metwork \033[1;30mT\033[1;mesting \033[1;30mE\033[1;mnvironment'
+        print '    |  Developped at ETHZ in 2012'
+        print '    |  Felix Bachmair & Philipp Eller'
+        print '    |'
+        print '----+-----------------------------------------------------------------------'
+        print '    |'
 
 
 

@@ -316,3 +316,5 @@ class SCPClient(object):
 class SCPException(Exception):
     """SCP exception class"""
     pass
+class SCPError(Exception): pass
+class SCPTimeoutError(SCPError): pass

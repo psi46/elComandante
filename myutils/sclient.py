@@ -214,7 +214,6 @@ class sClient:
         while not self.thread_gestartet and self.anzahl_threads == 0: 
             pass 
     def closeConnection(self):
-        print 'Close Connection'
         closePacket =packet_t(self.ziel,self.port)
         closePacket.type = closePacket.PKT_CLIENTTERM
         closePacket.aboName = ''
