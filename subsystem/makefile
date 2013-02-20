@@ -155,14 +155,13 @@ install:	lib
 	@$(ECHO) " CP inclued files"
 	@mkdir -p $(INC_INSTALL_PATH)
 	@$(ECHO) cp to "$(INC_INSTALL_PATH)"
-	@cp -Lvf `find . -name "*.h"` $(INC_INSTALL_PATH)
+	@find . -name "*.h" -print -exec cp -Lvf {} $(INC_INSTALL_PATH) \;
 	@INCFILES=`find . \( -path "./clients"\
 			-or -path "./documentation"\
 			-or -path "./subsystem*"\
 			-or -path "./qt4" \) -prune -o -name "*.h" -a -print`;
 	@$(ECHO) COPY INCLUDE FILES: "$(INCFILES) $$INCFILES"
 	@$(ECHO) $$INCFILES
-	#@cp -Lfvr $$INCFILES $(INC_INSTALL_PATH)
 	@$(ECHO) -e " INSTALL ok."
 
 bin:	all
