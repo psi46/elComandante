@@ -98,9 +98,9 @@ class psi_agente(el_agente.el_agente):
             if Testboard.slot != self.activeTestboard:
                 return
         if self.test.environment.temperature >=0:
-            tempString = "p%s"%self.test.environment.temperature
+            tempString = "p%s"%int(self.test.environment.temperature)
         else:
-            tempString = "m%s"%(-1*self.test.environment.temperature)
+            tempString = "m%s"%(-1*int(self.test.environment.temperature))
              
         Testboard.testdir = Testboard.parentDir + '/%s_%s_%s/' % (str(Testboard.numerator).zfill(3), self.currenttest, tempString)
         self.log <<"%s: set testdir '%s'"%(self.agente_name,Testboard.testdir)

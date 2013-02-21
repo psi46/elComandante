@@ -142,7 +142,7 @@ def sweep():
     ivCurveLogger = printer()
     ivCurveLogger.set_name("ivCurveLogger")
     ivCurveLogger.disable_print()
-    ivCurveLogger.timestamp = float(args.timestamp)
+#    ivCurveLogger.timestamp = float(args.timestamp)
     ivCurveLogger.set_prefix('')
     ivCurveLogger.set_logfile('%s/ivCurve.log'%testDir)
     ivCurveLogger << '#timestamp\tvoltage(V)\tcurrent(A)'

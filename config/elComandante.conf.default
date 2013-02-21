@@ -16,8 +16,8 @@ TB0: DPE00JA9
 #TB0: DPCDKAPA
 TB1: DPE00T0D
 TB2: DPE00IUD
-#TB3: DPE00J4X
-TB3: DPE00J72
+TB3: DPE00J4X
+#TB3: DPE00J72
 
 [defaultParameters]
 Roc: defaultParametersRocPSI46v2
@@ -50,12 +50,12 @@ xrfTargets: Fe:0,Cu:25320,Mo:50640,Ag:75960,Sn:101280,Ba:126600
 
 
 [Transfer]
-#host: cmspixel.pi.infn.it
-#port: 23481
-#destination: /home/eth/dropbox
-#user: eth
-host: snickers.ethz.ch
-port: 9922
-destination: /data/cooling-box/DATA
-user: bachmair
+host: cmspixel.pi.infn.it
+port: 23481
+destination: /home/eth/dropbox
+user: eth
+#host: snickers.ethz.ch
+#port: 9922
+#destination: /data/cooling-box/DATA
+#user: bachmair
 checkForTars: True

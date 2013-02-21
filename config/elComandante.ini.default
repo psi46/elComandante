@@ -1,14 +1,14 @@
 [Modules]
 TB0: M0696
-TB1: M0001
-TB2: M3476
-TB3: M7676
+TB1: M1148
+TB2: M1148
+TB3: M3476
 
 [ModuleType]
 TB0: Roc
-TB1: Roc
+TB1: Full
 TB2: Full
-TB3: Roc
+TB3: Full
 
 [TestboardUse]
 TB0: False
@@ -31,7 +31,7 @@ Delay: 2
 KeithleyUse: True
 
 [CoolingBox]
-CoolingBoxUse: True
+CoolingBoxUse: False
 
 [Xray]
 XrayUse: False
@@ -79,14 +79,15 @@ command: VcalVsThresholdAnalysis --output analysis_VcalVsThreshold.root *VcalVsT
 command: VcalCalibration --targets 17.49:22.16:32.19 --output VcalCalibration.root analysis_VcalVsThreshold.root analysis_XrayThresholdScanMo.root analysis_XrayThresholdScanAg.root analysis_XrayThresholdScanBa.root
 
 [Tests]
-TestDescription: FullQualification
+TestDescription: IVtest
+#FullQualification
 #Test: Pretest>Trim
-Test: powercycle
-#IV@17
+#Test: Pretest
+Test: powercycle,IV@17,IV@16,IV@17
 #,IV@16
 
 #Test: IV@17,Fulltest@17,IV@17
-#Test: Pretest@17,Cycle,Pretest@14,Pretest@17
+#Test: Pretest@17,Fulltest@-10,IV@-10,Cycle,Fulltest@17,IV@17
 #Test: Pretest>{VcalCalibrationStep@Mo,VcalCalibrationStep@Ag,VcalCalibrationStep@Ba,VcalVsThreshold@17},VcalCalibrationStepAnalysisMo,VcalCalibrationStepAnalysisAg,VcalCalibrationStepAnalysisBa,VcalVsThresholdAnalysis,VcalCalibrationAnalysis
 #,Pretest@-10
 #,Cycle,Pretest@17

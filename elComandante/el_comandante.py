@@ -103,10 +103,21 @@ def uploadTarFiles(tarList,Logger):
                         os.remove(item)
                     #remove TAR
                     #move Dir to localStorage
-                localStorage = Directories['storageDir']
-                dir = fileName.rstrip('.tar.gz')
-                moveDirToStorage(dir,localStorage,Logger)
+                    try:
+                        localStorage = Directories['storageDir']
+                        dir = fileName.rstrip('.tar.gz')
+                        moveDirToStorage(dir,localStorage,Logger)
+                    except:
+                        pass
             ssh.close()                
+        except paramiko.PasswordRequiredException, e:
+            Logger.warning("Couldn't upload need password: %s"%e)
+        except socket.gaierror,e:
+            if e.errno == 8:
+                Logger.warning("couldn't upload: no connection to server established. Errormessage: %s"%(e))
+            else:
+                Logger.warning("%s"%e)
+                raise
         except:
             raise
     else:

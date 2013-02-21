@@ -235,6 +235,10 @@ class keithleyInterface:
             raise Exception('setting currentProtection: not valid current: %s'%value)
         return self.write(':CURR:PROT:LEV %s'%value)
     
+    def setCurrentMeasurmentRange(self,range):
+        if not self.validCurrent(range):
+            raise Exception('setting CurrentMeasurmentRange: not valid current: %s'%range)
+        return self.write(':SENS:CURR:RANG %s'%range)
     def setCurrentMeasurmentSpeed(self,value):
         if value <0.01 or value >10:
             raise Exception ('Current NPLC not valid: %s'%value)
