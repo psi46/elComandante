@@ -26,7 +26,6 @@ class printer:
             self.f.write('#---------------------------------------------------------\n\n')
             self.f.close()
         if self.logger1:
-            self.logger1.disabled = True
             if self.logFileHandler:
                 self.logger1.removeHandler(self.logFileHandler)
             

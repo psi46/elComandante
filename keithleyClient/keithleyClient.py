@@ -158,7 +158,7 @@ def sweep():
         client.sendData(IVAbo," ".join(map(str, measurement[:3]))+'\n')
         client.sendData(voltageAbo,'%s %s\n'%(timestamp,voltage))
         client.sendData(currentAbo,'%s %s\n'%(timestamp,current))
-        ivCurveLogger << '%s\t%s\t%s'%(timestamp,voltage,current)
+        ivCurveLogger << '%s\t%.3f\t%.4e'%(timestamp,voltage,current)
 #        IVLogger << '%s\t%s\t%s'%(timestamp,voltage,current)
 #        client.sendData(resistanceAbo,'%s %s\n'%(timestamp,resistance))
     client.send(IVAbo,'Results End\n')
