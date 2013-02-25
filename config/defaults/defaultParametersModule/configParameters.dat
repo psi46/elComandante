@@ -13,7 +13,7 @@ rootFileName Pretest.root
 
 nModules 1
 nRocs 16
-hubId 31
+hubId -1
 tbmEnable 1
 tbmEmulator 0
 hvOn 1
