@@ -125,7 +125,7 @@ class psi_agente(el_agente.el_agente):
         self.pending = True
         # Runs a test
         self.sclient.clearPackets(self.subscription)
-        if 'IV' in self.currenttest:
+        if self.currenttest.lower().startswith('iv') or self.currenttest.lower().startswith('cycle'):
             self.pending = False
             return True
         elif not self.currenttest == 'powercycle':
