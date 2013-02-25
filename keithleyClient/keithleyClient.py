@@ -68,6 +68,10 @@ def handler(signum, frame):
     Logger << 'Close Connection'
     client.closeConnection()
     Logger << 'Signal handler called with signal %s'%signum
+    try:
+        keithley.setOutput(OFF)
+    except:
+        pass
     if client.isClosed == True:
         Logger << 'client connection closed: kill all'
         End=True
@@ -156,9 +160,24 @@ def sweep():
 #        resistance = float(measurement[3])
         client.sendData(aboName,':IV! %s/%s '%(npoint,nPoints) +" ".join(map(str, measurement[:3]))+'\n')
         client.sendData(IVAbo," ".join(map(str, measurement[:3]))+'\n')
-        client.sendData(voltageAbo,'%s %s\n'%(timestamp,voltage))
-        client.sendData(currentAbo,'%s %s\n'%(timestamp,current))
-        ivCurveLogger << '%s\t%.3f\t%.4e'%(timestamp,voltage,current)
+        strA = '%d %+8.3f'%(timestamp,voltage)
+        strA = strA.strip('\n')
+        strA += '\n'
+        try:
+            client.sendData(voltageAbo,strA)
+        except:
+            Logger.warning("Couldn't send '%s'"%strA)
+        strA = '%d %+11.4e'%(timestamp,current)
+        strA = strA.strip('\n')
+        strA += '\n'
+        try:
+            client.sendData(currentAbo,'%d %+11.4e\n'%(timestamp,current))
+        except:
+            Logger.warning("Couldn't send '%s'"%strA)
+        try:
+            ivCurveLogger << '%d\t%+8.3f\t%+11.4e'%(timestamp,voltage,current)
+        except:
+            pass
 #        IVLogger << '%s\t%s\t%s'%(timestamp,voltage,current)
 #        client.sendData(resistanceAbo,'%s %s\n'%(timestamp,resistance))
     client.send(IVAbo,'Results End\n')
@@ -342,8 +361,10 @@ def analysePacket(coms,typ,msg):
         command = ":".join(map(str, coms[1:]))+' '+msg
         Logger << 'send command to keithley: '
         keithley.write(command)
+    elif coms[0].lower().startswith('exit') and typ != 'a':
+        client.closeConnection()
     else:
-        Logger << 'not Valid Packet'
+        Logger << 'not Valid Packet %s'%coms
         
 
 
