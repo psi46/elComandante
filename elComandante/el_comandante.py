@@ -19,6 +19,7 @@ import analysis_agente
 import highVoltage_agente
 import watchDog_agente
 import signal
+import socket
 import tarfile
 import glob
 #import scp
@@ -80,6 +81,8 @@ def uploadTarFiles(tarList,Logger):
     checkConfig = checkConfig and config.has_option('Transfer','user')
     checkConfig = checkConfig and config.has_option('Transfer','destination')
     if  checkConfig:
+        if len(tarList)==0:
+            return
         try:
             dest = config.get('Transfer','destination')
             ssh = paramiko.SSHClient()
@@ -131,7 +134,7 @@ def uploadTarFiles(tarList,Logger):
         except:
             raise
     else:
-        print "cannot upload data since no alll needed options are defined: section 'Transfer', options: 'host,'port','user','destination'"
+        Logger.warning("cannot upload data since no alll needed options are defined: section 'Transfer', options: 'host,'port','user','destination'")
 
 def moveDirToStorage(dir,storage,Logger):
     Logger << " move %s ---> %s"%(dir,storage)
