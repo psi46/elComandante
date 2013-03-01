@@ -21,6 +21,7 @@ class highVoltage_agente(el_agente.el_agente):
         self.currenttest=None
         self.ivDone = True
         self.log = log
+        self.active = True
         
     def setup_configuration(self, conf):
        # self.conf = conf

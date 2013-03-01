@@ -12,7 +12,7 @@ def preexec():
 class analysis_agente(el_agente.el_agente):
     def __init__(self, timestamp, log, sclient):
         el_agente.el_agente.__init__(self, timestamp, log, sclient)
-        self.active = 1
+        self.active = True
         self.pending = False
         self.agente_name = "analysisAgente"
         self.client_name = "analysisClient"
@@ -29,6 +29,10 @@ class analysis_agente(el_agente.el_agente):
     def setup_initialization(self, init):
         self.init = init
         self.directories = []
+        if init.has_option("Analysis","AnalysisUse"):
+            self.active = init.getboolean("Analysis","AnalysisUse")
+        else:
+            self.active = False
         tb = -1
         while True:
             tb += 1
@@ -69,7 +73,10 @@ class analysis_agente(el_agente.el_agente):
         self.sclient.subscribe(self.subscription)
     def check_subscription(self):
         # Verify the subsystem connection
-        return self.sclient.checkSubscription(self.subscription)
+        if self.active:
+            return self.sclient.checkSubscription(self.subscription)
+        else:
+            return True
     def request_client_exit(self):
         # Request the client to exit with a command
         # through subsystem

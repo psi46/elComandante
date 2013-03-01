@@ -22,6 +22,7 @@ import signal
 import socket
 import tarfile
 import glob
+import socket
 #import scp
 
 los_agentes = []
@@ -74,8 +75,22 @@ def createTarFiles(psi_agente):
         pass
 #signal.signal(signal.SIGINT, handler)
 
+
+def removeDir(dir,Logger):
+    if  userQueries.query_yes_no("Do you want to store the data %s?"%dir):
+        return
+    dir = '%s/%s'%(config.Directories['dataDir'],dir)
+    Logger << "Removing Directory: '%s'"%dir
+    
+    try:
+        rmtree(dir)
+    except:
+        pass
+
 def uploadTarFiles(tarList,Logger):
     #check if all needed options are defined
+    if len(tarList) ==0:
+        return
     checkConfig = config.has_option('Transfer','host')
     checkConfig = checkConfig and config.has_option('Transfer','port')
     checkConfig = checkConfig and config.has_option('Transfer','user')
@@ -87,7 +102,7 @@ def uploadTarFiles(tarList,Logger):
             dest = config.get('Transfer','destination')
             ssh = paramiko.SSHClient()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            ssh.connect(config.get('Transfer','host'),config.getint('Transfer','port'),username=config.get('Transfer','user'))
+            ssh.connect(config.get('Transfer','host'),config.getint('Transfer','port'),username=config.get('Transfer','user'),timeout=5.0)
             transport = ssh.get_transport()
             ssh_client = scp.SCPClient(transport)
             if not dest.endswith('/'):
@@ -95,6 +110,8 @@ def uploadTarFiles(tarList,Logger):
             Logger << 'copy files:'
             for item in tarList:
                 fileName = item.split('/')[-1]
+                localStorage = Directories['storageDir']
+                dir = fileName.rstrip('.tar.gz')
                 if userQueries.query_yes_no("Do you want to upload the data of %s?"%(fileName),"yes",Logger):
                     Logger << 'uploading: \t%s --> %s:%s' % (fileName, config.get('Transfer','host'),dest)
                     ssh_client.put(item, dest, preserve_times=False)
@@ -367,7 +384,7 @@ try:
             Logger << "\t%s is answering." % subscription
     for agente in los_agentes:
         if not agente.check_subscription():
-            raise Exception("Cannot read from %s subscription" % agente.subscription)
+            raise Exception("Cannot read from agente: %s subscription" % agente.subscription)
         else:
             Logger << "\t%s is answering." % agente.subscription
 
@@ -502,6 +519,12 @@ try:
         except: pass
    
 except:
+    if len(los_agentes)>0 and los_agentes[0]:
+        try:
+            for Testboard in los_agentes[0].Testboards:
+                removeDir(Testboard.moduleDir, Logger)
+        except:
+            pass 
     killChildren()
     raise
     sys.exit(0)

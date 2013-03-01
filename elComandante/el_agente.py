@@ -8,7 +8,7 @@ class el_agente():
         self.timestamp = timestamp
         self.log = log
         self.sclient = sclient
-        self.active = 0
+        self.active = False
         self.pending = False
         self.agente_name = "el_agente"
         self.client_name = "client"

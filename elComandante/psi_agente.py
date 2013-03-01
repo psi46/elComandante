@@ -20,6 +20,9 @@ class psi_agente(el_agente.el_agente):
         self.client_name = "psiClient"
         self.currenttest=None
         self.init = None
+        self.active = True
+        self.Testboards = []
+        
     def setup_configuration(self, conf):
         self.conf = conf
         self.subscription = conf.get("subsystem", "psiSubscription")
@@ -187,17 +190,21 @@ class psi_agente(el_agente.el_agente):
     def check_finished(self):
         if not self.active or not self.pending:
             return True
+        for Testboard in self.Testboards:
+            if Testboard.busy:
+#                self.log <<"%s: sending: ':STAT:TB%d?' to %s"%(self.agente_name,Testboard.slot,self.subscription)
+                self.sclient.send(self.subscription,":STAT:TB%d?\n"%Testboard.slot)
         packet = self.sclient.getFirstPacket(self.subscription)
         if not packet.isEmpty() and not "pong" in packet.data.lower():
             data = packet.data
             Time,coms,typ,msg = decode(data)[:4]
-            if coms[0].find('STAT')==0 and coms[1].find('TB')==0 and typ == 'a' and msg=='test:finished':
+            if coms[0].find('STAT')==0 and coms[1].find('TB')==0 and typ == 'a' and msg.split(':')[1].startswith('finished'):
                 try:
                     index=[Testboard.slot==int(coms[1][2]) for Testboard in self.Testboards].index(True)
                     self.Testboards[index].busy=False
                 except:
                     self.log<<"Couldn't find TB with slot %s"%coms[1][2]
-            if coms[0][0:4] == 'STAT' and coms[1][0:2] == 'TB' and typ == 'a' and msg=='test:failed':
+            if coms[0][0:4] == 'STAT' and coms[1][0:2] == 'TB' and typ == 'a' and msg.split(':')[1].startswith('failed'):
                 try:
                     index=[Testboard.slot==int(coms[1][2]) for Testboard in self.Testboards].index(True)
                 except:

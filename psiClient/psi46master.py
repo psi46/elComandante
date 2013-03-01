@@ -38,12 +38,14 @@ numTB = int(args.numTB)
 config = BetterConfigParser()
 config.read(configDir+'/elComandante.conf')
 #config
+clientName = "psi46"
 serverZiel=config.get('subsystem','Ziel')
 Port = int(config.get('subsystem','Port'))
 serverPort = int(config.get('subsystem','serverPort'))
 psiSubscription = config.get('subsystem','psiSubscription')
+errorSubscription = "/error"
 #construct
-client = sClient(serverZiel,serverPort,"psi46")
+client = sClient(serverZiel,serverPort,clientName)
 #subscribe
 client.subscribe(psiSubscription)
 #----------------------------------------------------
@@ -72,6 +74,7 @@ class TBmaster(object):
         self.Logger = Logger
         self.TBSubscription = '/TB%s'%self.TB
         self.client.subscribe(self.TBSubscription)
+        self.dir = ''
 
     def _spawn(self,executestr):
         self.proc = subprocess.Popen([executestr,''], shell = True, stdout = subprocess.PIPE, stdin = subprocess.PIPE)
@@ -105,11 +108,12 @@ class TBmaster(object):
 
     @staticmethod
     def findError(stat):
-        return any([Error in stat for Error in ['error','Error','anyOtherString']])
+        return any([Error in stat for Error in ['error','Error','anyOtherString','command not found']])
 
     def _readout(self):
         failed = False
         self.Logger << '>>> Aquire Testboard %s <<<'%self.TB
+#        self._answer(self)
         while self.proc.poll() is None and ClosePSI[self.TB]==False:
             if Abort[self.TB]:
                 failed = self._abort()
@@ -123,6 +127,8 @@ class TBmaster(object):
                 if self.findError(line.rstrip()):
                     self.Logger << 'The following error triggerd the exception:'
                     self.Logger.warning(line.rstrip())
+                    self.client.send(self.psiSubscription, 'psi46@TB%s - Error >> %s'%(line.rstrip()))
+                    self.client.send(self.TBSubscription, 'Error >> %s'%(line.rstrip()))
                     failed=True
                     self._kill()
                 if 'command not found' in line.strip():
@@ -132,18 +138,31 @@ class TBmaster(object):
         self.Logger << '>>> Release Testboard %s <<<'%self.TB
         TestEnd[self.TB] = True
         busy[self.TB] = False
+        self._answer()
         return failed
 
     def _answer(self):
+        name = self.get_directory_name()
+        
         if failed[self.TB]:
-            self.client.send(self.psiSubscription,':STAT:TB%s! test:failed\n'%self.TB)
-            self.Logger.warning('Test failed in TB%s'%self.TB)
+            self.client.send(self.psiSubscription,':STAT:TB%s! %s:failed\n'%(self.TB,name))
+            self.Logger.warning('Test %s failed in TB%s'%(name,self.TB))
+        elif busy[self.TB]:
+            self.client.send(self.psiSubscription,':STAT:TB%s! %s:busy\n'%(self.TB,name))
+            self.Logger << ':Test %s busy in TB%s'%(name,self.TB)
         else:
-            self.client.send(self.psiSubscription,':STAT:TB%s! test:finished\n'%self.TB)
-            self.Logger << ':Test finished in TB%s'%self.TB
+            self.client.send(self.psiSubscription,':STAT:TB%s! %s:finished\n'%(self.TB,name))
+            self.Logger << ':Test %s finished in TB%s'%(name,self.TB)
+            
+            
+    def get_directory_name(self):
+        dir = self.dir.rstrip('/')
+        name = dir.split('/')[-1]
+        return name
 
     def executeTest(self,whichTest,dir,fname):
         self._resetVariables()
+        self.dir = dir
         self.Logger << 'executing psi46 %s in TB%s'%(whichTest,self.TB)
         executestr='psi46expert -dir %s -f %s -r %s.root -log %s.log'%(dir,whichTest,fname,fname)
         self._spawn(executestr)
@@ -152,6 +171,7 @@ class TBmaster(object):
 
     def openTB(self,dir,fname):
         self._resetVariables()
+        self.dir = dir
         Logger << 'open TB%s'%(self.TB)
         executestr='psi46expert -dir %s -r %s.root -log %s.log'%(dir,fname,fname)
         self._spawn(executestr)
@@ -172,6 +192,7 @@ class TBmaster(object):
 
 #Globals
 global busy
+global testName
 global failed
 global TestEnd
 global DoTest
@@ -181,6 +202,8 @@ global Abort
 #numTB = 4
 
 busy = [False]*numTB
+testName =['unkown']*numTB
+testNo = [-1]*numTB
 failed = [False]*numTB
 TestEnd = [False]*numTB
 DoTest=[False]*numTB
@@ -211,32 +234,44 @@ while client.anzahl_threads > 0 and not End:
             #Logger << msg
             splittedMsg =msg.split(',')
             if len(splittedMsg) !=2:
-                print "couldnt convert Msg: %s --> %s"%(msg,splittedMsg)
+                Logger.warning("couldnt convert Msg: %s --> %s"%(msg,splittedMsg))
                 raise Exception
             dir, fname = splittedMsg
             TB=int(coms[1][2])
             if not busy[TB]:
                 DoTest[TB] = Thread(target=TBmasters[TB].openTB, args=(dir,fname,))
                 DoTest[TB].start()
+                testNo[TB] = int(dir.rstrip('/').split('/')[-1].split('_')[0])
+                testName[TB] = 'open'
 
         elif coms[0].find('PROG')==0 and coms[1].find('TB')==0 and coms[2][0:5] == 'CLOSE' and typ == 'c':
             if len(coms[1])>=3:
                 TB=int(coms[1][2])
                 Logger << 'trying to close TB...'
                 ClosePSI[TB]=True
+                testName[TB] = 'close'
 
         elif coms[0].find('PROG')==0 and coms[1][0:2] == 'TB' and coms[2][0:5] == 'START' and typ == 'c':
             whichTest,dir,fname=msg.split(',')
             TB=int(coms[1][2])
             if not busy[TB]:
                 #Logger << whichTest
-                Logger << 'got command to execute %s in TB%s'%(whichTest,TB)
+                testName[TB] = whichTest.split('/')[-1]
+                testNo[TB] = int(dir.rstrip('/').split('/')[-1].split('_')[0])
+                
+                Logger << 'got command to execute %s in TB%s  -- %s:%s'%(whichTest,TB,testNo[TB],testName[TB])
                 DoTest[TB] = Thread(target=TBmasters[TB].executeTest, args=(whichTest,dir,fname,))
                 DoTest[TB].start()
-                client.send(psiSubscription,':STAT:TB%s! %s:started\n'%(TB,whichTest))
+                name = TBmasters[TB].get_directory_name()
+                if name =='':
+                    Logger << "Directory name not valid.....%s-whichTest"%(name,whichTest)
+                client.send(psiSubscription,':STAT:TB%s! %s:started\n'%(TB,name))
                 busy[TB]=True
+                
             else:
-                client.send(psiSubscription,':STAT:TB%s! busy\n'%TB)
+                name = TBmasters[TB].get_directory_name()
+                client.send(psiSubscription,':STAT:TB%s! %s:busy\n'%(name,TB))
+                client.send(errorSubscription, '%s: Cannot start test %s - TB %s is busy'%(clientName,whichTest,TB))
 
         elif coms[0][0:4] == 'PROG' and coms[1][0:2] == 'TB' and coms[2][0:4] == 'KILL' and typ == 'c':
             TB=int(coms[1][2])
@@ -253,25 +288,29 @@ while client.anzahl_threads > 0 and not End:
             if not reduce(lambda x,y: x or y, busy):
                 End = True
             else:
-                for i in range(0,numTB):
-                    if busy[i]: client.send(psiSubscription,':STAT:TB%s! busy\n'%i)
+                for TB in range(0,numTB):
+                    name = TBmasters[TB].get_directory_name()
+                    if busy[TB]: client.send(psiSubscription,':STAT:TB%s! busy\n'%(TB,name))
 
         elif coms[0][0:4] == 'STAT' and coms[1][0:2] == 'TB' and typ == 'q':
             TB=int(coms[1][2])
+            name = TBmasters[TB].get_directory_name()
             if busy[TB]:
-                client.send(psiSubscription,':STAT:TB%s! busy\n'%TB)
+                client.send(psiSubscription,':STAT:TB%s! %s:busy\n'%(TB,name))
             elif failed[TB]:
-                client.send(psiSubscription,':STAT:TB%s! test:failed\n'%TB)
+                client.send(psiSubscription,':STAT:TB%s! %s:failed\n'%(TB,name))
             elif TestEnd[TB]:
-                client.send(psiSubscription,':STAT:TB%s! test:finished\n'%TB)
+                client.send(psiSubscription,':STAT:TB%s! %s:finished\n'%(TB,name))
             else:
                 client.send(psiSubscription,':STAT:TB%s! status:unknown\n'%TB)
         else:
-            Logger << 'unknown command: ', coms, msg
+            Logger << 'unknown command: %s, %s'%(coms, msg)
     else:
         pass
         #Logger << 'waiting for answer...\n'
 
+
+#final stats....
 for i in range(0,numTB):
     if failed[i]: client.send(psiSubscription,':STAT:TB%s! test:failed\n'%i)
     elif TestEnd[i]: client.send(psiSubscription,':STAT:TB%s! test:finished\n'%i)
