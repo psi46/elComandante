@@ -106,7 +106,7 @@ class printer:
         self.logger1.addHandler(self.logFileHandler)
         self.logger1.setLevel(logging.INFO) 
         #self.f = open(path,'append')
-        x = '#--------LOG from %s ---------\n'%strftime("%a %d %b %Y at %Hh:%Mm:%Ss",localtime(self.timestamp))
+        x = '#\n#--------LOG from %s ---------\n#'%strftime("%a %d %b %Y at %Hh:%Mm:%Ss",localtime(self.timestamp))
         self.logToFile(x)
         #if self.f and self.loglevel > 0: self.f.write(x+'\n')
         #self.f.write()
