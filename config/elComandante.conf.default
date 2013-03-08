@@ -48,6 +48,8 @@ xrfDevice: /dev/ttyF1
 xrfType: zaber
 xrfTargets: Fe:0,Cu:25320,Mo:50640,Ag:75960,Sn:101280,Ba:126600
 
+[psiClient]
+psiVersion: /usr/local/bin/psi46expert
 
 [Transfer]
 host: cmspixel.pi.infn.it

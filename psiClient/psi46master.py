@@ -7,7 +7,6 @@ sys.path.insert(1, "../")
 from myutils import sClient, printer, decode, BetterConfigParser
 from threading import Thread
 import subprocess
-import sys
 import argparse
 import signal
 import select
@@ -66,7 +65,7 @@ def colorGenerator():
         i = (i+1)%len(list)
 
 class TBmaster(object):
-    def __init__(self, TB, client, psiSubscription, Logger, color='black'):
+    def __init__(self, TB, client, psiSubscription, Logger, color='black', psiVersion):
         self.TB = TB
         self.client = client
         self.psiSubscription = psiSubscription
@@ -75,6 +74,7 @@ class TBmaster(object):
         self.TBSubscription = '/TB%s'%self.TB
         self.client.subscribe(self.TBSubscription)
         self.dir = ''
+        self.psiVersion = psiVersion
 
     def _spawn(self,executestr):
         self.proc = subprocess.Popen([executestr,''], shell = True, stdout = subprocess.PIPE, stdin = subprocess.PIPE)
@@ -164,7 +164,7 @@ class TBmaster(object):
         self._resetVariables()
         self.dir = dir
         self.Logger << 'executing psi46 %s in TB%s'%(whichTest,self.TB)
-        executestr='psi46expert -dir %s -f %s -r %s.root -log %s.log'%(dir,whichTest,fname,fname)
+        executestr='%s -dir %s -f %s -r %s.root -log %s.log'%(psiVersion,dir,whichTest,fname,fname)
         self._spawn(executestr)
         failed[self.TB]=self._readout()
         self._answer()
@@ -173,7 +173,7 @@ class TBmaster(object):
         self._resetVariables()
         self.dir = dir
         Logger << 'open TB%s'%(self.TB)
-        executestr='psi46expert -dir %s -r %s.root -log %s.log'%(dir,fname,fname)
+        executestr='%s -dir %s -r %s.root -log %s.log'%(psiVersion,dir,fname,fname)
         self._spawn(executestr)
         failed[self.TB]=self._readout()
         while not ClosePSI[self.TB]:
@@ -185,7 +185,7 @@ class TBmaster(object):
             try:
                 self.proc.send_signal(signal.SIGINT)
             except:
-                slef.Logger << 'Process already killed'
+                self.Logger << 'Process already killed'
         self._answer()
 
 
@@ -215,12 +215,14 @@ End=False
 color = colorGenerator()
 print 'PSI Master'
 
+psiVersion = config.get('psiClient','psiVersion')
+
 #ToDo:
 #initGlobals(numTB)
 #init TBmasters:
 TBmasters=[]
 for i in range(numTB):
-    TBmasters.append(TBmaster(i, client, psiSubscription, Logger, next(color)))
+    TBmasters.append(TBmaster(i, client, psiSubscription, Logger, next(color), psiVersion))
 
 #RECEIVE COMMANDS (mainloop)
 while client.anzahl_threads > 0 and not End:
