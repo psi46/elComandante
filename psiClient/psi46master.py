@@ -112,12 +112,12 @@ class TBmaster(object):
         return any([Error in stat for Error in ['error','Error','anyOtherString','command not found']])
 
     def _readout(self):
-        failed = False
+        internalFailed = False
         self.Logger << '>>> Aquire Testboard %s <<<'%self.TB
 #        self._answer(self)
         while self.proc.poll() is None and ClosePSI[self.TB]==False:
             if Abort[self.TB]:
-                failed = self._abort()
+                internalFailed = self._abort()
             lines = ['']
             lines = self._readAllSoFar(lines[-1]).split('\n')
             for a in range(len(lines)-1):
@@ -126,28 +126,30 @@ class TBmaster(object):
                 self.client.send(self.TBSubscription,'%s\n'%hesays)
                 self.Logger.printcolor("psi46@TB%s >> %s"%(self.TB,hesays),self.color)
                 if self.findError(line.rstrip()):
-                    self.Logger << 'The following error triggerd the exception:'
+                    self.Logger << 'The following error triggered the exception:'
                     self.Logger.warning(line.rstrip())
-                    self.client.send(self.psiSubscription, 'psi46@TB%s - Error >> %s'%(self.TB,line.rstrip()))
-                    self.client.send(self.TBSubscription, 'Error >> %s'%(line.rstrip()))
-                    failed=True
+                    self.client.send(self.psiSubscription, 'psi46@TB%s - Error >> %s\n'%(self.TB,line.rstrip()))
+                    self.client.send(self.TBSubscription, 'Error >> %s\n'%(line.rstrip()))
+                    internalFailed = True
+                    failed[self.TB] = True
                     self._kill()
                 if 'command not found' in line.strip():
                     self.Logger.warning("psi46expert for TB%s not found"%self.TB)
                 if Abort[self.TB]:
-                    failed = self._abort()
+                    internalFailed = self._abort()
+                    failed[self.TB] = internalFailed or failed[self.TB]
         self.Logger << '>>> Release Testboard %s <<<'%self.TB
         TestEnd[self.TB] = True
         busy[self.TB] = False
-        self._answer()
-        return failed
+        return internalFailed
 
     def _answer(self):
         name = self.get_directory_name()
         
         if failed[self.TB]:
             self.client.send(self.psiSubscription,':STAT:TB%s! %s:failed\n'%(self.TB,name))
-            self.Logger.warning('Test %s failed in TB%s'%(name,self.TB))
+            self.Logger.warning(':Test %s failed in TB%s'%(name,self.TB))
+            self.client.send(self.psiSubscription,':STAT:TB%s! %s:failed\n'%(self.TB,name))
         elif busy[self.TB]:
             self.client.send(self.psiSubscription,':STAT:TB%s! %s:busy\n'%(self.TB,name))
             self.Logger << ':Test %s busy in TB%s'%(name,self.TB)
@@ -177,6 +179,7 @@ class TBmaster(object):
         executestr='%s -dir %s -r %s.root -log %s.log'%(psiVersion,dir,fname,fname)
         self._spawn(executestr)
         failed[self.TB]=self._readout()
+        self._answer()
         while not ClosePSI[self.TB]:
             pass
         self.Logger << 'CLOSE TB %s HERE'%(self.TB)
@@ -224,89 +227,136 @@ TBmasters=[]
 for i in range(numTB):
     TBmasters.append(TBmaster(i, client, psiSubscription, Logger, next(color), psiVersion))
 
-#RECEIVE COMMANDS (mainloop)
-while client.anzahl_threads > 0 and not End:
-    sleep(.5)
-    packet = client.getFirstPacket(psiSubscription)
-    if not packet.isEmpty() and not "pong" in packet.data.lower():
-        time,coms,typ,msg,cmd = decode(packet.data)
-        #Logger << time,coms,typ,msg
-        #Logger << cmd
-        if coms[0].find('PROG')==0 and coms[1].find('TB')==0 and coms[2].find('OPEN')==0 and typ == 'c':
-            #Logger << msg
-            splittedMsg =msg.split(',')
-            if len(splittedMsg) !=2:
-                Logger.warning("couldnt convert Msg: %s --> %s"%(msg,splittedMsg))
-                raise Exception
-            dir, fname = splittedMsg
-            TB=int(coms[1][2])
-            if not busy[TB]:
-                DoTest[TB] = Thread(target=TBmasters[TB].openTB, args=(dir,fname,))
-                DoTest[TB].start()
-                testNo[TB] = int(dir.rstrip('/').split('/')[-1].split('_')[0])
-                testName[TB] = 'open'
+def openTB(TB,msg):
+    if TB>=0:
+        splittedMsg =msg.split(',')
+        if len(splittedMsg) !=2:
+            Logger.warning("openTB: couldnt convert Msg: %s --> %s"%(msg,splittedMsg))
+            client.send(psiSubscription,'Cannot convert msg: %s -->%s'%(msg,splittedMsg))
+            return
+            #raise Exception
+        dir, fname = splittedMsg
+        if not busy[TB]:
+            DoTest[TB] = Thread(target=TBmasters[TB].openTB, args=(dir,fname,))
+            DoTest[TB].start()
+            testNo[TB] = int(dir.rstrip('/').split('/')[-1].split('_')[0])
+            testName[TB] = 'open'
+def closeTB(TB):
+    if TB >=0:
+        Logger << 'trying to close TB...'
+        ClosePSI[TB]=True
+        testName[TB] = 'close'
 
-        elif coms[0].find('PROG')==0 and coms[1].find('TB')==0 and coms[2][0:5] == 'CLOSE' and typ == 'c':
-            if len(coms[1])>=3:
-                TB=int(coms[1][2])
-                Logger << 'trying to close TB...'
-                ClosePSI[TB]=True
-                testName[TB] = 'close'
-
-        elif coms[0].find('PROG')==0 and coms[1][0:2] == 'TB' and coms[2][0:5] == 'START' and typ == 'c':
-            whichTest,dir,fname=msg.split(',')
-            TB=int(coms[1][2])
-            if not busy[TB]:
-                #Logger << whichTest
-                testName[TB] = whichTest.split('/')[-1]
-                testNo[TB] = int(dir.rstrip('/').split('/')[-1].split('_')[0])
-                
-                Logger << 'got command to execute %s in TB%s  -- %s:%s'%(whichTest,TB,testNo[TB],testName[TB])
-                DoTest[TB] = Thread(target=TBmasters[TB].executeTest, args=(whichTest,dir,fname,))
-                DoTest[TB].start()
-                name = TBmasters[TB].get_directory_name()
-                if name =='':
-                    Logger << "Directory name not valid.....'%s'-whichTest '%s'"%(name,whichTest)
+def startTestTB(TB,msg):
+    if TB>=0:
+        splittedMsg=msg.split(',')
+        if len(splittedMsg) == 3:
+            whichTest,dir,fname = splittedMsg
+        else:
+            Logger.warning("startTestTB: couldnt convert Msg: %s --> %s"%(msg,splittedMsg))
+            client.send(psiSubscription,'Cannot convert msg: %s -->%s'%(msg,splittedMsg))
+            return
+        if not busy[TB]:
+            #Logger << whichTest
+            testName[TB] = whichTest.split('/')[-1]
+            testNo[TB] = int(dir.rstrip('/').split('/')[-1].split('_')[0])
+            
+            Logger << 'got command to execute %s in TB%s  -- %s:%s'%(whichTest,TB,testNo[TB],testName[TB])
+            DoTest[TB] = Thread(target=TBmasters[TB].executeTest, args=(whichTest,dir,fname,))
+            DoTest[TB].start()
+            name = TBmasters[TB].get_directory_name()
+            if name =='':
+                Logger << "Directory name not valid.....'%s'-whichTest '%s'"%(name,whichTest)
                 client.send(psiSubscription,':STAT:TB%s! %s:started\n'%(TB,name))
                 busy[TB]=True
-                
             else:
+                Logger <<"Testboard %d is still busy cannot execute %s" %(TB, whichTest)
                 name = TBmasters[TB].get_directory_name()
                 client.send(psiSubscription,':STAT:TB%s! %s:busy\n'%(name,TB))
                 client.send(errorSubscription, '%s: Cannot start test %s - TB %s is busy'%(clientName,whichTest,TB))
 
-        elif coms[0][0:4] == 'PROG' and coms[1][0:2] == 'TB' and coms[2][0:4] == 'KILL' and typ == 'c':
-            TB=int(coms[1][2])
-            if not DoTest[TB]:
-                Logger << 'nothing to be killed!'
-            else:
-                failed[TB]=True
-                busy[TB]=False
-                Abort[TB]=True
-                Logger.warning('killing TB%s...'%TB)
-                
-        elif coms[0].find('PROG')==0 and coms[1].find('EXIT')==0 and typ == 'c':
-            Logger << 'exit'
-            if not reduce(lambda x,y: x or y, busy):
-                End = True
-            else:
-                for TB in range(0,numTB):
-                    name = TBmasters[TB].get_directory_name()
-                    if busy[TB]: client.send(psiSubscription,':STAT:TB%s! busy\n'%(TB,name))
-
-        elif coms[0][0:4] == 'STAT' and coms[1][0:2] == 'TB' and typ == 'q':
-            TB=int(coms[1][2])
-            name = TBmasters[TB].get_directory_name()
-            if busy[TB]:
-                client.send(psiSubscription,':STAT:TB%s! %s:busy\n'%(TB,name))
-            elif failed[TB]:
-                client.send(psiSubscription,':STAT:TB%s! %s:failed\n'%(TB,name))
-            elif TestEnd[TB]:
-                client.send(psiSubscription,':STAT:TB%s! %s:finished\n'%(TB,name))
-            else:
-                client.send(psiSubscription,':STAT:TB%s! status:unknown\n'%TB)
+def killTestTB(TB):
+    if TB>=0:
+        if not DoTest[TB]:
+            Logger << 'nothing to be killed!'
         else:
-            Logger << 'unknown command: %s, %s'%(coms, msg)
+            failed[TB]=True
+            busy[TB]=False
+            Abort[TB]=True
+            Logger.warning('killing TB%s...'%TB)
+
+
+def analyseProg_TB(coms,msg,typ,TB):
+    if len(coms)==3:
+        if typ == 'c':  
+            if coms[2].startswith('open'):
+                openTB(TB,msg)
+            elif coms[2].startswith('close'):
+                closeTB(TB) and TB >=0 
+            elif coms[2].startswith('start'):
+                startTestTB(TB,msg)
+            elif coms[2].startswith('kill'):
+                killTestTB(TB)
+            else:
+                Logger << 'unknown command: %s, %s,%s'%(coms, msg,typ)
+             
+def exitProg():
+   Logger << 'exit'
+   if not reduce(lambda x,y: x or y, busy):
+       End = True
+   else:
+       for TB in range(0,numTB):
+           name = TBmasters[TB].get_directory_name()
+       if busy[TB]: 
+           client.send(psiSubscription,':STAT:TB%s! busy %s \n'%(TB,name))
+           Logger << " TB %s still busy with %s "%(TB,name)
+
+def sendStatsTB(TB):
+    if len(TBmasters) > TB: 
+        name = TBmasters[TB].get_directory_name()
+        if len(busy)>TB and busy[TB]:
+            client.send(psiSubscription,':STAT:TB%s! %s:busy\n'%(TB,name))
+            return
+        elif len(failed)>TB and failed[TB]:
+            client.send(psiSubscription,':STAT:TB%s! %s:failed\n'%(TB,name))
+            return
+        elif len(TestEnd) >TB and TestEnd[TB]:
+            client.send(psiSubscription,':STAT:TB%s! %s:finished\n'%(TB,name))
+            return
+    client.send(psiSubscription,':STAT:TB%s! status:unknown\n'%TB)
+
+
+def analysePacket(packet):
+    time,coms,typ,msg,cmd = decode(packet.data)
+    coms = [x.lower() for x in coms]
+    try:
+        TB=int(coms[1][2:])
+    except:
+        TB = -1
+    if(len(coms)>=2):
+        if coms[0].startswith('prog') and coms[1].startswith('tb'):
+            analyseProg_TB(coms,msg,typ,TB)
+            return
+        elif coms[0].startswith('prog') and coms[1].startswith('exit'):
+            exitProg()
+            return
+        elif coms[0].startswith('stat') and coms[1].startswith('tb') and typ == 'q':
+            sendStatsTB(TB)
+            return
+    Logger << 'unknown command: %s, %s'%(coms, msg) 
+
+#RECEIVE COMMANDS (mainloop)
+while client.anzahl_threads > 0 and not End:
+    sleep(.5)
+    packet = client.getFirstPacket(psiSubscription)
+    counter = 0 
+    if not packet.isEmpty() and not "pong" in packet.data.lower():
+        analysePacket(packet)
+        counter += 1 
+        if counter %100 == 0:
+            Logger << time,coms,typ,msg
+        #Logger << cmd
+        
     else:
         pass
         #Logger << 'waiting for answer...\n'
