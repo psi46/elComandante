@@ -102,6 +102,7 @@ def uploadTarFiles(tarList,Logger):
             dest = config.get('Transfer','destination')
             ssh = paramiko.SSHClient()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            Logger <<'Creating ssh connection: %s:%s'%(config.get('Transfer','host'),config.getint('Transfer','port'))
             ssh.connect(config.get('Transfer','host'),config.getint('Transfer','port'),username=config.get('Transfer','user'),timeout=5.0)
             transport = ssh.get_transport()
             ssh_client = scp.SCPClient(transport)
@@ -148,6 +149,14 @@ def uploadTarFiles(tarList,Logger):
             else:
                 Logger.warning("%s"%e)
                 raise
+        except socket.error:
+            errno, errstr = sys.exc_info()[:2]
+            if errno == socket.timeout:
+                Logger << "Connection time out: Couldn't transfer data"
+                pass
+            else:
+                raise
+
         except:
             raise
     else:
@@ -354,6 +363,7 @@ try:
         return Testboard.parentDir
 
     def wait_until_finished(los_agentes):
+        time.sleep(1)
         finished = False
         while not finished:
             time.sleep(1.0)
@@ -364,6 +374,8 @@ try:
             if not finished:
                 sys.stdout.write('%s\r' %output)
             sys.stdout.flush()
+        Logger << "finished"
+        time.sleep(2)
 
     # Check whether the client is already running before trying to start it
     Logger << "Checking whether clients are runnning ..."
@@ -445,7 +457,6 @@ try:
         Logger << "Executing test %s ..." % test.test_str
         for agente in los_agentes:
             agente.execute_test()
-            time.sleep(1.0)
         wait_until_finished(los_agentes)
 
         Logger.printn()

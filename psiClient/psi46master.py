@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 #
 # This program controls the PSI46-Testboards using the standard psi46expert software and executes Tests or opens and closes the TB
 # it should work for N Testboards
@@ -11,7 +12,7 @@ import argparse
 import signal
 import select
 from time import sleep
-
+print 'hallo'
 #------------some configuration--------------
 parser = argparse.ArgumentParser()
 
@@ -30,7 +31,7 @@ Logger = printer()
 Logger.set_name("Psi46Log")
 Logger.set_prefix('')
 Logger.set_logfile('%s/psi46Handler.log'%(args.loggingDir))
-#Logger <<'ConfigDir: "%s"'%args.configDir
+Logger <<'ConfigDir: "%s"'%args.configDir
 configDir= args.configDir
 numTB = int(args.numTB)
 #load config
@@ -65,7 +66,7 @@ def colorGenerator():
         i = (i+1)%len(list)
 
 class TBmaster(object):
-    def __init__(self, TB, client, psiSubscription, Logger, color='black', psiVersion):
+    def __init__(self, TB, client, psiSubscription, Logger, color='black', psiVersion='psi46expert'):
         self.TB = TB
         self.client = client
         self.psiSubscription = psiSubscription
@@ -127,7 +128,7 @@ class TBmaster(object):
                 if self.findError(line.rstrip()):
                     self.Logger << 'The following error triggerd the exception:'
                     self.Logger.warning(line.rstrip())
-                    self.client.send(self.psiSubscription, 'psi46@TB%s - Error >> %s'%(line.rstrip()))
+                    self.client.send(self.psiSubscription, 'psi46@TB%s - Error >> %s'%(self.TB,line.rstrip()))
                     self.client.send(self.TBSubscription, 'Error >> %s'%(line.rstrip()))
                     failed=True
                     self._kill()
@@ -216,7 +217,6 @@ color = colorGenerator()
 print 'PSI Master'
 
 psiVersion = config.get('psiClient','psiVersion')
-
 #ToDo:
 #initGlobals(numTB)
 #init TBmasters:
@@ -266,7 +266,7 @@ while client.anzahl_threads > 0 and not End:
                 DoTest[TB].start()
                 name = TBmasters[TB].get_directory_name()
                 if name =='':
-                    Logger << "Directory name not valid.....%s-whichTest"%(name,whichTest)
+                    Logger << "Directory name not valid.....'%s'-whichTest '%s'"%(name,whichTest)
                 client.send(psiSubscription,':STAT:TB%s! %s:started\n'%(TB,name))
                 busy[TB]=True
                 

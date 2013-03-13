@@ -85,6 +85,7 @@ class psi_agente(el_agente.el_agente):
         self.activeTestboard = -1
         self.powercycle()
         self.currenttest = whichtest.split('@')[0]
+        self.log << "%s: PrepareTest: currenttest: %s"%(self.agente_name,self.currenttest)
         if 'IV' in self.currenttest:
             activeTestboard = self.currenttest.split('_')
             if len(activeTestboard) == 2:
@@ -126,6 +127,7 @@ class psi_agente(el_agente.el_agente):
         if not self.active:
             return False
         self.pending = True
+        self.log << "%s: executeTest: currenttest: %s"%(self.agente_name,self.currenttest)
         # Runs a test
         self.sclient.clearPackets(self.subscription)
         if self.currenttest.lower().startswith('iv') or self.currenttest.lower().startswith('cycle'):
@@ -137,6 +139,9 @@ class psi_agente(el_agente.el_agente):
             self.log << 'Powercycling Testboards'
         for Testboard in self.Testboards:
             self._execute_testboard(Testboard)
+        sleep(1)
+        self.sclient.clearPackets(self.subscription)
+        self.log <<" Packets: %s"%self.sclient.getNumberOfPackets()
         return True    
 
             #Here we need the Errorstream of the watchdog:
@@ -162,6 +167,8 @@ class psi_agente(el_agente.el_agente):
         self.sclient.send(self.subscription,':prog:TB%s:start %s,%s,commander_%s\n'%(Testboard.slot,self.Directories['testdefDir']+'/'+ self.currenttest,Testboard.testdir,self.currenttest))
         if not self.currenttest == 'powercycle':
             self.log << 'psi46 at Testboard %s is now started'%Testboard.slot
+        self.sclient.clearPackets(self.subscription)
+
 
     def cleanup_test(self):
         # Run after a test has executed
@@ -192,28 +199,61 @@ class psi_agente(el_agente.el_agente):
             return True
         for Testboard in self.Testboards:
             if Testboard.busy:
-#                self.log <<"%s: sending: ':STAT:TB%d?' to %s"%(self.agente_name,Testboard.slot,self.subscription)
                 self.sclient.send(self.subscription,":STAT:TB%d?\n"%Testboard.slot)
-        packet = self.sclient.getFirstPacket(self.subscription)
-        if not packet.isEmpty() and not "pong" in packet.data.lower():
-            data = packet.data
-            Time,coms,typ,msg = decode(data)[:4]
-            if coms[0].find('STAT')==0 and coms[1].find('TB')==0 and typ == 'a' and msg.split(':')[1].startswith('finished'):
-                try:
-                    index=[Testboard.slot==int(coms[1][2]) for Testboard in self.Testboards].index(True)
-                    self.Testboards[index].busy=False
-                except:
-                    self.log<<"Couldn't find TB with slot %s"%coms[1][2]
-            if coms[0][0:4] == 'STAT' and coms[1][0:2] == 'TB' and typ == 'a' and msg.split(':')[1].startswith('failed'):
-                try:
-                    index=[Testboard.slot==int(coms[1][2]) for Testboard in self.Testboards].index(True)
-                except:
-                    self.log<<"Couldn't find TB with slot %s"%coms[1][2]
-                    index =-1
-                if self.currenttest == 'powercycle' and index !=-1:
-                    sleep(1)
-                    raise Exception('Could not open Testboard at %s.'%Testboard.slot)
-                self.Testboards[index].busy=False
+        sleep(.5)
+        while True:
+            packet = self.sclient.getFirstPacket(self.subscription) 
+            if packet.isEmpty() or not self.pending:
+                break
+            if not "pong" in packet.data.lower():
+                data = packet.data
+                Time,coms,typ,msg = decode(data)[:4]
+                if type(msg)== str:
+                    msg = msg.lower()
+                if len(coms) >= 2:
+                    if 'busy' in msg:
+                        continue
+                    msg = msg.split(':')
+                    if coms[0].lower().find('stat')==0 and coms[1].lower().find('tb')==0 and typ == 'a':
+                        com = coms[1][2:] 
+                        try:
+                            TBslot = int(com)
+                        except:
+                            self.log << "Couldn't convert command to TBslot %s"%com
+                            continue
+                        if len(msg)>1:
+                            #Finished
+                            if msg[1].startswith('finished'):
+                                try:
+                                    index=[Testboard.slot==TBslot for Testboard in self.Testboards].index(True)
+                                    self.Testboards[index].busy=False
+                                    TBsbusy = [TB.busy for TB in self.Testboards]
+                                    TBsindex= [TB.slot for TB in self.Testboards]
+                                    self.log<< packet.data
+                                    self.log<<"%s:  self.Testboards[%s] finished: %s"%(self.agente_name,index, TBsbusy)
+                                except:
+                                    self.log<<"Couldn't find TB with slot %s, %s"%(TBslot,[TB.slot for TB in self.Testboards])
+                                    raise
+                            #FAILED
+                            elif msg[1].startswith('failed'):
+                                try:
+                                    index=[Testboard.slot==TBslot for Testboard in self.Testboards].index(True)
+                                except:
+                                    self.log<<"Couldn't find TB with slot %s, %s"%(TBslot,[TB.slot for TB in self.Testboards])
+                                    index =-1
+                                    raise
+                                if self.currenttest == 'powercycle' and index !=-1:
+                                    sleep(1)
+                                    raise Exception('Could not open Testboard at %s.'%Testboard.slot)
+                                elif self.Testboards[index].busy==True:
+                                    self.log<<""
+                                    self.log<<'%s: %s'%(index, self.Testboards[index].busy)
+                                    self.Testboards[index].busy=False
+                                    TBsbusy = [TB.busy for TB in self.Testboards]
+                                    TBsindex= [TB.slot for TB in self.Testboards]
+                                    self.log<<"%s:  self.Testboards[%s] failed: %s: %s-%s" % (self.agente_name,index, self.pending, TBsindex,TBsbusy)
+
+            self.pending = any([Testboard.busy for Testboard in self.Testboards])
         self.pending = any([Testboard.busy for Testboard in self.Testboards])
         return not self.pending
 
