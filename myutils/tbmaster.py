@@ -88,7 +88,7 @@ class TBmaster(object):
                     internalFailed = self._abort()
                     self.failed = internalFailed or self.failed
         self.Logger << '>>> Release Testboard %s <<<'%self.TB
-        TestEnd[self.TB] = True
+        self.TestEnd = True
         self.busy = False
         return internalFailed
 
@@ -115,7 +115,7 @@ class TBmaster(object):
         self._resetVariables()
         self.dir = dir
         self.Logger << 'executing psi46 %s in TB%s'%(whichTest,self.TB)
-        executestr='%s -dir %s -f %s -r %s.root -log %s.log'%(psiVersion,dir,whichTest,fname,fname)
+        executestr='%s -dir %s -f %s -r %s.root -log %s.log'%(self.psiVersion,dir,whichTest,fname,fname)
         self._spawn(executestr)
         self.failed=self._readout()
         self._answer()
@@ -124,7 +124,7 @@ class TBmaster(object):
         self._resetVariables()
         self.dir = dir
         Logger << 'open TB%s'%(self.TB)
-        executestr='%s -dir %s -r %s.root -log %s.log'%(psiVersion,dir,fname,fname)
+        executestr='%s -dir %s -r %s.root -log %s.log'%(self.psiVersion,dir,fname,fname)
         self._spawn(executestr)
         self.failed=self._readout()
         self._answer()
