@@ -208,81 +208,83 @@ class psi_agente(el_agente.el_agente):
         for Testboard in self.Testboards:
             if Testboard.busy:
                 self.sclient.send(self.subscription,":STAT:TB%d?\n"%Testboard.slot)
-        sleep(.5)
+                sleep(.1)
+        sleep(.1)
         while True:
             packet = self.sclient.getFirstPacket(self.subscription) 
             if packet.isEmpty() or not self.pending:
                 break
-            if not "pong" in packet.data.lower():
-                data = packet.data
-                Time,coms,typ,msg = decode(data)[:4]
-                if type(msg)== str:
-                    msg = msg.lower()
-                if len(coms) >= 2:
-                    if 'busy' in msg:
+            if "pong" in packet.data.lower():
+            	continue
+            data = packet.data
+            Time,coms,typ,msg = decode(data)[:4]
+            if type(msg)== str:
+                msg = msg.lower()
+            if len(coms) >= 2:
+                if 'busy' in msg:
+                    continue
+                msg = msg.split(':')
+                if coms[0].lower().find('stat')==0 and coms[1].lower().find('tb')==0 and typ == 'a':
+                    com = coms[1][2:] 
+                    try:
+                        TBslot = int(com)
+                    except:
+                        self.log << "%s: Couldn't convert command to TBslot %s"%(self.agente_name,com)
                         continue
-                    msg = msg.split(':')
-                    if coms[0].lower().find('stat')==0 and coms[1].lower().find('tb')==0 and typ == 'a':
-                        com = coms[1][2:] 
-                        try:
-                            TBslot = int(com)
-                        except:
-                            self.log << "%s: Couldn't convert command to TBslot %s"%(self.agente_name,com)
-                            continue
-                        if len(msg)>1:
-                            #Finished
-                            if msg[1].startswith('finished'):
-                                try:
-                                    index=[Testboard.slot==TBslot for Testboard in self.Testboards].index(True)
-                                    if self.Testboards[index].busy!=False:
-                                        self.Testboards[index].busy=False
-                                        self.Testboards[index].failedPowercylces = 0
-                                        TBsbusy = [TB.busy for TB in self.Testboards]
-                                        TBsindex= [TB.slot for TB in self.Testboards]
-                                        self.log<<""
-                                        self.log<<"%s:  self.Testboards[%s] finished: %s"%(self.agente_name,index, TBsbusy)
-                                except:
-                                    self.log<<"%s: Couldn't find TB with slot %s, %s"%(self.agente_name,TBslot,[TB.slot for TB in self.Testboards])
-                                    raise
-                            #FAILED
-                            elif msg[1].startswith('failed'):
-                                try:
-                                    index=[Testboard.slot==TBslot for Testboard in self.Testboards].index(True)
-                                except:
-                                    self.log<<"%s: Couldn't find TB with slot %s, %s"%(self.agente_name,TBslot,[TB.slot for TB in self.Testboards])
-                                    index =-1
-                                    raise
-                                if self.currenttest == 'powercycle' and index !=-1:
-                                    sleep(1)
-                                    TBsbusy = [TB.busy for TB in self.Testboards]
-                                    TBsindex= [TB.slot for TB in self.Testboards]
-                                    self.log<<"%s:  self.Testboards[%s] could not be opened: %s: %s-%s" % (self.agente_name,index, self.pending, TBsindex,TBsbusy)
-                                    self.Testboards[index].failedPowercylces += 1
-                                    
-                                    if self.Testboards[index].failedPowercycles < 20:
-                                        self.log<<"%s:  self.Testboards[%s] restart Powecycle: %s: %s-%s" % (self.agente_name,index, self.pending, TBsindex,TBsbusy)
-                                        self._execute_test(self.Testboards[index])
-                                    else:
-                                        raise Exception('Could not open Testboard at %s.'%Testboard.slot)
-
-                                elif self.Testboards[index].busy==True:
-                                    self.log<<""
+                    if len(msg)>1:
+                        #Finished
+                        if msg[1].startswith('finished'):
+                            try:
+                                index=[Testboard.slot==TBslot for Testboard in self.Testboards].index(True)
+                                if self.Testboards[index].busy!=False:
                                     self.Testboards[index].busy=False
+                                    self.Testboards[index].failedPowercylces = 0
                                     TBsbusy = [TB.busy for TB in self.Testboards]
                                     TBsindex= [TB.slot for TB in self.Testboards]
-                                    self.log<<"%s:  self.Testboards[%s] failed- the following boards are busy: %s: %s-%s" % (self.agente_name,index, self.pending, TBsindex,TBsbusy)
-                            elif msg[1].startswith('unknown'):
+                                    self.log<<""
+                                    self.log<<"%s:  self.Testboards[%s] finished: %s"%(self.agente_name,index, TBsbusy)
+                            except:
+                                self.log<<"%s: Couldn't find TB with slot %s, %s"%(self.agente_name,TBslot,[TB.slot for TB in self.Testboards])
+                                raise
+                        #FAILED
+                        elif msg[1].startswith('failed'):
+                            try:
+                                index=[Testboard.slot==TBslot for Testboard in self.Testboards].index(True)
+                            except:
+                                self.log<<"%s: Couldn't find TB with slot %s, %s"%(self.agente_name,TBslot,[TB.slot for TB in self.Testboards])
+                                index =-1
+                                raise
+                            if self.currenttest == 'powercycle' and index !=-1:
+                                sleep(1)
                                 TBsbusy = [TB.busy for TB in self.Testboards]
                                 TBsindex= [TB.slot for TB in self.Testboards]
-                                try:
-                                    index=[Testboard.slot==TBslot for Testboard in self.Testboards].index(True)
-                                except:
-                                    self.log<<"%s: Couldn't find TB with slot %s, %s"%(self.agente_name,TBslot,[TB.slot for TB in self.Testboards])
-                                    index =-1
-                                if self.Testboards[index].busy==True:
-                                    self.Testboards[index].busy=False
-                                    self.log<<""
-                                    self.log <<"%s: Status of TB in slot %s is unknown"%(self.agente_name,TBslot)
+                                self.log<<"%s:  self.Testboards[%s] could not be opened: %s: %s-%s" % (self.agente_name,index, self.pending, TBsindex,TBsbusy)
+                                self.Testboards[index].failedPowercylces += 1
+                                
+                                if self.Testboards[index].failedPowercycles < 20:
+                                    self.log<<"%s:  self.Testboards[%s] restart Powecycle: %s: %s-%s" % (self.agente_name,index, self.pending, TBsindex,TBsbusy)
+                                    self._execute_test(self.Testboards[index])
+                                else:
+                                    raise Exception('Could not open Testboard at %s.'%Testboard.slot)
+
+                            elif self.Testboards[index].busy==True:
+                                self.log<<""
+                                self.Testboards[index].busy=False
+                                TBsbusy = [TB.busy for TB in self.Testboards]
+                                TBsindex= [TB.slot for TB in self.Testboards]
+                                self.log<<"%s:  self.Testboards[%s] failed- the following boards are busy: %s: %s-%s" % (self.agente_name,index, self.pending, TBsindex,TBsbusy)
+                        elif msg[1].startswith('unknown'):
+                            TBsbusy = [TB.busy for TB in self.Testboards]
+                            TBsindex= [TB.slot for TB in self.Testboards]
+                            try:
+                                index=[Testboard.slot==TBslot for Testboard in self.Testboards].index(True)
+                            except:
+                                self.log<<"%s: Couldn't find TB with slot %s, %s"%(self.agente_name,TBslot,[TB.slot for TB in self.Testboards])
+                                index =-1
+                            if self.Testboards[index].busy==True:
+                                self.Testboards[index].busy=False
+                                self.log<<""
+                                self.log <<"%s: Status of TB in slot %s is unknown"%(self.agente_name,TBslot)
 
             self.pending = any([Testboard.busy for Testboard in self.Testboards])
         self.pending = any([Testboard.busy for Testboard in self.Testboards])

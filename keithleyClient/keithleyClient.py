@@ -50,11 +50,11 @@ except:
     os.mkdir(args.dataDir)
 #Setup Logger 
 Logger.timestamp = float(args.timestamp)
-Logger.set_logfile('%s/Keithley.log'%(args.dataDir))
+Logger.set_logfile(args.dataDir,'Keithley.log')
 Logger.set_prefix('')
 #default testDir, should be set (by elComandante)  when doing IV curve
 testDir = '%s'%(args.dataDir)
-IVLogger.set_logfile('%s/IV.log'%(args.dataDir))
+IVLogger.set_logfile(args.dataDir,'IV.log')
 IVLogger.set_prefix('')
 IVLogger.timestamp = float(args.timestamp)
 IVLogger.disable_print()
@@ -148,7 +148,7 @@ def sweep():
     ivCurveLogger.disable_print()
 #    ivCurveLogger.timestamp = float(args.timestamp)
     ivCurveLogger.set_prefix('')
-    ivCurveLogger.set_logfile('%s/ivCurve.log'%testDir)
+    ivCurveLogger.set_logfile(testDir,'ivCurve.log')
     ivCurveLogger << '#timestamp\tvoltage(V)\tcurrent(A)'
     while len(keithley.measurments)>0:
         npoint +=1
@@ -377,29 +377,28 @@ sleep(0.5)
 counter = 0 
 while client.anzahl_threads > 0 and End == False and client.isClosed == False: 
     
-    counter +=1
-    sleep(.5)
     packet = client.getFirstPacket(aboName)
     
-    if not packet.isEmpty():
+    if packet.isEmpty():
+        sleep(.5)
+        continue
+	counter +=1
 
-        #Logger << 'got Packet: %s'%packet.Print()
-        data = packet.data
-        timeStamp,coms,typ,msg,command = decode(data)
-        # 'T:',timeStamp, 'Comand:',command
-        #Logger << '%s: %s, %s, %s'%(timeStamp,len(coms),typ,msg)
-        dataOut = '%s\n'%packet.Print()
-        if command.find(':DOSWEEP')!=-1:
-            sweep()
-        if len(coms)>0:
-            analysePacket(coms,typ,msg)
-        else:
-            keithley.write(command)
-            client.send(aboName,dataOut)
-        #string retVal = keithley.setOutput(ON)
+    #Logger << 'got Packet: %s'%packet.Print()
+    data = packet.data
+    timeStamp,coms,typ,msg,command = decode(data)
+    # 'T:',timeStamp, 'Comand:',command
+    #Logger << '%s: %s, %s, %s'%(timeStamp,len(coms),typ,msg)
+    dataOut = '%s\n'%packet.Print()
+    if command.find(':DOSWEEP')!=-1:
+        sweep()
+    if len(coms)>0:
+        analysePacket(coms,typ,msg)
     else:
-       # Logger << client.getNumberOfPackets(),' packets are left in queue'
-       pass
+        keithley.write(command)
+        client.send(aboName,dataOut)
+    #string retVal = keithley.setOutput(ON)
+        
     if counter%10 == 0:      
         if not doingSweep:
             readCurrentIV()

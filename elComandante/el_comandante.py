@@ -261,7 +261,7 @@ try:
     Logger = printer()
     Logger.set_name("elComandanteLog")
     Logger.timestamp = timestamp
-    Logger.set_logfile('%s/elComandante.log'%(Directories['logDir']))
+    Logger.set_logfile(Directories['logDir'],'elComandante.log')
     Logger.printw()
     Logger<<'Set LogFile to %s'%Logger.f
     check_for_tar(Directories['dataDir'],Logger)

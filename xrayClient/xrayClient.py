@@ -27,7 +27,7 @@ args = parser.parse_args()
 
 # Setup logging handle
 log.timestamp = float(args.timestamp)
-log.set_logfile(args.directory + "/xrayClient.log")
+log.set_logfile(args.directory,"xrayClient.log")
 log.set_prefix = ""
 
 # Print welcome
@@ -177,7 +177,6 @@ shutter = 3 # FIXME: Read from config
 
 log << "Waiting for commands ..."
 while client.anzahl_threads > 0 and client.isClosed == False:
-	time.sleep(0.5)
 	packet = client.getFirstPacket(abo)
 	if not packet.isEmpty():
 		log << "Received packet from " + abo + ": " + packet.data
@@ -287,6 +286,7 @@ while client.anzahl_threads > 0 and client.isClosed == False:
 			state_kV = xray_generator.get_voltage()
 			state_mA = xray_generator.get_current()
 			state_HV = xray_generator.get_hv()
+		time.sleep(0.5)
 
 
 log.printv()

@@ -126,9 +126,10 @@ class xray_agente(el_agente.el_agente):
 	def check_finished(self):
 		if not self.active:
 			return True
-
-		packet = self.sclient.getFirstPacket(self.subscription)
-		if not packet.isEmpty():
+		while True:
+			packet = self.sclient.getFirstPacket(self.subscription)
+			if packet.isEmpty():
+				break
 			if self.pending and "FINISHED" in packet.data.upper():
 				self.pending = False
 			elif "ERROR" in packet.data.upper():

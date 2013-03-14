@@ -120,16 +120,21 @@ class highVoltage_agente(el_agente.el_agente):
     def check_finished(self):
         if not self.active or not self.pending:
             return True
-        packet = self.sclient.getFirstPacket(self.subscription)
-        if not packet.isEmpty() and not "pong" in packet.data.lower():
-            data = packet.data
-            if 'IV' in self.currenttest:
-                return self.checkIVCurveFinished(data)
-        else:
-            #self.log << "packet is Empty %s,\t pong in data.lower:%s"%(packet.isEmpty(),packet.data.lower())
-            pass
+        while True:
+            packet = self.sclient.getFirstPacket(self.subscription)
+            if packet.isEmpty():
+                break
+            if not "pong" in packet.data.lower():
+                data = packet.data
+                if 'IV' in self.currenttest:
+                    return self.checkIVCurveFinished(data)
+                else:
+                    pass
+            else:
+                #self.log << "packet is Empty %s,\t pong in data.lower:%s"%(packet.isEmpty(),packet.data.lower())
+                pass
         return self.ivDone
-        
+
     def prepareIVCurve(self):
         self.ivDone = False
         self.sclient.send(self.subscription,':PROG:IV:START %s\n'%self.ivStart)
@@ -137,7 +142,7 @@ class highVoltage_agente(el_agente.el_agente):
         self.sclient.send(self.subscription,':PROG:IV:STEP %s\n'%self.ivStep)
         self.sclient.send(self.subscription,':PROG:IV:DELAY %s\n'%self.ivDelay)
         #todo: wait for PROG:IV:TESTDIR
-            
+
     def doIVCurve(self):
 #        self.sclient.send(self.subscription,':PROG:IV:TESTDIR %s\n'%testdir)
         self.sclient.send(self.subscription,':PROG:IV MEAS\n')

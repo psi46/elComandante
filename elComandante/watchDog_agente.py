@@ -37,7 +37,7 @@ class watchDog_agente(el_agente.el_agente):
         self.logFileName = "temperature.log"
         self.tempLog = printer()
         self.tempLog.set_name('Temperature')
-        self.tempLog.set_logfile('%s/%s'%(self.logDir,self.logFileName))
+        self.tempLog.set_logfile(self.logDir,self.logFileName)
         self.tempLog.disable_print()
 
         #todo find a better way to define list...
@@ -199,8 +199,12 @@ class watchDog_agente(el_agente.el_agente):
         return True
 
     def readTemperatures(self):
-        packet = self.sclient.getFirstPacket(self.subscriptions['temp'])
-        if not packet.isEmpty() and not "pong" in packet.data.lower():
+        while True:
+            packet = self.sclient.getFirstPacket(self.subscriptions['temp'])
+            if packet.isEmpty():
+                break
+            if "pong" in packet.data.lower():
+                continue
             data = packet.data
             Time,coms,typ,msg = decode(data)[:4]
             if len(msg)>=1:

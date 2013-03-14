@@ -1,4 +1,5 @@
 from time import strftime,time, localtime
+import os
 import logging
 class printer:
     def __init__(self):
@@ -69,7 +70,8 @@ class printer:
     def logToFile(self,log):
         if self.logger1 and self.loglevel > 0:
             self.logger1.info(log)
-            self.logFileHandler.flush()
+            if self.logFileHandler:
+                self.logFileHandler.flush()
 
     @staticmethod
     def identifyer(color):
@@ -99,10 +101,12 @@ class printer:
     def set_loglevel(self,loglevel):
         self.loglevel=loglevel
 
-    def set_logfile(self,path):
-        self._print('%s: Set Logfile to "%s"'%(self.name,path))
+    def set_logfile(self,path,fileName):
+        path=path.rstrip('/')
+        self._print('%s: Set Logfile to "%s/%s"'%(self.name,path,fileName))
         self.logger1 = logging.getLogger('log%s'%self.name)
-        self.logFileHandler = logging.FileHandler(path)
+        self.check_path(path)
+        self.logFileHandler = logging.FileHandler('%s/%s'%(path,fileName))
         self.logger1.addHandler(self.logFileHandler)
         self.logger1.setLevel(logging.INFO) 
         #self.f = open(path,'append')
@@ -111,7 +115,14 @@ class printer:
         #if self.f and self.loglevel > 0: self.f.write(x+'\n')
         #self.f.write()
 
-
+    def check_path(self,path):
+        self << 'checking path: %s'%path
+        path = os.path.abspath(path)
+        try:
+            os.stat(path)
+        except:
+            os.mkdir(path)
+            
     def printv(self):
         if not self.showOutput:
             return

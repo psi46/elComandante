@@ -25,7 +25,7 @@ args = parser.parse_args()
 
 # Setup logging handle
 log.timestamp = float(args.timestamp)
-log.set_logfile(args.log_dir + "/analysisClient.log")
+log.set_logfile(args.log_dir,"/analysisClient.log")
 log.set_prefix = ""
 
 # Setup Subsystem
@@ -52,7 +52,6 @@ exec_dir = args.exec_dir
 
 log << "Waiting for commands ..."
 while client.anzahl_threads > 0 and client.isClosed == False:
-	time.sleep(0.5)
 	packet = client.getFirstPacket(abo)
 	if not packet.isEmpty():
 		log << "Received packet from " + abo + ": " + packet.data
@@ -94,6 +93,8 @@ while client.anzahl_threads > 0 and client.isClosed == False:
 			client.send(abo, ":FINISHED\n")
 		elif len(commands) == 1 and commands[0].upper() == "EXIT":
 			break
+	else:
+		time.sleep(0.5)
 
 log.printv()
 log << "Closing connection ..."
