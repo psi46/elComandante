@@ -68,6 +68,7 @@ def createTarFiles(psi_agente):
             tarFileName=tarFileName[:-1]
         tarFileName += '.tar.gz'
         tar = tarfile.open(tarFileName, "w:gz")
+        print 'creating Tarfile: %s'%tarFileName 
         tar.add(Testboard.parentDir, arcname=Testboard.moduleDir);
 #        for name in ["file1", "file2", "file3"]:
 #    tar.add(name)

@@ -100,7 +100,7 @@ class TBmaster(object):
             self.client.send(self.psiSubscription,':STAT:TB%s! %s:failed\n'%(self.TB,name))
         elif self.busy:
             self.client.send(self.psiSubscription,':STAT:TB%s! %s:busy\n'%(self.TB,name))
-            self.Logger << ':Test %s busy in TB%s'%(name,self.TB)
+            #self.Logger << ':Test %s busy in TB%s'%(name,self.TB)
         else:
             self.client.send(self.psiSubscription,':STAT:TB%s! %s:finished\n'%(self.TB,name))
             self.Logger << ':Test %s finished in TB%s'%(name,self.TB)
@@ -123,7 +123,7 @@ class TBmaster(object):
     def openTB(self,dir,fname):
         self._resetVariables()
         self.dir = dir
-        Logger << 'open TB%s'%(self.TB)
+        self.Logger << 'open TB%s'%(self.TB)
         executestr='%s -dir %s -r %s.root -log %s.log'%(self.psiVersion,dir,fname,fname)
         self._spawn(executestr)
         self.failed=self._readout()

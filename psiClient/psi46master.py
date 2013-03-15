@@ -121,20 +121,22 @@ def startTestTB(TBno,msg):
             TB.testName = whichTest.split('/')[-1]
             TB.testNo = int(dir.rstrip('/').split('/')[-1].split('_')[0])
             
+            TB.busy=True
             Logger << 'got command to execute %s in TB%s  -- %s:%s'%(whichTest,TBno,TB.testNo,TB.testName)
             TB.DoTest = Thread(target=TB.executeTest, args=(whichTest,dir,fname,))
             TB.DoTest.start()
             name = TB.get_directory_name()
+#TODO Hier stimmt was noch nicht compare mit alter version neeeded
             if name =='':
                 Logger << "Directory name not valid.....'%s'-whichTest '%s'"%(name,whichTest)
                 client.send(psiSubscription,':STAT:TB%s! %s:started\n'%(TBno,name))
                 TB.busy = True
-            else:
-                Logger <<"Testboard %d is still busy cannot execute %s" %(TBno, whichTest)
-                name = TB.get_directory_name()
-                TB.sendTBStatus()
+        else:
+            Logger <<"Testboard %d is still busy cannot execute %s" %(TBno, whichTest)
+            name = TB.get_directory_name()
+            TB.sendTBStatus()
 #                client.send(psiSubscription,':STAT:TB%s! %s:busy\n'%(name,TBno))
-                client.send(errorSubscription, '%s: Cannot start test %s - TB %s is busy'%(clientName,whichTest,TBno))
+            client.send(errorSubscription, '%s: Cannot start test %s - TB %s is busy'%(clientName,whichTest,TBno))
 
 def killTestTB(TBno):
     if TBno>=0:
@@ -172,32 +174,34 @@ def exitProg():
            name = TB.get_directory_name()
            if TB.busy: 
                TB.sendTBStatus()
-               client.send(psiSubscription,':STAT:TB%s! busy %s \n'%(TB,name))
+               #client.send(psiSubscription,':STAT:TB%s! busy %s \n'%(TB,name))
                Logger << " TB %s still busy with %s "%(TB,name)
 
 def sendStatsTB(TBno):
     if len(TBmasters) > TBno: 
         TB = TBmasters[TBno]
         name = TB.get_directory_name()
-        Logger << "Stat TBno %s, %s %s"%(TBno, TB.failed,TB.busy)
+        #Logger << "Stat TBno %s, %s %s"%(TBno, TB.failed,TB.busy)
         TB.sendTBStatus()
         if TB.busy:
-            client.send(psiSubscription,':STAT:TBno%s! %s:busy\n'%(TBno,name))
+            #client.send(psiSubscription,':STAT:TB%s! %s:busy\n'%(TBno,name))
             return
         elif TB.failed:
-            client.send(psiSubscription,':STAT:TBno%s! %s:failed\n'%(TBno,name))
+            #client.send(psiSubscription,':STAT:TB%s! %s:failed\n'%(TBno,name))
             return
         elif TB.TestEnd:
-            client.send(psiSubscription,':STAT:TBno%s! %s:finished\n'%(TBno,name))
+            #client.send(psiSubscription,':STAT:TB%s! %s:finished\n'%(TBno,name))
             return
         else:
             pass
-    client.send(psiSubscription,':STAT:TBno%s! status:unknown\n'%TBno)
+    client.send(psiSubscription,':STAT:TB%s! status:unknown\n'%TBno)
 
 
 def analysePacket(packet):
     time,coms,typ,msg,cmd = decode(packet.data)
     coms = [x.lower() for x in coms]
+    #if counter %100 == 0:
+    #    Logger << time,coms,typ,msg
     try:
         TBno=int(coms[1][2:])
     except:
@@ -228,8 +232,6 @@ while client.anzahl_threads > 0 and not End:
     if not "pong" in packet.data.lower():
         analysePacket(packet)
         counter += 1 
-        if counter %100 == 0:
-            Logger << time,coms,typ,msg
         #Logger << cmd
     else:
         sleep(.5)
@@ -238,8 +240,13 @@ while client.anzahl_threads > 0 and not End:
 
 #final stats....
 for TB in TBmasters:
-    if TB.failed: client.send(psiSubscription,':STAT:TB%s! test:failed\n'%i)
-    elif TB.TestEnd: client.send(psiSubscription,':STAT:TB%s! test:finished\n'%i)
+    TB.sendTBStatus()
+    if TB.failed: 
+        pass
+        #client.send(psiSubscription,':STAT:TB%s! test:failed\n'%i)
+    elif TB.TestEnd:
+        pass
+        #client.send(psiSubscription,':STAT:TB%s! test:finished\n'%i)
 
 client.send(psiSubscription,':prog:stat! exit\n')    
 print 'exiting...'

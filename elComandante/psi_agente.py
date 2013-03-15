@@ -118,7 +118,9 @@ class psi_agente(el_agente.el_agente):
         self.currenttest='powercycle'
         for Testboard in self.Testboards:
             self._prepare_testboard(Testboard)
+        time.sleep(1)
         self.execute_test()
+        time.sleep(1)
         self.log <<" %s: do internal power_cycle" %(self.agente_name)
         start_time = time.time()
         while True:
@@ -130,7 +132,9 @@ class psi_agente(el_agente.el_agente):
                 self.execute_test()
                 start_time = time.time()
             sleep(1)
+        time.sleep(1)
         self.cleanup_test()
+        self.sclient.clearPackets(self.subscription)
 
     def execute_test(self):
         if not self.active:
@@ -193,6 +197,7 @@ class psi_agente(el_agente.el_agente):
         else:
             for Testboard in self.Testboards:
                 self._deldir(Testboard)
+        self.sclient.clearPackets(self.subscription) 
         return True
 
     def final_test_cleanup(self):
