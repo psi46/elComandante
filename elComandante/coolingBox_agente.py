@@ -137,6 +137,8 @@ class coolingBox_agente(el_agente.el_agente):
         self.currentTest = "stabalizeTemp"
         self.sclient.send(self.subscription,":PROG:START 0\n")
         self.sclient.send(self.subscription,":PROG:TEMP %s\n"%Temperature)
+        time.sleep(1);
+        self.sclient.clearPackets(self.subscription)
 
     def check_finished(self):
         # Check whether the client has finished its task
@@ -158,7 +160,7 @@ class coolingBox_agente(el_agente.el_agente):
     def checkFinalHeating(self):
         self.sclient.clearPackets(self.subscription)
         self.sclient.send(self.subscription,":PROG:STAT?\n")
-        time.sleep(1.0)
+        time.sleep(1.)
         bGotAnswer = False
         while not bGotAnswer:
             packet = self.sclient.getFirstPacket(self.subscription)
@@ -180,6 +182,7 @@ class coolingBox_agente(el_agente.el_agente):
 
     def checkStabalized(self):
         self.sclient.clearPackets(self.subscription)
+        self.sclient.clearPackets(self.subscription)
         self.sclient.send(self.subscription,":PROG:STAT?\n")
         time.sleep(1.0)
         bGotAnswer = False
@@ -188,6 +191,10 @@ class coolingBox_agente(el_agente.el_agente):
             if not packet.isEmpty() and not "pong" in packet.data.lower():
                 data = packet.data
                 Time,coms,typ,msg = decode(data)[:4]
+                timeNow = time.time()
+                if timeNow - Time > 5:
+                    self.log< "%s: packet to old: received at: %s\tnow: %s" %(self.agente_name, Time, TimeNow)
+                    continue
                 if len(coms)>1:
                     if "prog" in coms[0].lower():
                         if "stat" in coms[1].lower() and typ == 'a':
