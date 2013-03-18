@@ -161,6 +161,7 @@ def sweep():
         npoint +=1
         measurement = keithley.measurments.popleft()
         measurement[0]=int(measurement[0])
+        Logger << "sending: %s  - %s" %(measurement,len(keithley.measurments))
         timestamp = measurement[0]
         voltage = float(measurement[1])
         current = float(measurement[2])
@@ -184,8 +185,11 @@ def sweep():
         try:
             ivCurveLogger << '%d\t%+8.3f\t%+11.4e'%(timestamp,voltage,current)
         except:
-            pass
-        IVLogger << '%s\t%s\t%s'%(timestamp,voltage,current)
+            Logger.warning("Couldn't write to ivCuvrveLogger")
+        try: 
+            IVLogger << '%s\t%s\t%s'%(timestamp,voltage,current)
+        except:
+             Logger.warning("Couldn't write to ivLogger")
         #        client.sendData(resistanceAbo,'%s %s\n'%(timestamp,resistance))
     Logger << 'Results End'
     client.send(IVAbo,'Results End\n')
@@ -201,7 +205,7 @@ def sweep():
     keithley.initKeithley()
     keithley.setOutput(outputStatus)
     doingSweep =  False
-
+    client.send(aboName,':PROG:IV! FINISHED\n')
 
 ############################################################################
 ############################################################################
