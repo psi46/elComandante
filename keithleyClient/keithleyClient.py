@@ -2,13 +2,13 @@
 import sys
 sys.path.insert(1, "../")
 from myutils import sClient, decode, printer, is_float
-from threading import Thread
-import subprocess
+#from threading import Thread
+#import subprocess
 import time
 import argparse
 import keithleyInterface
 import os
-import serial
+#import serial
 import signal
 from time import sleep
 ON = 1
@@ -118,10 +118,12 @@ def readCurrentIV():
 def sweep():
     global doingSweep
     global testDir
+    global maxSweepTries 
     doingSweep = True
     outputStatus = keithley.getOutputStatus()
     client.send(aboName,':MSG! Start with Linear Sweep from %sV to %sV in %sV steps\n'%(startValue,stopValue,stepValue))
     Logger << "TestDirectory is: %s"%testDir
+    Logger << "Max Sweep Tries:  %d"%maxSweepTries
     ntries = 0
     while True:
         retVal = keithley.doLinearSweep(startValue, stopValue, stepValue, nSweeps, delay)
@@ -135,6 +137,7 @@ def sweep():
         Logger << msg
         client.send(aboName,msg)
         client.send(IVAbo,msg) 
+    Logger << "Done with recording IV Curve"
     client.send(aboName,'Results of Linear Sweep:\n')
     client.send(IVAbo,'Results Start:\n')
     client.sendData(voltageAbo,'Sweep Data\n')
@@ -145,10 +148,10 @@ def sweep():
     nPoints = len(keithley.measurments)
     ivCurveLogger = printer()
     ivCurveLogger.set_name("ivCurveLogger")
-    ivCurveLogger.disable_print()
-#    ivCurveLogger.timestamp = float(args.timestamp)
     ivCurveLogger.set_prefix('')
     ivCurveLogger.set_logfile(testDir,'ivCurve.log')
+    ivCurveLogger.disable_print()
+#    ivCurveLogger.timestamp = float(args.timestamp)
     ivCurveLogger << '#timestamp\tvoltage(V)\tcurrent(A)'
     while len(keithley.measurments)>0:
         npoint +=1
@@ -178,19 +181,22 @@ def sweep():
             ivCurveLogger << '%d\t%+8.3f\t%+11.4e'%(timestamp,voltage,current)
         except:
             pass
-#        IVLogger << '%s\t%s\t%s'%(timestamp,voltage,current)
-#        client.sendData(resistanceAbo,'%s %s\n'%(timestamp,resistance))
+        IVLogger << '%s\t%s\t%s'%(timestamp,voltage,current)
+        #        client.sendData(resistanceAbo,'%s %s\n'%(timestamp,resistance))
+    Logger << 'Results End'
     client.send(IVAbo,'Results End\n')
+    client.clearPackets(aboName)
     client.send(aboName,':PROG:IV! FINISHED\n')
     client.send(voltageAbo,'Sweep Data Done\n')
     client.send(currentAbo,'Sweep Data Done\n')
     client.send(resistanceAbo,'Sweep Data Done\n')
+    Logger << 'Sweep done'
     del ivCurveLogger
     sleep(1)
+    Logger << 're-initialize Keithley'
     keithley.initKeithley()
     keithley.setOutput(outputStatus)
     doingSweep =  False
-
 
 
 ############################################################################
@@ -221,12 +227,16 @@ def  analyseIV(coms,typ,msg):
     global stopValue
     global delay
     global stepValue
-    global maxSwepTries
+    global maxSweepTries
     global nSweeps
     global testDir
+    if type(coms)==list:
+        coms = [x.lower() for x in coms]
+    elif type(coms) == str:
+        coms = coms.lower()
 #    Logger <<'analyse :IV'
     if len(coms)==0:
-        if msg.lower().find('meas')>=0 and typ=='c':
+        if msg.lower().startswith('meas') and typ=='c':
             outMsg= ':MSG! Do Sweep from %.2f V to %.2f'%(startValue,stopValue)
             outMsg+=' in steps of %.2fV with a delay of %.f\n'%(stepValue,delay)
             outMsg+='\tTestDirectory is "%s"\n'%testDir
@@ -239,7 +249,7 @@ def  analyseIV(coms,typ,msg):
     elif len(coms)==1:
 #        Logger << 'iv len >0'
         outMsg = 'not Valid Input'
-        if coms[0].lower().find('testdir')>=0:
+        if coms[0].startwith('testdir'):
             if typ =='c':
 #                Logger << '%s: "%s"'%(coms[0],msg)
                 testDir = msg
@@ -251,7 +261,7 @@ def  analyseIV(coms,typ,msg):
                 else:
                     outMsg = ':IV:TESTDIR! %s'%testDir
 
-        if coms[0].find('START')>=0:
+        if coms[0].startswith('start'):
             if typ =='c' and is_float(msg):
                 startValue=float(msg)
 #                Logger << 'prog-iv-start=%s'%msg
@@ -259,7 +269,8 @@ def  analyseIV(coms,typ,msg):
 #                Logger << 'prog-iv-start?'
                 pass
             outMsg = ':PROG:IV:START! %s'%startValue
-        elif coms[0].find('STOP')>=0:
+            
+        elif coms[0].startswith('stop'):
             if typ =='c'and is_float(msg):
                 stopValue = float(msg)
 #                Logger << 'prog-iv-stop=%s'%msg
@@ -267,7 +278,8 @@ def  analyseIV(coms,typ,msg):
 #                Logger << 'prog-iv-stop?'
                 pass
             outMsg = ':PROG:IV:STOP! %s'%stopValue
-        elif coms[0].find('STEP')>=0:
+            
+        elif coms[0].startswith('step'):
             if typ =='c'and is_float(msg):
                 stepValue=float(msg)
 #                Logger << 'prog-iv-step=%s'%msg
@@ -275,7 +287,8 @@ def  analyseIV(coms,typ,msg):
 #                Logger << 'prog-iv-step?'
                 pass
             outMsg = ':PROG:IV:STEP! %s'%stepValue
-        elif coms[0].find('DEL')>=0:           
+            
+        elif coms[0].startswith('del'):           
             if typ =='c'and is_float(msg):
                 delay=float(msg)
 #                Logger << 'prog-iv-delay=%s'%msg
@@ -283,14 +296,22 @@ def  analyseIV(coms,typ,msg):
 #                Logger << 'prog-iv-delay?'
                 Logger
             outMsg = ':PROG:IV:DELAY! %s'%delay
-        elif coms[0].find('MAXTRIPS')>=0:           
+            
+        elif coms[0].startswith('maxtrips'):           
             if typ =='c' and is_float(msg):
-                maxSweepTries=float(msg)
+                maxSweepTries = float(msg)
 #                Logger << 'prog-iv-trip=%s'%msg
             elif typ =='q':
 #                Logger << 'prog-iv-trip?'
                 pass
             outMsg = ':PROG:IV:TRIP! %s'%delay
+            
+        elif coms[0].startswith('stat') and typ == 'q':
+            if doingSweep:
+                outMsg = ':PROG:IV:STAT! busy'
+            else:
+                outMsg = ':PROG:IV:STAT! finished'
+            pass
         Logger << outMsg
         outMsg+='\n'
         client.send(aboName,outMsg)
