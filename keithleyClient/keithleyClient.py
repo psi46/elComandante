@@ -95,6 +95,8 @@ keithley.setOutput(OFF)
 #Logger << 'status:%s'%keithley.getOutputStatus()
 
 def readCurrentIV():
+    global client
+    global keithley
     if keithley.getOutputStatus():
         data= keithley.getAnswerForQuery(':READ?',69).split(' ')
         timestamp = time.time()
@@ -119,6 +121,8 @@ def sweep():
     global doingSweep
     global testDir
     global maxSweepTries 
+    global client
+    global keithley
     doingSweep = True
     outputStatus = keithley.getOutputStatus()
     client.send(aboName,':MSG! Start with Linear Sweep from %sV to %sV in %sV steps\n'%(startValue,stopValue,stepValue))
@@ -204,6 +208,8 @@ def sweep():
 ############################################################################
 
 def printHelp():
+    global client
+    global Logger
     data = '\n************************************************************************\n'
     data +=  'This is the Help for the python keithley client, part of elComandante\n'
     data +=' You can use following SCPI like commands: \n'
@@ -230,6 +236,9 @@ def  analyseIV(coms,typ,msg):
     global maxSweepTries
     global nSweeps
     global testDir
+    global Logger
+    global client
+    global keithley
     if type(coms)==list:
         coms = [x.lower() for x in coms]
     elif type(coms) == str:
@@ -321,6 +330,9 @@ def  analyseIV(coms,typ,msg):
     pass
         
 def analyseProg(coms,typ,msg):
+    global Logger
+    global client
+    global keithley
 #    Logger << 'analyse :PROG'
 #    Logger << coms
     if coms[0].find('IV')>=0:
@@ -339,6 +351,9 @@ def analyseProg(coms,typ,msg):
     pass
 
 def analyseOutp(coms,typ,msg): #pretty much ok
+    global Logger
+    global client
+    global keithley
     #Logger << 'analyse Output'
     if len(coms)>0 and  typ != 'a':
 #        Logger << 'not valid command: %s %s %s '%(coms, typ, msg)
@@ -366,6 +381,9 @@ def analyseOutp(coms,typ,msg): #pretty much ok
     pass
 
 def analysePacket(coms,typ,msg):
+    global Logger
+    global client
+    global keithley
     if coms[0].find('PROG')>=0:
         if len(coms[1:])>0:
             analyseProg(coms[1:],typ,msg)
