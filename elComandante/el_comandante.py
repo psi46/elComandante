@@ -129,7 +129,7 @@ def uploadTarFiles(tarList,Logger):
                         localStorage = Directories['storageDir']
                         dir = fileName.rstrip('.tar.gz')
                         moveDirToStorage(dir,localStorage,Logger)
-                    except e:
+                    except as e:
                         Logger.warning("Coulnt move directory: %s"%e)
                         pass
                 else:
@@ -138,7 +138,7 @@ def uploadTarFiles(tarList,Logger):
                         dir = fileName.rstrip('.tar.gz')
                         if userQueries.query_yes_no("Do you want to move directory '%s' to storage anyway?"%(dir,localStorage),Logger):
                             moveDirToStorage(dir,localStorage,Logger)
-                    except e:
+                    except as e:
                         Logger.warning("Coulnt move directory: %s"%e)
                         pass
             ssh.close()                
@@ -376,7 +376,7 @@ try:
                 sys.stdout.write('%s\r' %output)
             sys.stdout.flush()
         Logger << "finished"
-        time.sleep(2)
+        time.sleep(1)
 
     # Check whether the client is already running before trying to start it
     Logger << "Checking whether clients are runnning ..."
