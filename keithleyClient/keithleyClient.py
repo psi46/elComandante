@@ -123,6 +123,7 @@ def sweep():
     global maxSweepTries 
     global client
     global keithley
+    global aboName
     doingSweep = True
     outputStatus = keithley.getOutputStatus()
     client.send(aboName,':MSG! Start with Linear Sweep from %sV to %sV in %sV steps\n'%(startValue,stopValue,stepValue))
@@ -161,13 +162,25 @@ def sweep():
         npoint +=1
         measurement = keithley.measurments.popleft()
         measurement[0]=int(measurement[0])
-        Logger << "sending: %s  - %s" %(measurement,len(keithley.measurments))
+        #Logger << "sending: %s  - %s" %(measurement,len(keithley.measurments))
         timestamp = measurement[0]
         voltage = float(measurement[1])
         current = float(measurement[2])
 #        resistance = float(measurement[3])
-        client.sendData(aboName,':IV! %s/%s '%(npoint,nPoints) +" ".join(map(str, measurement[:3]))+'\n')
-        client.sendData(IVAbo," ".join(map(str, measurement[:3]))+'\n')
+        try:
+            client.sendData(aboName,':IV! %s/%s '%(npoint,nPoints) +" ".join(map(str, measurement[:3]))+'\n')
+        except:
+            Logger.warning("Couldn't send to %s"%aboName)
+
+        try:
+            client.sendData(aboName,':IV! %s/%s '%(npoint,nPoints) +" ".join(map(str, measurement[:3]))+'\n')
+        except:
+            Logger.warning("Couldn't send to %s"%aboName)
+            print "Couln't send to %s"%aboName
+        try:
+            client.sendData(IVAbo," ".join(map(str, measurement[:3]))+'\n')
+        except:
+            Logger.warning("Couldn't send to %s"%IVAbo)
         strA = '%d %+8.3f'%(timestamp,voltage)
         strA = strA.strip('\n')
         strA += '\n'
@@ -191,10 +204,11 @@ def sweep():
         except:
              Logger.warning("Couldn't write to ivLogger")
         #        client.sendData(resistanceAbo,'%s %s\n'%(timestamp,resistance))
-    Logger << 'Results End'
+    Logger << 'Results End, %s'% aboName
     client.send(IVAbo,'Results End\n')
     client.clearPackets(aboName)
     client.send(aboName,':PROG:IV! FINISHED\n')
+    client.sendData(aboName,':PROG:IV! FINISHED\n')
     client.send(voltageAbo,'Sweep Data Done\n')
     client.send(currentAbo,'Sweep Data Done\n')
     client.send(resistanceAbo,'Sweep Data Done\n')
@@ -262,7 +276,7 @@ def  analyseIV(coms,typ,msg):
     elif len(coms)==1:
 #        Logger << 'iv len >0'
         outMsg = 'not Valid Input'
-        if coms[0].startwith('testdir'):
+        if coms[0].startswith('testdir'):
             if typ =='c':
 #                Logger << '%s: "%s"'%(coms[0],msg)
                 testDir = msg

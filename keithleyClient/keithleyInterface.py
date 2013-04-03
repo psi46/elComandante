@@ -456,7 +456,7 @@ class keithleyInterface:
             else:
                 retVal= -1
         
-        print 'readSweepOutput RetVal: %s'%retVal
+        #print 'readSweepOutput RetVal: %s'%retVal
         return retVal
     
     def initFourWireResistensMeasurement(self):
