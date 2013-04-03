@@ -15,7 +15,7 @@ class Testboard:
         self.numerator = 0
         self.dataDir ='.'
         self.moduleDir ='MXXXX'
-        self.failedPowercylces =0
+        self.failedPowercycles =0
     @property
     def parentDir(self):
         return '%s/%s/'%(self.dataDir,self.moduleDir)
