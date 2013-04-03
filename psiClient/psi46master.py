@@ -227,7 +227,7 @@ counter = 0
 while client.anzahl_threads > 0 and not End:
     packet = client.getFirstPacket(psiSubscription)
     if packet.isEmpty():
-        sleep(.5)
+        sleep(.1)
         continue
     if not "pong" in packet.data.lower():
         analysePacket(packet)
