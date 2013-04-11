@@ -3,6 +3,13 @@ import serial
 
 from motor_stage import motor_stage
 
+## Motor stage implementation for the Zaber company devices
+#
+# This motor stage implementation is specifically made for the
+# device X made by the company Zaber. It uses a serial interface
+# for communication. The serial commands are 6 byte packets with
+# packet ID (2 bytes) and data (4 bytes).
+# @ingroup xrayClient
 class zaber_motor_stage(motor_stage):
 	def __init__(self, device):
 		motor_stage.__init__(self, 1)

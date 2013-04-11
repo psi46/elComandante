@@ -1,7 +1,7 @@
 #!/usr/bin/python2
 
 ## \addtogroup xrayClient
-# elComandante client for communicating with an x-ray device
+# elComandante client for controlling an x-ray device
 #
 # This device receives commands from elComandante to operate and supervise
 # and x-ray device. The commands are exchanged over the subsystem. The
@@ -20,13 +20,13 @@
 # the required arguments from its configuration files.
 #
 # Command line arguments:
-# - --xray-device	Xray generator device, e.g. /dev/ttyS0	(default: /dev/ttyF0)
-# - --xray-type		Xray generator device type, e.g. id3003	(default: id3003)
-# - --stage-device	Fluorescence device, e.g. /dev/ttyS0	(default: /dev/ttyF1)
-# - --stage-type	Fluorescence device type, e.g. zaber	(default: zaber)
-# - --directory		Directory for log files			(default: .)
-# - --timestamp		Timestamp for creation of file		(default: 0)
-# - --targets		Fluorescence target description		(default: "")
+# - \c \--xray-device	Xray generator device, e.g. /dev/ttyS0	(default: /dev/ttyF0)
+# - \c \--xray-type	Xray generator device type, e.g. id3003	(default: id3003)
+# - \c \--stage-device	Fluorescence device, e.g. /dev/ttyS0	(default: /dev/ttyF1)
+# - \c \--stage-type	Fluorescence device type, e.g. zaber	(default: zaber)
+# - \c \--directory	Directory for log files			(default: .)
+# - \c \--timestamp	Timestamp for creation of file		(default: 0)
+# - \c \--targets	Fluorescence target description		(default: "")
 #
 # The target description is a comma separated list of targets where the
 # targets are given by a label and a set of coordinates, e.g.
@@ -46,7 +46,6 @@
 # have to be defined which inherit from the xray_generator.xray_generator and
 # the motor_stage.motor_stage classes. Examples of such implementations are
 # the id3003.id3003_xray_generator and the zaber.zaber_motor_stage classes.
-# @{
 
 import sys
 sys.path.insert(1, "../")
@@ -359,5 +358,3 @@ if client.isClosed == True:
 	log << "Client connection closed."
 log << "Exit."
 process.remove_pid_file()
-
-## @}

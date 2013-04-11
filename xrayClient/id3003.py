@@ -4,6 +4,13 @@ import time
 
 from xray_generator import xray_generator
 
+## Implementation of the General Electric Iso Debyeflex 3003 x-ray
+# generator
+#
+# This class is an implementation of the x-ray generator Iso Debyeflex
+# 3003 from General Electric. It uses a serial interface to communicate
+# with the device.
+# \ingroup xrayClient
 class id3003_xray_generator(xray_generator):
 	def __init__(self, device):
 		xray_generator.__init__(self, 4)

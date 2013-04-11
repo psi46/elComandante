@@ -8,6 +8,7 @@
 # replaces all the functions with actual code that communicates with the
 # device. If a function is not replaced it will act in a conservative
 # telling the calling program, that the function call was unsuccessful.
+# @ingroup xrayClient
 class motor_stage():
 	## Constructor that sets the number of dimensions of the motor stage
 	#
