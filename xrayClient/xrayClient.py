@@ -1,5 +1,53 @@
 #!/usr/bin/python2
 
+## \addtogroup xrayClient
+# elComandante client for communicating with an x-ray device
+#
+# This device receives commands from elComandante to operate and supervise
+# and x-ray device. The commands are exchanged over the subsystem. The
+# nature of the commands is very high level and they do not care about the
+# details of the implementation and the type of x-ray device used. An
+# example for a series of commands is: SET VOLTAGE 30, SET CURRENT 10,
+# SET HV ON, SET BEAM ON. The xrayClient interprets these high level
+# commands and, by knowing the specifics of the x-ray device, sends the
+# appropriate commands to it. Additionally it checks whether the specified
+# conditions are reached successfully and monitors them when nothing else
+# is happening.
+#
+# Since the xrayClient can use multiple different x-ray setups there is
+# quite a number of command line arguments to chose how the client
+# operates. Normally, the client is started by elComandante who reads
+# the required arguments from its configuration files.
+#
+# Command line arguments:
+# - --xray-device	Xray generator device, e.g. /dev/ttyS0	(default: /dev/ttyF0)
+# - --xray-type		Xray generator device type, e.g. id3003	(default: id3003)
+# - --stage-device	Fluorescence device, e.g. /dev/ttyS0	(default: /dev/ttyF1)
+# - --stage-type	Fluorescence device type, e.g. zaber	(default: zaber)
+# - --directory		Directory for log files			(default: .)
+# - --timestamp		Timestamp for creation of file		(default: 0)
+# - --targets		Fluorescence target description		(default: "")
+#
+# The target description is a comma separated list of targets where the
+# targets are given by a label and a set of coordinates, e.g.
+# Ag:35:59,Sn:12:69 whereas the coordinates will be used as the motor stage
+# positions where the target is located. The label is such that the high
+# level command SET TARGET Ag (or else) can be used by elComandante.
+#
+# At the beginning, the command line arguments are parsed. This is followed
+# by the setup of the x-ray device and the motor stage. They are initialised
+# and reset. Then, the client enters a loop where it waits for commands that
+# it will execute in sequence. During the time when no commands arrive it will
+# check whether the state of the x-ray device has changed. This could happen
+# when a physical interlock of the x-ray device is broken and x-ray emission
+# is stopped externally.
+#
+# To extend the x-ray client with more x-ray device implementations new classes
+# have to be defined which inherit from the xray_generator.xray_generator and
+# the motor_stage.motor_stage classes. Examples of such implementations are
+# the id3003.id3003_xray_generator and the zaber.zaber_motor_stage classes.
+# @{
+
 import sys
 sys.path.insert(1, "../")
 import time
@@ -12,9 +60,11 @@ from myutils import process
 
 process.create_pid_file()
 
+## Instance of the logger from the myutils package
 log = myutils.printer()
 
 # Parse command line arguments
+## Instance of the ArgumentParser from the argparse package
 parser = argparse.ArgumentParser()
 parser.add_argument("-xd",	"--xray-device",	dest="xray_device",	help="Xray generator device, e.g. /dev/ttyS0",	default="/dev/ttyF0")
 parser.add_argument("-xt",	"--xray-type",		dest="xray_type",	help="Xray generator device type, e.g. id3003",	default="id3003")
@@ -23,6 +73,7 @@ parser.add_argument("-st",	"--stage-type",		dest="stage_type",	help="Fluorescenc
 parser.add_argument("-dir",	"--directory",		dest="directory",	help="Directory for log files",			default=".")
 parser.add_argument("-ts",	"--timestamp",		dest="timestamp",	help="Timestamp for creation of file",		default=0)
 parser.add_argument("-tg",	"--targets",		dest="targets",		help="Fluorescence target description",		default="")
+## Parsed command line arguments
 args = parser.parse_args()
 
 # Setup logging handle
@@ -35,15 +86,20 @@ log << "Xray Client"
 log.printv()
 
 # Setup Subsystem
+## Subsystem channel on which the xrayClient is listening
 abo = "/xray"
+## Subsystem client instance
 client = myutils.sClient("127.0.0.1", 12334, "xrayClient")
 client.subscribe(abo)
 client.send(abo, 'Connecting xrayClient with Subsystem\n')
 
+## Target dictionary with label and coordinates
 targets = {}
 # Decode target argument
 for target in args.targets.split(","):
+	## Coordinates of the target
 	positions = target.split(":")
+	## Label of the target
 	name = positions[0]
 	positions = positions[1:]
 	if len(positions) == 0:
@@ -68,6 +124,7 @@ log.printv()
 # Open the xray generator device ###################################################
 log << "Opening " + args.xray_type + " xray device at " + args.xray_device + " ..."
 if args.xray_type == "id3003":
+	## X-ray generator instance
 	xray_generator = id3003.id3003_xray_generator(args.xray_device)
 else:
 	error = "Unknown device " + args.xray_type + "."
@@ -98,6 +155,7 @@ log.printv()
 # Open the motor stage device ################################################################
 log << "Opening " + args.stage_type + " fluorescence device at " + args.stage_device + " ..."
 if args.stage_type == "zaber":
+	## Motor stage instance
 	motor_stage = zaber.zaber_motor_stage(args.stage_device)
 else:
 	error = "Unknown device " + args.stage_type + "."
@@ -146,7 +204,7 @@ else:
 log << "Initialization finished."
 log.printv()
 
-# Setup KILL handler
+## Signal handler that handles the SIGINT (Ctrl-C) or KILL signal and exits gracefully
 def handler(signal, frame):
 	log.printv()
 	log << "Received signal " + `signal` + "."
@@ -158,10 +216,15 @@ def handler(signal, frame):
 
 signal.signal(signal.SIGINT, handler)
 
+## Saved voltage that the x-ray generation is supposed to be at
 state_kV = xray_generator.get_voltage()
+## Saved current that the x-ray generation is supposed to be at
 state_mA = xray_generator.get_current()
+## Saved high voltage state that the x-ray generation is supposed to be at
 state_HV = xray_generator.get_hv()
 
+
+## Checks whether the state of the x-ray device has changed or not
 def check_state(xray, kV, mA, HV):
 	if xray.get_hv() != HV:
 		return False
@@ -296,3 +359,5 @@ if client.isClosed == True:
 	log << "Client connection closed."
 log << "Exit."
 process.remove_pid_file()
+
+## @}
