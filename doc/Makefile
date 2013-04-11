@@ -3,7 +3,7 @@
 all: doc
 
 doc:
-	doxygen Doxyfile
+	cd .. && doxygen doc/Doxyfile
 
 pdf: doc
 	make -C latex
