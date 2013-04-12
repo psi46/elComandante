@@ -35,6 +35,31 @@ def preexec():
 ## of the client to finish. Since the client is a separate process, elComandante
 ## (of which this agente is a part) may continue to start or monitor other
 ## processes through other agentes.
+##
+## The configuration of the x-ray agente is made in the elComandante.conf
+## and the elComandante.ini files. The elComandante.conf file contains information
+## about the setup such as x-ray generator type and device file name:
+## @code
+## xraySubscription: /xray
+##
+## [xrayClient]
+## xrayDevice: /dev/ttyF0
+## xrayType: id3003
+## xrfDevice: /dev/ttyF1
+## xrfType: zaber
+## xrfTargets: Fe:0,Cu:25320,Mo:50640,Ag:75960,Sn:101280,Ba:126600
+## @endcode
+##
+## The xrfTarget definition is a comma separated list of targets, where each
+## target is a Label, a colon character and a coordinate (multiple dimension
+## coordinates can be given like Label:X:Y:Z).
+##
+## The initialization only holds the parameter
+## @code
+## XrayUse: True
+## @endcode
+## which enables or disables the xrayAgente. Appart from that there are the
+## environment.environment definitions which specify the x-ray conditions for each test.
 ## @ingroup elComandante
 ## @ingroup elAgente
 class xray_agente(el_agente.el_agente):

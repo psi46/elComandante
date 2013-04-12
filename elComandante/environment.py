@@ -1,3 +1,36 @@
+## @file
+## Defines the class environment.environment
+## @ingroup elComandante
+## @ingroup elAgente
+
+## Class that contains information about a test environment
+##
+## This class contains physical parameters of a test environment such
+## as temperature and x-ray radiation. Environments can be either defined
+## either by a label or a temperature value. Both can be specified in
+## elComandante's test list as Test@Env, where Test is any valid Test
+## and Env is either a floating point number (i.e. -12.5) or an environment
+## label. Only with environment labels all the features of environments
+## can be used.
+##
+## Environment labels can be definded in elComandante.ini as follows:
+## @code
+## [Environment Xrf]
+## Temperature: 17
+## XrayVoltage: 30
+## XrayCurrent: 10
+## XrayTarget: Mo
+## @endcode
+## This example contains all the currently available parameters. The
+## temperature will be used by a thermal cycling machine to control
+## this aspect of the environment and an x-ray device will control
+## the radiation according to the x-ray related parameters. The x-ray
+## voltage is in kilovolts and the current in milliamperes. An x-ray
+## target can be specified with a label. The client controlling the
+## xray device (xrayClient) must know how to interpret this label.
+## None or "" can be specified as well, for direct beam instead of
+## a fluorescence target. Default values are 17 degrees, 30 kV, 10 mA,
+## and direct beam.
 class environment():
     def __init__(self, test_str, init):
         self.temperature = 17

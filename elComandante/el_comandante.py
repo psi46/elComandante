@@ -551,3 +551,16 @@ except:
     killChildren()
     raise
     sys.exit(0)
+
+## @mainpage elComandante documentation
+## @section Introduction
+## elComandante is a program that is used for the automatic testing of CMS pixel modules ...
+##
+## @subsection Motivation
+## ...
+## @section Documentation for users
+## ...
+## @section Documentation for people responsible for the setup
+## ...
+## @section Documentation for developers
+## ...
