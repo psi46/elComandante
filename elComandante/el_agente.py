@@ -1,12 +1,34 @@
 ## @file
 ## Implements the base class for all elAgentes
 ## @ingroup elComandante
+## @ingroup elAgente
+
+## @addtogroup elAgente
+## @brief elComandante base class to supervise clients
+##
+## elAgente is an abstraction layer for elComandante which handles
+## specific tasks that are transparent for elComandante. elComandante
+## specifies which test is to be executed and it does not care how
+## the details are handled. The details are handled by the elAgentes
+## (correct: losAgentes) which act in behalf of elComandante. It is
+## important to note that the agentes are still part of the main code
+## of elComandante and are not standalone programs.
+##
+## In the beginning elComandante creates the agentes and nominates
+## which agentes are supposed to act and which are not (enabled or
+## disabled). Then he allows the to be instructed (configuration and
+## initialization), to create their communication channels (subsystem)
+## and hire (start) their minions (clients). They know the communication
+## protocols of their clients and their capabilities. They use the
+## information from elComandante (test and environment) to prepare,
+## execute, and clean up the tests that they are required to run.
 
 ## Base class for all elAgentes
 ##
 ## The class defines the standard interface to elComandante that all
 ## agents (el_agente/los_agentes) have to implement.
 ## @ingroup elComandante
+## @ingroup elAgente
 class el_agente():
     ## Constructor
     ##
