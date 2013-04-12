@@ -35,6 +35,8 @@ def preexec():
 ## of the client to finish. Since the client is a separate process, elComandante
 ## (of which this agente is a part) may continue to start or monitor other
 ## processes through other agentes.
+## @ingroup elComandante
+## @ingroup elAgente
 class xray_agente(el_agente.el_agente):
 	## Initializes the agente
 	## @param timestamp Timestamp from elComandante

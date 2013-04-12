@@ -1,3 +1,8 @@
+## @file
+## Implements the agente for the analysisClient
+## @ingroup elComandante
+## @ingroup elAgente
+
 import os
 import time
 import subprocess
@@ -9,6 +14,16 @@ import el_agente
 def preexec():
     os.setpgrp()
 
+## Agente class that communicates with the analysisClient
+##
+## The analysis agente communicates with its client to perform analyses
+## as dictated by elComandante. At this point is is able to ask the
+## client to run some command, the nature of the command being transparent
+## to bot the agente and the client. The command lines are labeled in
+## elComandante's initialization file and called, whenever a test has
+## such a label.
+## @ingroup elComandante
+## @ingroup elAgente
 class analysis_agente(el_agente.el_agente):
     def __init__(self, timestamp, log, sclient):
         el_agente.el_agente.__init__(self, timestamp, log, sclient)
