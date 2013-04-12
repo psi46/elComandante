@@ -1,4 +1,15 @@
 #!/usr/bin/env python
+
+## @file
+## Program code for elComandante
+## @ingroup elComandante
+
+## @addtogroup elComandante
+## @brief [short description]
+##
+## @details
+## [detailed description]
+
 import sys
 sys.path.insert(1, "../")
 from myutils import BetterConfigParser, sClient, decode, printer, preexec, testchain,scp,userQueries
