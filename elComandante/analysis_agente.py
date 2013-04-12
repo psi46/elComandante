@@ -21,7 +21,19 @@ def preexec():
 ## client to run some command, the nature of the command being transparent
 ## to bot the agente and the client. The command lines are labeled in
 ## elComandante's initialization file and called, whenever a test has
-## such a label.
+## such a label. The labels are defined in the following way:
+## @code
+## [Analysis VcalCalibrationStepAnalysisMo]
+## command: XrayThresholdScanAnalysis --output analysis_XrayThresholdScanMo.root *_Mo/commander_VcalCalibrationStep.root
+## @endcode
+## In this example the label would be \c VcalCalibrationStepAnalysisMo and
+## can be used in the test list.
+## @note
+## At the moment it is not for the analysis client to know the directory
+## of the test results (which should be analysed). For this reason tricks
+## have to be used like the wildcard character \c * in the example above.
+## Additionally it has to be noted that at this time there is no special
+## directory created for the analysis results.
 ## @ingroup elComandante
 ## @ingroup elAgente
 class analysis_agente(el_agente.el_agente):

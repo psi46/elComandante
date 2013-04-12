@@ -552,15 +552,101 @@ except:
     raise
     sys.exit(0)
 
+# DOCUMENTATION ##############################################################################
+
 ## @mainpage elComandante documentation
-## @section Introduction
+## @section introduction Introduction
 ## elComandante is a program that is used for the automatic testing of CMS pixel modules ...
 ##
-## @subsection Motivation
+## @subsection motivation Motivation
 ## ...
-## @section Documentation for users
+## @section user User documentation
+##
+## @subsection modconf Module and testboard configuration
+##
+## @subsection env Environments
+##
+## @subsection tests Tests
+##
+## @subsubsection pretest Pretest
+##
+## @subsubsection fulltest Fulltest
+##
+## @subsubsection trimming Trimming
+##
+## @subsubsection phcal Pulse height calibration
+##
+## @subsubsection vcalcal Vcal calibration
+## The Vcal calibration is somewhat special among the tests/calibrations that elComandante
+## can perform. This is because some measurements require different environments (see @ref env)
+## and therefore the calibration has to be split into multiple tests. There are two categories
+## of tests in the Vcal calibration:
+##
+##   - X-ray threshold scan
+##   - Vcal threshold scan
+##
+## The former must run at different x-ray conditions, namely monochromatic x-rays of different
+## wavelengths/energies. This is achieved by using different targes in the x-ray beam. The
+## nature and number of targets is configureable.
+##
+## Additionally there is the fact that all these tests must run with the same configuration
+## of the module/ROC which (probably) was created or modified through another test such as
+## @ref pretest or @ref trimming. To achieve this special considerations have to be made when
+## setting the testlist in the initialization file:
+## @code
+## Tests: Pretest@17>Trim@17>{VcalCalibrationStep@Mo,VcalCalibrationStep@Ag,VcalCalibrationStep@Ba,VcalVsThreshold@17}
+## @endcode
+## In this example there are three X-ray threshold scans (the test name is \c VcalCalibrationStep)
+## that are run in three different environments (\c Mo, \c Ag, \c Ba which stand for molybdenum,
+## silver, and barium fluorescence targets). Before these scans are performed a @ref pretest and
+## a @ref trimming step are executed. In the list they are not comma separated, but connected with an
+## arrow (\c >) character. This means, that the test parameter files (such as DAC parameters or trim
+## parameters) are taken from the previous test. The curly brackets mean that all tests listed within
+## use test parameters from the test before the bracket. (Brackets can be nested.) After the
+## \c VcalCalibrationSteps there is the VcalVsThreshold step which is a test that determines the
+## \c Vcal DAC valuess that correspond to different \c VcThr (threshold) values.
+##
+## The different @ref env (\c Mo, \c Ag, \c Ba) can be defined in the initialization file as follows:
+## @code
+## [Environment Mo]
+## Temperature: 17
+## XrayVoltage: 60
+## XrayCurrent: 30
+## XrayTarget: Mo
+## @endcode
+## In this example an environment label \c Mo is created that stands for a temperature of 17 degrees
+## Celsius, a x-ray tube voltage and current of 60 kV and 30 mA respectively, as well as a fluorescence
+## target with label \c Mo. The possible targets are defined in the elComandante.conf file. Here it is
+## a coincidence (and convenience) that the environment label and the target label are the same.
+##
+## @subsubsection highrate High rate tests
+## There are three high rate tests:
+##
+##   - \c HighRatePixelMapTest
+##   - \c HighRateEfficiencyTest
+##   - \c HighRateSCurveTest
+##
+## They are separate (and not in one big test) because one may want to run them at different conditions
+## (@ref env). For instance, one may want the \c HighRatePixelMapTest and the \c HighRateEfficiencyTest
+## to be run at different x-ray intensities, but \c HighRateSCurveTest only at one (because it takes
+## a much longer time). This could be listed in the test list like
+## @code
+## Tests: HighRatePixelMapTest@HR100,HighRateEfficiencyTest@HR100,HighRatePixelMapTest@HR250,HighRateEfficiencyTest@HR250,HighRateSCurveTest@HR250
+## @endcode
+## with @ref env like
+## @code
+## [Environment HR100]
+## Temperature: 17
+## XrayVoltage: 30
+## XrayCurrent: 10
+## @endcode
+## for testing at intensities of 100 MHz / cm2 and 250 MHz / cm2.
+##
+## @subsection testparams Changing test parameters
+## @note This is not yet possible.
+##
+## @subsection ana Analyses
 ## ...
-## @section Documentation for people responsible for the setup
-## ...
-## @section Documentation for developers
+##
+## @section devel Developer documentation
 ## ...
