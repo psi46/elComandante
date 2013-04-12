@@ -1,3 +1,13 @@
+## @file
+## Program code for the analysisClient
+
+## @addtogroup analysisClient
+## @brief elComandante client to run analysis scripts
+##
+## @details
+## The analysis client is a program that listens to commands (from elComandante)
+## and upon reception of such a command executes a script.
+
 #!/usr/bin/python2
 
 import sys
@@ -14,6 +24,18 @@ from myutils import process
 process.create_pid_file()
 
 log = myutils.printer()
+
+## @addtogroup analysisClient
+## @details
+## The program takes a number of command line arguments which determines
+## the behaviour of the client. Because the program is normally started by
+## elComandante these command line arguments are normally given automatically
+## (through specification in elComandante's configuration files)
+##
+## - \c \--log-dir	Directory where the client stores the log file			(default: .)
+## - \c \--exec-dir	Directory where scripts are executed (working directory)	(default: .)
+## - \c \--script-dir	Directory where scripts are searched for			(default: .)
+## - \c \--timestamp	Timestamp for creation of files					(default: 0)
 
 # Parse command line arguments
 parser = argparse.ArgumentParser()
@@ -34,7 +56,11 @@ client = myutils.sClient("127.0.0.1", 12334, "analysisClient")
 client.subscribe(abo)
 client.send(abo, 'Connecting analysisClient with Subsystem\n')
 
-# Setup KILL handler
+## Function that handles unexpected events caused by the SIGKILL signal
+##
+## These function that either comes from user interaction (Ctrl-C) or a
+## parent program (elComandante) that wishes to terminate the program.
+## If such an event occurs the program cleans up the subsytem client connection.
 def handler(signal, frame):
 	log.printv()
 	log << "Received signal " + `signal` + "."
@@ -50,6 +76,11 @@ signal.signal(signal.SIGINT, handler)
 
 exec_dir = args.exec_dir
 
+## @addtogroup analysisClient
+## @details
+## The main function of the analysisClient is to listen to commands
+## from elComandante and it processes them sequentially.
+
 log << "Waiting for commands ..."
 while client.anzahl_threads > 0 and client.isClosed == False:
 	packet = client.getFirstPacket(abo)
@@ -60,6 +91,17 @@ while client.anzahl_threads > 0 and client.isClosed == False:
 			if commands[1].upper() == "EXECDIR":
 				exec_dir = message.strip()
 			if commands[1].upper() == "EXECUTE":
+				## @addtogroup analysisClient
+				## @details
+				## When the command is received to execute a scipt the
+				## script is searched in the search path. After that te
+				## program switches to the execution directory and
+				## executes the script in a child process. After execution
+				## the program switches back to the original directory.
+				## The output of the program is read through a pipe and
+				## logged in the analysisClient logfile. The child process
+				## status code is then examined and if it is 0 (success)
+				## the status is returned to elComandante.
 				cargs = message.split(",")
 				cargs[0] = os.path.abspath(args.script_dir + "/" + cargs[0])
 				log << "Executing: " + " ".join(cargs)
