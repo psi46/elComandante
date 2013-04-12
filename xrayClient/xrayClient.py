@@ -1,8 +1,13 @@
 #!/usr/bin/python2
 
+## @file
+# Implements the program code of the xrayClient
+# @ingroup xrayClient
+
 ## \addtogroup xrayClient
-# elComandante client for controlling an x-ray device
+# @brief elComandante client for controlling an x-ray device
 #
+# @details
 # This device receives commands from elComandante to operate and supervise
 # and x-ray device. The commands are exchanged over the subsystem. The
 # nature of the commands is very high level and they do not care about the
@@ -13,34 +18,6 @@
 # appropriate commands to it. Additionally it checks whether the specified
 # conditions are reached successfully and monitors them when nothing else
 # is happening.
-#
-# Since the xrayClient can use multiple different x-ray setups there is
-# quite a number of command line arguments to chose how the client
-# operates. Normally, the client is started by elComandante who reads
-# the required arguments from its configuration files.
-#
-# Command line arguments:
-# - \c \--xray-device	Xray generator device, e.g. /dev/ttyS0	(default: /dev/ttyF0)
-# - \c \--xray-type	Xray generator device type, e.g. id3003	(default: id3003)
-# - \c \--stage-device	Fluorescence device, e.g. /dev/ttyS0	(default: /dev/ttyF1)
-# - \c \--stage-type	Fluorescence device type, e.g. zaber	(default: zaber)
-# - \c \--directory	Directory for log files			(default: .)
-# - \c \--timestamp	Timestamp for creation of file		(default: 0)
-# - \c \--targets	Fluorescence target description		(default: "")
-#
-# The target description is a comma separated list of targets where the
-# targets are given by a label and a set of coordinates, e.g.
-# Ag:35:59,Sn:12:69 whereas the coordinates will be used as the motor stage
-# positions where the target is located. The label is such that the high
-# level command SET TARGET Ag (or else) can be used by elComandante.
-#
-# At the beginning, the command line arguments are parsed. This is followed
-# by the setup of the x-ray device and the motor stage. They are initialised
-# and reset. Then, the client enters a loop where it waits for commands that
-# it will execute in sequence. During the time when no commands arrive it will
-# check whether the state of the x-ray device has changed. This could happen
-# when a physical interlock of the x-ray device is broken and x-ray emission
-# is stopped externally.
 #
 # To extend the x-ray client with more x-ray device implementations new classes
 # have to be defined which inherit from the xray_generator.xray_generator and
@@ -61,6 +38,22 @@ process.create_pid_file()
 
 ## Instance of the logger from the myutils package
 log = myutils.printer()
+
+## @addtogroup xrayClient
+# @details
+# Since the xrayClient can use multiple different x-ray setups there is
+# quite a number of command line arguments to chose how the client
+# operates. Normally, the client is started by elComandante who reads
+# the required arguments from its configuration files.
+#
+# Command line arguments:
+# - \c \--xray-device	Xray generator device, e.g. /dev/ttyS0	(default: /dev/ttyF0)
+# - \c \--xray-type	Xray generator device type, e.g. id3003	(default: id3003)
+# - \c \--stage-device	Fluorescence device, e.g. /dev/ttyS0	(default: /dev/ttyF1)
+# - \c \--stage-type	Fluorescence device type, e.g. zaber	(default: zaber)
+# - \c \--directory	Directory for log files			(default: .)
+# - \c \--timestamp	Timestamp for creation of file		(default: 0)
+# - \c \--targets	Fluorescence target description		(default: "")
 
 # Parse command line arguments
 ## Instance of the ArgumentParser from the argparse package
@@ -92,6 +85,13 @@ client = myutils.sClient("127.0.0.1", 12334, "xrayClient")
 client.subscribe(abo)
 client.send(abo, 'Connecting xrayClient with Subsystem\n')
 
+## @addtogroup xrayClient
+# @details The target description is a comma separated list of targets where the
+# targets are given by a label and a set of coordinates, e.g.
+# Ag:35:59,Sn:12:69 whereas the coordinates will be used as the motor stage
+# positions where the target is located. The label is such that the high
+# level command SET TARGET Ag (or else) can be used by elComandante.
+
 ## Target dictionary with label and coordinates
 targets = {}
 # Decode target argument
@@ -119,6 +119,15 @@ for target in args.targets.split(","):
 	targets[name] = positions
 
 log.printv()
+
+## @addtogroup xrayClient
+# @details
+# Depending on the command line options a specific x-ray generator and motor stage
+# is instantiated. These instances are then used to perform the actions required
+# by elComandante. This is the reason why every device specific class has to implement
+# the standard set of functions (which are inherited from xray_generator.xray_generator
+# and motor_stage.motor_stage). If this is guaranteed the specific nature of the device
+# is entirely transparent to xrayClient (and elComandante).
 
 # Open the xray generator device ###################################################
 log << "Opening " + args.xray_type + " xray device at " + args.xray_device + " ..."
@@ -203,6 +212,15 @@ else:
 log << "Initialization finished."
 log.printv()
 
+## @addtogroup xrayClient
+# @details
+# During operation the xrayClient may be terminated unexpectedly by a UNIX signal
+# such as SIGINT. This can happen at any time either due to a user interaction
+# (Ctrl-C) or by a parent process (elComandante) that whishes to terminate the
+# client. If this happens, the client is given a chance to clean up. This is
+# especially important for hazardous devices such as the x-ray generator such
+# that no possible danger can occur due to unexpected events.
+
 ## Signal handler that handles the SIGINT (Ctrl-C) or KILL signal and exits gracefully
 def handler(signal, frame):
 	log.printv()
@@ -214,6 +232,18 @@ def handler(signal, frame):
 	process.remove_pid_file()
 
 signal.signal(signal.SIGINT, handler)
+
+## @addtogroup xrayClient
+# @details
+# The state of the x-ray device which is set through this client is saved
+# in internally. This is used to monitor the device. The reason for this is
+# that at any time, due to physical interaction for example, the conditions
+# of the device can change. In some devices there is a user interface that
+# can be manipulated directly without computer (for changing voltages and
+# currents for example). In all devices there is an interlock that turns
+# off the high voltage or closes the shutter if the device is opened. When
+# such an event happens, the xrayClient needs to know about it and this is
+# the reason why the variables are monitored.
 
 ## Saved voltage that the x-ray generation is supposed to be at
 state_kV = xray_generator.get_voltage()
@@ -236,6 +266,15 @@ def check_state(xray, kV, mA, HV):
 # Wait for new commands from elComandante
 
 shutter = 3 # FIXME: Read from config
+
+## @addtogroup xrayClient
+# @details
+# The core of the xrayClient is the message query loop where it
+# waits for new commands. When no commands are received the state
+# of the devices is checked. Commands that arrive are executed
+# sequentially. Whenever a problem occurs, an ERROR message is sent
+# back. Otherwise, no messages are sent, except when the FINISHED
+# query arrives, at which FINISHED is sent back.
 
 log << "Waiting for commands ..."
 while client.anzahl_threads > 0 and client.isClosed == False:

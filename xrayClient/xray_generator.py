@@ -1,3 +1,8 @@
+## @file
+# Implements the class which defines the basic interface to
+# x-ray generator devices
+# @ingroup xrayClient
+
 ## Implements the basic interface to an x-ray generator device
 #
 # In order to support multiple different x-ray generator devices
@@ -127,5 +132,6 @@ class xray_generator():
 	# to be opened or closed
 	# @param on Boolean, whether the shutter should be opened (True)
 	# or close (False)
+	# @return Should return whether the beam is now on
 	def set_beam_shutter(self, beamno, on):
 		return self.set_hv(on)

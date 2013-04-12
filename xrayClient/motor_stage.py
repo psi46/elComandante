@@ -1,3 +1,7 @@
+## @file
+# Implements the class that defines the standard interface for motor stages
+# @ingroup xrayClient
+
 ## Implements the basic interface to a motor stage
 #
 # In order to support multiple different motor stages it is necessary to
@@ -15,7 +19,9 @@ class motor_stage():
 	# The number of dimensions for a device that moves in x, y, and z
 	# would be 3. This constructor should be called when it is re-defined
 	# when inherited.
+	# @param dimensions Sets the dimensions of the motor stage
 	def __init__(self, dimensions):
+		## The dimensions of the motor stage
 		self.dimensions = dimensions
 
 	## Tests whether the device file of the motor stage is open or not
