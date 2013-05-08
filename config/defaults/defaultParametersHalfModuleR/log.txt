@@ -1,0 +1,30 @@
+[psi46expert] --------- psi46expert ---------
+[psi46expert] Mon Apr 29 11:51:17 2013
+[ConfigParameters] Reading Config-Parameters from './defaultParametersHalfModuleRight//configParameters.dat'.
+[psi46expert] Setting up the testboard interface ...
+---- TestBoard VersionATB V6.1dig (03.05.2012 14:58) ID=22A71BED TS=4C84D636
+TBM emulator off
+[TBParameters] Reading TB-Parameters from './defaultParametersHalfModuleRight//tbParameters.dat'.
+[TestParameters] Reading Test-Parameters from './defaultParametersHalfModuleRight//testParameters.dat'.
+[TBMParameters] Reading TBM-Parameters from './defaultParametersHalfModuleRight//tbmParameters.dat'.
+[DACParameters] Reading DAC-Parameters from ./defaultParametersHalfModuleRight//dacParameters_C0.dat.
+[Roc] Reading Trim configuration from './defaultParametersHalfModuleRight//trimParameters_C0.dat'.
+[DACParameters] Reading DAC-Parameters from ./defaultParametersHalfModuleRight//dacParameters_C1.dat.
+[Roc] Reading Trim configuration from './defaultParametersHalfModuleRight//trimParameters_C1.dat'.
+[DACParameters] Reading DAC-Parameters from ./defaultParametersHalfModuleRight//dacParameters_C2.dat.
+[Roc] Reading Trim configuration from './defaultParametersHalfModuleRight//trimParameters_C2.dat'.
+[DACParameters] Reading DAC-Parameters from ./defaultParametersHalfModuleRight//dacParameters_C3.dat.
+[Roc] Reading Trim configuration from './defaultParametersHalfModuleRight//trimParameters_C3.dat'.
+[DACParameters] Reading DAC-Parameters from ./defaultParametersHalfModuleRight//dacParameters_C4.dat.
+[Roc] Reading Trim configuration from './defaultParametersHalfModuleRight//trimParameters_C4.dat'.
+[DACParameters] Reading DAC-Parameters from ./defaultParametersHalfModuleRight//dacParameters_C5.dat.
+[Roc] Reading Trim configuration from './defaultParametersHalfModuleRight//trimParameters_C5.dat'.
+[DACParameters] Reading DAC-Parameters from ./defaultParametersHalfModuleRight//dacParameters_C6.dat.
+[Roc] Reading Trim configuration from './defaultParametersHalfModuleRight//trimParameters_C6.dat'.
+[DACParameters] Reading DAC-Parameters from ./defaultParametersHalfModuleRight//dacParameters_C7.dat.
+[Roc] Reading Trim configuration from './defaultParametersHalfModuleRight//trimParameters_C7.dat'.
+[TBAnalogInterface] Analog current 0.1062
+[TBAnalogInterface] Analog current 0.1071
+[TBAnalogInterface] Analog current 0.1071
+[TBAnalogInterface] Analog current 0.1076
+[TBAnalogInterface] Analog current 0.1083

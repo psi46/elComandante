@@ -1,0 +1,312 @@
+[psi46expert] --------- psi46expert ---------
+[psi46expert] Mon Apr 29 11:51:17 2013
+[ConfigParameters] Reading Config-Parameters from './defaultParametersHalfModuleRight//configParameters.dat'.
+[psi46expert] Setting up the testboard interface ...
+---- TestBoard VersionATB V6.1dig (03.05.2012 14:58) ID=22A71BED TS=4C84D636
+TBM emulator off
+[TBParameters] Reading TB-Parameters from './defaultParametersHalfModuleRight//tbParameters.dat'.
+[TestParameters] Reading Test-Parameters from './defaultParametersHalfModuleRight//testParameters.dat'.
+ 0: adding Roc  0 with hubID 1 and portID 0
+[Roc] Setting ROC 0 as type psi46v2
+ 1: adding Roc  1 with hubID 1 and portID 0
+[Roc] Setting ROC 1 as type psi46v2
+ 2: adding Roc  2 with hubID 1 and portID 0
+[Roc] Setting ROC 2 as type psi46v2
+ 3: adding Roc  3 with hubID 1 and portID 0
+[Roc] Setting ROC 3 as type psi46v2
+ 4: adding Roc  4 with hubID 1 and portID 1
+[Roc] Setting ROC 4 as type psi46v2
+ 5: adding Roc  5 with hubID 1 and portID 1
+[Roc] Setting ROC 5 as type psi46v2
+ 6: adding Roc  6 with hubID 1 and portID 1
+[Roc] Setting ROC 6 as type psi46v2
+ 7: adding Roc  7 with hubID 1 and portID 1
+[Roc] Setting ROC 7 as type psi46v2
+[TBMParameters] Reading TBM-Parameters from './defaultParametersHalfModuleRight//tbmParameters.dat'.
+[DACParameters] Reading DAC-Parameters from ./defaultParametersHalfModuleRight//dacParameters_C0.dat.
+[DACParameters] Parameter 1 is set to 6.
+[DACParameters] Parameter 2 is set to 147.
+[DACParameters] Parameter 3 is set to 150.
+[DACParameters] Parameter 4 is set to 10.
+[DACParameters] Parameter 5 is set to 0.
+[DACParameters] Parameter 6 is set to 0.
+[DACParameters] Parameter 7 is set to 35.
+[DACParameters] Parameter 8 is set to 0.
+[DACParameters] Parameter 9 is set to 35.
+[DACParameters] Parameter 10 is set to 160.
+[DACParameters] Parameter 11 is set to 7.
+[DACParameters] Parameter 12 is set to 86.
+[DACParameters] Parameter 13 is set to 30.
+[DACParameters] Parameter 14 is set to 10.
+[DACParameters] Parameter 15 is set to 92.
+[DACParameters] Parameter 16 is set to 50.
+[DACParameters] Parameter 17 is set to 120.
+[DACParameters] Parameter 18 is set to 130.
+[DACParameters] Parameter 19 is set to 220.
+[DACParameters] Parameter 20 is set to 30.
+[DACParameters] Parameter 21 is set to 220.
+[DACParameters] Parameter 22 is set to 99.
+[DACParameters] Parameter 23 is set to 0.
+[DACParameters] Parameter 24 is set to 0.
+[DACParameters] Parameter 25 is set to 200.
+[DACParameters] Parameter 26 is set to 79.
+[DACParameters] Parameter 27 is set to 0.
+[DACParameters] Parameter 253 is set to 0.
+[DACParameters] Parameter 254 is set to 100.
+[Roc] Reading Trim configuration from './defaultParametersHalfModuleRight//trimParameters_C0.dat'.
+[DACParameters] Reading DAC-Parameters from ./defaultParametersHalfModuleRight//dacParameters_C1.dat.
+[DACParameters] Parameter 1 is set to 6.
+[DACParameters] Parameter 2 is set to 143.
+[DACParameters] Parameter 3 is set to 150.
+[DACParameters] Parameter 4 is set to 10.
+[DACParameters] Parameter 5 is set to 0.
+[DACParameters] Parameter 6 is set to 0.
+[DACParameters] Parameter 7 is set to 35.
+[DACParameters] Parameter 8 is set to 0.
+[DACParameters] Parameter 9 is set to 35.
+[DACParameters] Parameter 10 is set to 160.
+[DACParameters] Parameter 11 is set to 7.
+[DACParameters] Parameter 12 is set to 114.
+[DACParameters] Parameter 13 is set to 30.
+[DACParameters] Parameter 14 is set to 10.
+[DACParameters] Parameter 15 is set to 102.
+[DACParameters] Parameter 16 is set to 50.
+[DACParameters] Parameter 17 is set to 120.
+[DACParameters] Parameter 18 is set to 130.
+[DACParameters] Parameter 19 is set to 220.
+[DACParameters] Parameter 20 is set to 33.
+[DACParameters] Parameter 21 is set to 220.
+[DACParameters] Parameter 22 is set to 99.
+[DACParameters] Parameter 23 is set to 0.
+[DACParameters] Parameter 24 is set to 0.
+[DACParameters] Parameter 25 is set to 200.
+[DACParameters] Parameter 26 is set to 84.
+[DACParameters] Parameter 27 is set to 0.
+[DACParameters] Parameter 253 is set to 0.
+[DACParameters] Parameter 254 is set to 100.
+[Roc] Reading Trim configuration from './defaultParametersHalfModuleRight//trimParameters_C1.dat'.
+[DACParameters] Reading DAC-Parameters from ./defaultParametersHalfModuleRight//dacParameters_C2.dat.
+[DACParameters] Parameter 1 is set to 6.
+[DACParameters] Parameter 2 is set to 157.
+[DACParameters] Parameter 3 is set to 150.
+[DACParameters] Parameter 4 is set to 10.
+[DACParameters] Parameter 5 is set to 0.
+[DACParameters] Parameter 6 is set to 0.
+[DACParameters] Parameter 7 is set to 35.
+[DACParameters] Parameter 8 is set to 0.
+[DACParameters] Parameter 9 is set to 35.
+[DACParameters] Parameter 10 is set to 160.
+[DACParameters] Parameter 11 is set to 7.
+[DACParameters] Parameter 12 is set to 110.
+[DACParameters] Parameter 13 is set to 30.
+[DACParameters] Parameter 14 is set to 10.
+[DACParameters] Parameter 15 is set to 112.
+[DACParameters] Parameter 16 is set to 50.
+[DACParameters] Parameter 17 is set to 120.
+[DACParameters] Parameter 18 is set to 130.
+[DACParameters] Parameter 19 is set to 220.
+[DACParameters] Parameter 20 is set to 34.
+[DACParameters] Parameter 21 is set to 220.
+[DACParameters] Parameter 22 is set to 99.
+[DACParameters] Parameter 23 is set to 0.
+[DACParameters] Parameter 24 is set to 0.
+[DACParameters] Parameter 25 is set to 200.
+[DACParameters] Parameter 26 is set to 94.
+[DACParameters] Parameter 27 is set to 0.
+[DACParameters] Parameter 253 is set to 0.
+[DACParameters] Parameter 254 is set to 100.
+[Roc] Reading Trim configuration from './defaultParametersHalfModuleRight//trimParameters_C2.dat'.
+[DACParameters] Reading DAC-Parameters from ./defaultParametersHalfModuleRight//dacParameters_C3.dat.
+[DACParameters] Parameter 1 is set to 6.
+[DACParameters] Parameter 2 is set to 125.
+[DACParameters] Parameter 3 is set to 150.
+[DACParameters] Parameter 4 is set to 10.
+[DACParameters] Parameter 5 is set to 0.
+[DACParameters] Parameter 6 is set to 0.
+[DACParameters] Parameter 7 is set to 35.
+[DACParameters] Parameter 8 is set to 0.
+[DACParameters] Parameter 9 is set to 35.
+[DACParameters] Parameter 10 is set to 160.
+[DACParameters] Parameter 11 is set to 7.
+[DACParameters] Parameter 12 is set to 101.
+[DACParameters] Parameter 13 is set to 30.
+[DACParameters] Parameter 14 is set to 10.
+[DACParameters] Parameter 15 is set to 102.
+[DACParameters] Parameter 16 is set to 50.
+[DACParameters] Parameter 17 is set to 120.
+[DACParameters] Parameter 18 is set to 130.
+[DACParameters] Parameter 19 is set to 220.
+[DACParameters] Parameter 20 is set to 32.
+[DACParameters] Parameter 21 is set to 220.
+[DACParameters] Parameter 22 is set to 99.
+[DACParameters] Parameter 23 is set to 0.
+[DACParameters] Parameter 24 is set to 0.
+[DACParameters] Parameter 25 is set to 200.
+[DACParameters] Parameter 26 is set to 84.
+[DACParameters] Parameter 27 is set to 0.
+[DACParameters] Parameter 253 is set to 0.
+[DACParameters] Parameter 254 is set to 100.
+[Roc] Reading Trim configuration from './defaultParametersHalfModuleRight//trimParameters_C3.dat'.
+[DACParameters] Reading DAC-Parameters from ./defaultParametersHalfModuleRight//dacParameters_C4.dat.
+[DACParameters] Parameter 1 is set to 6.
+[DACParameters] Parameter 2 is set to 131.
+[DACParameters] Parameter 3 is set to 150.
+[DACParameters] Parameter 4 is set to 10.
+[DACParameters] Parameter 5 is set to 0.
+[DACParameters] Parameter 6 is set to 0.
+[DACParameters] Parameter 7 is set to 35.
+[DACParameters] Parameter 8 is set to 0.
+[DACParameters] Parameter 9 is set to 35.
+[DACParameters] Parameter 10 is set to 160.
+[DACParameters] Parameter 11 is set to 7.
+[DACParameters] Parameter 12 is set to 131.
+[DACParameters] Parameter 13 is set to 30.
+[DACParameters] Parameter 14 is set to 10.
+[DACParameters] Parameter 15 is set to 102.
+[DACParameters] Parameter 16 is set to 50.
+[DACParameters] Parameter 17 is set to 120.
+[DACParameters] Parameter 18 is set to 130.
+[DACParameters] Parameter 19 is set to 220.
+[DACParameters] Parameter 20 is set to 34.
+[DACParameters] Parameter 21 is set to 220.
+[DACParameters] Parameter 22 is set to 99.
+[DACParameters] Parameter 23 is set to 0.
+[DACParameters] Parameter 24 is set to 0.
+[DACParameters] Parameter 25 is set to 200.
+[DACParameters] Parameter 26 is set to 101.
+[DACParameters] Parameter 27 is set to 0.
+[DACParameters] Parameter 253 is set to 0.
+[DACParameters] Parameter 254 is set to 100.
+[Roc] Reading Trim configuration from './defaultParametersHalfModuleRight//trimParameters_C4.dat'.
+[DACParameters] Reading DAC-Parameters from ./defaultParametersHalfModuleRight//dacParameters_C5.dat.
+[DACParameters] Parameter 1 is set to 6.
+[DACParameters] Parameter 2 is set to 146.
+[DACParameters] Parameter 3 is set to 150.
+[DACParameters] Parameter 4 is set to 10.
+[DACParameters] Parameter 5 is set to 0.
+[DACParameters] Parameter 6 is set to 0.
+[DACParameters] Parameter 7 is set to 35.
+[DACParameters] Parameter 8 is set to 0.
+[DACParameters] Parameter 9 is set to 35.
+[DACParameters] Parameter 10 is set to 160.
+[DACParameters] Parameter 11 is set to 7.
+[DACParameters] Parameter 12 is set to 103.
+[DACParameters] Parameter 13 is set to 30.
+[DACParameters] Parameter 14 is set to 10.
+[DACParameters] Parameter 15 is set to 107.
+[DACParameters] Parameter 16 is set to 50.
+[DACParameters] Parameter 17 is set to 120.
+[DACParameters] Parameter 18 is set to 130.
+[DACParameters] Parameter 19 is set to 220.
+[DACParameters] Parameter 20 is set to 33.
+[DACParameters] Parameter 21 is set to 220.
+[DACParameters] Parameter 22 is set to 99.
+[DACParameters] Parameter 23 is set to 0.
+[DACParameters] Parameter 24 is set to 0.
+[DACParameters] Parameter 25 is set to 200.
+[DACParameters] Parameter 26 is set to 69.
+[DACParameters] Parameter 27 is set to 0.
+[DACParameters] Parameter 253 is set to 0.
+[DACParameters] Parameter 254 is set to 100.
+[Roc] Reading Trim configuration from './defaultParametersHalfModuleRight//trimParameters_C5.dat'.
+[DACParameters] Reading DAC-Parameters from ./defaultParametersHalfModuleRight//dacParameters_C6.dat.
+[DACParameters] Parameter 1 is set to 6.
+[DACParameters] Parameter 2 is set to 142.
+[DACParameters] Parameter 3 is set to 150.
+[DACParameters] Parameter 4 is set to 10.
+[DACParameters] Parameter 5 is set to 0.
+[DACParameters] Parameter 6 is set to 0.
+[DACParameters] Parameter 7 is set to 35.
+[DACParameters] Parameter 8 is set to 0.
+[DACParameters] Parameter 9 is set to 35.
+[DACParameters] Parameter 10 is set to 160.
+[DACParameters] Parameter 11 is set to 7.
+[DACParameters] Parameter 12 is set to 118.
+[DACParameters] Parameter 13 is set to 30.
+[DACParameters] Parameter 14 is set to 10.
+[DACParameters] Parameter 15 is set to 87.
+[DACParameters] Parameter 16 is set to 50.
+[DACParameters] Parameter 17 is set to 120.
+[DACParameters] Parameter 18 is set to 130.
+[DACParameters] Parameter 19 is set to 220.
+[DACParameters] Parameter 20 is set to 30.
+[DACParameters] Parameter 21 is set to 220.
+[DACParameters] Parameter 22 is set to 99.
+[DACParameters] Parameter 23 is set to 0.
+[DACParameters] Parameter 24 is set to 0.
+[DACParameters] Parameter 25 is set to 200.
+[DACParameters] Parameter 26 is set to 73.
+[DACParameters] Parameter 27 is set to 0.
+[DACParameters] Parameter 253 is set to 0.
+[DACParameters] Parameter 254 is set to 100.
+[Roc] Reading Trim configuration from './defaultParametersHalfModuleRight//trimParameters_C6.dat'.
+[DACParameters] Reading DAC-Parameters from ./defaultParametersHalfModuleRight//dacParameters_C7.dat.
+[DACParameters] Parameter 1 is set to 6.
+[DACParameters] Parameter 2 is set to 143.
+[DACParameters] Parameter 3 is set to 150.
+[DACParameters] Parameter 4 is set to 10.
+[DACParameters] Parameter 5 is set to 0.
+[DACParameters] Parameter 6 is set to 0.
+[DACParameters] Parameter 7 is set to 35.
+[DACParameters] Parameter 8 is set to 0.
+[DACParameters] Parameter 9 is set to 35.
+[DACParameters] Parameter 10 is set to 160.
+[DACParameters] Parameter 11 is set to 7.
+[DACParameters] Parameter 12 is set to 110.
+[DACParameters] Parameter 13 is set to 30.
+[DACParameters] Parameter 14 is set to 10.
+[DACParameters] Parameter 15 is set to 107.
+[DACParameters] Parameter 16 is set to 50.
+[DACParameters] Parameter 17 is set to 120.
+[DACParameters] Parameter 18 is set to 130.
+[DACParameters] Parameter 19 is set to 220.
+[DACParameters] Parameter 20 is set to 35.
+[DACParameters] Parameter 21 is set to 220.
+[DACParameters] Parameter 22 is set to 99.
+[DACParameters] Parameter 23 is set to 0.
+[DACParameters] Parameter 24 is set to 0.
+[DACParameters] Parameter 25 is set to 200.
+[DACParameters] Parameter 26 is set to 69.
+[DACParameters] Parameter 27 is set to 0.
+[DACParameters] Parameter 253 is set to 0.
+[DACParameters] Parameter 254 is set to 100.
+[Roc] Reading Trim configuration from './defaultParametersHalfModuleRight//trimParameters_C7.dat'.
+psi46expert> roc 0:7
+psi46expert> tb ia
+[TBAnalogInterface] Analog current 0.1062
+psi46expert> Vana 0
+[DACParameters] Parameter 2 is set to 0.
+[DACParameters] Parameter 2 is set to 0.
+[DACParameters] Parameter 2 is set to 0.
+[DACParameters] Parameter 2 is set to 0.
+[DACParameters] Parameter 2 is set to 0.
+[DACParameters] Parameter 2 is set to 0.
+[DACParameters] Parameter 2 is set to 0.
+[DACParameters] Parameter 2 is set to 0.
+psi46expert> tb ia
+[TBAnalogInterface] Analog current 0.1071
+psi46expert> tb ia
+[TBAnalogInterface] Analog current 0.1071
+psi46expert> Vana 0
+[DACParameters] Parameter 2 is set to 0.
+[DACParameters] Parameter 2 is set to 0.
+[DACParameters] Parameter 2 is set to 0.
+[DACParameters] Parameter 2 is set to 0.
+[DACParameters] Parameter 2 is set to 0.
+[DACParameters] Parameter 2 is set to 0.
+[DACParameters] Parameter 2 is set to 0.
+[DACParameters] Parameter 2 is set to 0.
+psi46expert> tb ia
+[TBAnalogInterface] Analog current 0.1076
+psi46expert> Vana 150
+[DACParameters] Parameter 2 is set to 150.
+[DACParameters] Parameter 2 is set to 150.
+[DACParameters] Parameter 2 is set to 150.
+[DACParameters] Parameter 2 is set to 150.
+[DACParameters] Parameter 2 is set to 150.
+[DACParameters] Parameter 2 is set to 150.
+[DACParameters] Parameter 2 is set to 150.
+[DACParameters] Parameter 2 is set to 150.
+psi46expert> tb ia
+[TBAnalogInterface] Analog current 0.1083
+psi46expert> exit
