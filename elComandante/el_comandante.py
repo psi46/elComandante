@@ -140,7 +140,7 @@ def uploadTarFiles(tarList,Logger):
                         localStorage = Directories['storageDir']
                         dir = fileName.rstrip('.tar.gz')
                         moveDirToStorage(dir,localStorage,Logger)
-                    except as e:
+                    except Exception as e:
                         Logger.warning("Coulnt move directory: %s"%e)
                         pass
                 else:
@@ -149,7 +149,7 @@ def uploadTarFiles(tarList,Logger):
                         dir = fileName.rstrip('.tar.gz')
                         if userQueries.query_yes_no("Do you want to move directory '%s' to storage anyway?"%(dir,localStorage),Logger):
                             moveDirToStorage(dir,localStorage,Logger)
-                    except as e:
+                    except Exception as e:
                         Logger.warning("Coulnt move directory: %s"%e)
                         pass
             ssh.close()                
