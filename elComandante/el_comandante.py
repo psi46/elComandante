@@ -387,7 +387,7 @@ try:
                 sys.stdout.write('%s\r' %output)
             sys.stdout.flush()
         Logger << "finished"
-        time.sleep(1)
+        time.sleep(2)
 
     # Check whether the client is already running before trying to start it
     Logger << "Checking whether clients are runnning ..."

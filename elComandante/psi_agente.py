@@ -272,9 +272,9 @@ class psi_agente(el_agente.el_agente):
                                         self.log<<"%s:  self.Testboards[%s] restart Powecycle: %s: %s-%s" % (self.agente_name,index, self.pending, TBsindex,TBsbusy)
                                         self._execute_testboard(self.Testboards[index])
                                     else:
-                                        self.warning('Could not open Testboard at %s.'%Testboard.slot)
+                                        self.log.warning('Could not open Testboard at %s.'%Testboard.slot)
                                 else:
-                                    self.warning('index is out of range: %s'%index)
+                                    self.log.warning('index is out of range: %s'%index)
 
                             elif self.Testboards[index].busy==True:
                                 self.log<<""
