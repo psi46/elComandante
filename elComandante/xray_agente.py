@@ -100,6 +100,8 @@ class xray_agente(el_agente.el_agente):
 		self.xrf_device = conf.get("xrayClient", "xrfDevice")
 		## Target description to be passed to the client
 		self.targets = conf.get("xrayClient", "xrfTargets")
+		## Flag to allow elComandante to turn off the high voltage
+		self.turn_off_hv = conf.getboolean("xrayClient", "turnOffHV")
 		self.subscription = conf.get("subsystem", "xraySubscription")
 		## Directory for the log files
 		self.logdir = conf.get("Directories", "dataDir") + "/logfiles/"
@@ -221,7 +223,7 @@ class xray_agente(el_agente.el_agente):
 			if self.beamon:
 				self.sclient.send(self.subscription, ":SET:BEAM OFF\n")
 				self.beamon = False
-			if self.hvon:
+			if self.hvon and self.turn_off_hv:
 				self.sclient.send(self.subscription, ":SET:HV OFF\n")
 				self.hvon = False
 			self.set_pending()
@@ -258,7 +260,8 @@ class xray_agente(el_agente.el_agente):
 		if not self.active:
 			return True
 		self.sclient.send(self.subscription, ":SET:BEAM OFF\n")
-		self.sclient.send(self.subscription, ":SET:HV OFF\n")
+		if (self.turn_off_hv):
+			self.sclient.send(self.subscription, ":SET:HV OFF\n")
 		self.set_pending()
 		return True
 
