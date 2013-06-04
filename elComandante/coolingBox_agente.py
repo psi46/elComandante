@@ -194,7 +194,7 @@ class coolingBox_agente(el_agente.el_agente):
                 timeNow = time.time()
                 Time = int(Time)
                 if timeNow - Time > 5:
-                    self.log< "%s: packet to old: received at: %s\tnow: %s" %(self.agente_name, Time, TimeNow)
+                    self.log< "%s: packet to old: received at: %s\tnow: %s" %(self.agente_name, Time, timeNow)
                     continue
                 if len(coms)>1:
                     if "prog" in coms[0].lower():
