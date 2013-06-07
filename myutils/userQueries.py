@@ -40,3 +40,20 @@ def query_yes_no(question, default="yes",logger=None):
             else:
                 sys.stdout.write("Please respond with 'yes' or 'no' "\
                                  "(or 'y' or 'n').\n")
+
+## Asks the user for any response
+#  @param question The question that is printed
+#  @param logger An optional logging handle. If no handle is given, stdout is used.
+def query_any(question, logger = None):
+    # Ask the question
+    if logger:
+        logger << question
+    else:
+        sys.stdout.write(question)
+
+    # Wait for input
+    if logger:
+        choice = raw_input(logger.prefix)
+    else:
+        choice = raw_input()
+    return

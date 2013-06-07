@@ -492,6 +492,7 @@ try:
     #-------------EXIT----------------
 
     Logger.printv()
+    userQueries.query_any("Finished all tests. Press ENTER to terminate the clients. ", Logger)
 
     for agente in los_agentes:
         agente.request_client_exit()
@@ -542,6 +543,19 @@ try:
         except: pass
    
 except:
+    # Gather information about the exception
+    exc_type = sys.exc_info()[0]
+    exc_obj = sys.exc_info()[1]
+    exc_tb = sys.exc_info()[2]
+
+    # Print the exception information
+    print "Exception (" + exc_type.__name__ + ") in " + exc_tb.tb_frame.f_code.co_filename + ", line " + str(exc_tb.tb_lineno) + ":"
+    print exc_obj
+    print ""
+
+    # Wait for the user to acknowledge
+    userQueries.query_any("An exception occurred. Press ENTER to close the program. ")
+
     if len(los_agentes)>0 and los_agentes[0]:
         try:
             for Testboard in los_agentes[0].Testboards:
@@ -549,7 +563,6 @@ except:
         except:
             pass 
     killChildren()
-    raise
     sys.exit(0)
 
 # DOCUMENTATION ##############################################################################
