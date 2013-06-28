@@ -28,6 +28,7 @@ import shutil
 import coolingBox_agente
 import analysis_agente
 import highVoltage_agente
+import lowVoltage_agente
 import watchDog_agente
 import signal
 import socket
@@ -318,6 +319,8 @@ try:
     los_agentes.append(analysis_agente.analysis_agente(timestamp, Logger, client))
     if init.getboolean("CoolingBox", "CoolingBoxUse"):
         los_agentes.append(coolingBox_agente.coolingBox_agente(timestamp, Logger,client))
+    if init.getboolean("LowVoltage", "LowVoltageUse"):
+        los_agentes.append(lowVoltage_agente.lowVoltage_agente(timestamp, Logger,client))
 
     # Make the agentes read their configuration and initialization parameters
     for agente in los_agentes:

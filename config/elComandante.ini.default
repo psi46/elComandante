@@ -30,6 +30,9 @@ Delay: 2
 [Keithley]
 KeithleyUse: True
 
+[LowVoltage]
+LowVoltageUse: False
+
 [CoolingBox]
 CoolingBoxUse: False
 

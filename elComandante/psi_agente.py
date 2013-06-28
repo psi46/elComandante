@@ -83,7 +83,7 @@ class psi_agente(el_agente.el_agente):
             return False
         # Run before a test is executed
         self.activeTestboard = -1
-        self.powercycle()
+        #self.powercycle()
         self.currenttest = whichtest.split('@')[0]
         self.log << "%s: PrepareTest: currenttest: %s"%(self.agente_name,self.currenttest)
         if 'IV' in self.currenttest:
@@ -202,7 +202,7 @@ class psi_agente(el_agente.el_agente):
 
     def final_test_cleanup(self):
         # Run after a test has executed
-        self.powercycle()
+        #self.powercycle()
         if not self.active:
             return True
         return True

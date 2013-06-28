@@ -41,6 +41,9 @@ programName: jumoClient
 #port: /dev/ttyUSB0
 port: /dev/ttyF0
 
+[lowVoltageClient]
+lowVoltageType: yoctorelay
+
 [xrayClient]
 xrayDevice: /dev/ttyF0
 xrayType: id3003

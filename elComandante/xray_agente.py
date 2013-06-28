@@ -140,7 +140,7 @@ class xray_agente(el_agente.el_agente):
 	def start_client(self, timestamp):
 		if not self.active:
 			return True
-		command = "xterm +sb -geometry 120x20+0+300 -fs 10 -fa 'Mono' -e "
+		command = "xterm +sb -geometry 120x20+0+600 -fs 10 -fa 'Mono' -e "
 		command += "python ../xrayClient/xrayClient.py "
 		command += "--timestamp {0:d} ".format(timestamp)
 		command += "--directory {0:s} ".format(self.logdir)
