@@ -219,9 +219,62 @@ class el_agente():
     ## is finished or not
     ##
     ## Check whether the client has finished its task
-    ## but also check for errors and raise an exception
+    ## but also check for errors and return an error code
     ## if one occurs.
-    ## @return Boolean, whether it if finished (True) or not
+    ## @return Status of the test. 0: not finished, 1: finished,
+    ## <0: error
     ## (False)
     def check_finished(self):
         return not self.pending
+
+    ## Prints a warning message and continues testing
+    ##
+    ## Message that notifies the user that there is a problem or issue
+    ## which is not critical for the running of the test and can be
+    ## ignored. It should only be called when test results will not be
+    ## affected by the problem.
+    ## The function will prefix the message with the name of the agente
+    ## and the word 'warning'.
+    ## @param message The message that should be printed
+    ## @return Return code for elComandante to decide what to do
+    def raise_warning(self, message):
+        self.log.printcolor(self.agente_name + " warning: " + message, "blue")
+        return 0
+
+    ## Prints an error message and continues testing
+    ##
+    ## Message that notifies the user that there is a problem or issue
+    ## which will affect one part of the test and which will have an
+    ## impact on the results. The error however does not abort the test
+    ## because testing can continue and other results are unaffected.
+    ## @param message The message that should be printed
+    ## @return Return code for elComandante to decide what to do
+    def raise_error_and_continue_testing(self, message):
+        self.log.printcolor(self.agente_name + " error: " + message, "yellow")
+        return 0
+
+    ## Prints an error message and aborts testing
+    ##
+    ## Message that notifies the user that there is a problem or issue
+    ## with the test that either makes the results unusable or the test
+    ## can not continue to run. The return code instructs elComandante
+    ## to abort the test and to continue with the next in line.
+    ## @param message The message that should be printed
+    ## @return Return code for elComandante to decide what to do
+    def raise_error_and_abort_test(self, message):
+        self.log.printcolor(self.agente_name + " test error: " + message, "red")
+        self.log.printcolor("Aborting test ...", "red")
+        return -1
+
+    ## Prints an error message and aborts all tests
+    ##
+    ## Message that notifies the user that something happened that prevents
+    ## the current and following tests to be performed and/or the test results
+    ## will be invalid. The return code instructs elComandante to abort all
+    ## tests and try to clean up as best as it can.
+    ## @param message The message that should be printed
+    ## @return Return code for elComandante to decide what to do
+    def raise_error_and_abort_all(self, message):
+        self.log.printcolor(self.agente_name + " fatal error: " + message, "red")
+        self.log.printcolor("Aborting all tests ...", "red")
+        return -2
