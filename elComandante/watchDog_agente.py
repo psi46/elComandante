@@ -122,7 +122,6 @@ class watchDog_agente(el_agente.el_agente):
         if not self.active:
             return True
         sortedOverview = sorted(self.testOverview.items())
-        self.log << "%s: Status of Test"%self.agente_name
         for item in sortedOverview:
             TB = item [0]
             testDict = item[1]
@@ -141,9 +140,7 @@ class watchDog_agente(el_agente.el_agente):
 
         # create Config directory
         sortedOverview = sorted(self.testOverview.items())
-        self.log << "%s: Status of Test"%self.agente_name
         agenteFiller = ' '*len(self.agente_name)
-        self.log << "%s   testNo - testName   \tStatus"%(agenteFiller)
         # create a set from test numbers
         testNumbers = Set()
         for item in sortedOverview:
@@ -154,7 +151,6 @@ class watchDog_agente(el_agente.el_agente):
         msg = '%s testNo\t'%agenteFiller
         for item in sortedOverview:
             msg += 'TB%02d\t'%int(item[0])
-        self.log << msg
         for testNo in sorted(testNumbers):
             num = int(testNo)
             msg = "%s   %03d:\t"%(agenteFiller,num)

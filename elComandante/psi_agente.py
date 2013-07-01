@@ -84,9 +84,6 @@ class psi_agente(el_agente.el_agente):
         # Run before a test is executed
         self.activeTestboard = -1
         self.currenttest = whichtest.split('@')[0]
-        if "IV" in self.currenttest:
-            self.powercycle()
-        self.log << "%s: PrepareTest: currenttest: %s"%(self.agente_name,self.currenttest)
         if 'IV' in self.currenttest:
             activeTestboard = self.currenttest.split('_')
             if len(activeTestboard) == 2:
@@ -106,12 +103,10 @@ class psi_agente(el_agente.el_agente):
             tempString = "p%s"%int(self.test.environment.temperature)
         else:
             tempString = "m%s"%(-1*int(self.test.environment.temperature))
-             
+
         Testboard.testdir = Testboard.parentDir + '/%s_%s_%s/' % (str(Testboard.numerator).zfill(3), self.currenttest, tempString)
-        self.log <<"%s: set testdir '%s'"%(self.agente_name,Testboard.testdir)
         self._setupdir_testboard(Testboard)
         if 'IV' in self.currenttest:
-            self.log <<" %s: send testdir to %s: %s"%(self.agente_name, self.client_name, Testboard.testdir)
             self.sclient.send(self.highVoltageSubscription,":PROG:IV:TESTDIR %s\n"%Testboard.testdir)
             self.open_testboard(Testboard)
 
@@ -141,7 +136,6 @@ class psi_agente(el_agente.el_agente):
         if not self.active:
             return False
         self.pending = True
-        self.log << "%s: executeTest: currenttest: %s"%(self.agente_name,self.currenttest)
         # Runs a test
         self.sclient.clearPackets(self.subscription)
         if self.currenttest.lower().startswith('iv') or self.currenttest.lower().startswith('cycle'):
@@ -178,8 +172,6 @@ class psi_agente(el_agente.el_agente):
     def _execute_testboard(self,Testboard): 
         Testboard.busy=True
         self.sclient.send(self.subscription,':prog:TB%s:start %s,%s,commander_%s\n'%(Testboard.slot,self.Directories['testdefDir']+'/'+ self.currenttest,Testboard.testdir,self.currenttest))
-        if not self.currenttest == 'powercycle':
-            self.log << 'psi46 at Testboard %s is now started'%Testboard.slot
         self.sclient.clearPackets(self.subscription)
 
 
@@ -248,8 +240,6 @@ class psi_agente(el_agente.el_agente):
                                     self.Testboards[index].failedPowercycles = 0
                                     TBsbusy = [TB.busy for TB in self.Testboards]
                                     TBsindex= [TB.slot for TB in self.Testboards]
-                                    self.log<<""
-                                    self.log<<"%s:  self.Testboards[%s] finished: %s"%(self.agente_name,index, TBsbusy)
                             except:
                                 self.log.warning("%s: Couldn't find TB with slot %s, %s"%(self.agente_name,TBslot,[TB.slot for TB in self.Testboards]))
                                 #raise
@@ -302,9 +292,8 @@ class psi_agente(el_agente.el_agente):
 
     def _setupdir_testboard(self,Testboard):
         if not self.currenttest == 'powercycle':
-            self.log << 'Setting up the directory:'
-            self.log << '\t- %s'%Testboard.testdir
-            self.log << '\t  with Parameters from %s' % self.test.parent.parameter_dir[Testboard.slot]
+            self.log << 'Setting up the directory: %s'%Testboard.testdir
+            self.log << '... with Parameters from: %s' % self.test.parent.parameter_dir[Testboard.slot]
         #copy directory
         try:
             self.test.parameter_dir[Testboard.slot] = Testboard.testdir
