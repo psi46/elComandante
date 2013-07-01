@@ -102,6 +102,8 @@ class xray_agente(el_agente.el_agente):
 		self.targets = conf.get("xrayClient", "xrfTargets")
 		## Flag to allow elComandante to turn off the high voltage
 		self.turn_off_hv = conf.getboolean("xrayClient", "turnOffHV")
+		## Flag to make elComandante to turn off the beam between tests
+		self.beam_off_between_tests = conf.getboolean("xrayClient", "beamOffBetweenTests")
 		self.subscription = conf.get("subsystem", "xraySubscription")
 		## Directory for the log files
 		self.logdir = conf.get("Directories", "dataDir") + "/logfiles/"
@@ -140,7 +142,7 @@ class xray_agente(el_agente.el_agente):
 	def start_client(self, timestamp):
 		if not self.active:
 			return True
-		command = "xterm +sb -geometry 120x20+0+600 -fs 10 -fa 'Mono' -e "
+		command = "xterm +sb -geometry 80x20+0+600 -fs 10 -fa 'Mono' -e "
 		command += "python ../xrayClient/xrayClient.py "
 		command += "--timestamp {0:d} ".format(timestamp)
 		command += "--directory {0:s} ".format(self.logdir)
@@ -245,7 +247,7 @@ class xray_agente(el_agente.el_agente):
 		# Run after a test has executed
 		if not self.active:
 			return True
-		if self.beamon:
+		if self.beamon and self.beam_off_between_tests:
 			self.sclient.send(self.subscription, ":SET:BEAM OFF\n")
 			self.beamon = False
 			self.set_pending()
