@@ -95,6 +95,9 @@ class printer:
     def set_prefix(self,prefix):
         self.prefix=str(prefix)
 
+    def get_prefix(self):
+        return self.prefix
+
     def set_verbosity(self,verbosity):
         self.verbosity=verbosity
 
@@ -116,7 +119,6 @@ class printer:
         #self.f.write()
 
     def check_path(self,path):
-        self << 'checking path: %s'%path
         path = os.path.abspath(path)
         try:
             os.stat(path)

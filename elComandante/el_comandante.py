@@ -72,7 +72,7 @@ def handler(signum, frame):
     killChildren();
     sys.exit(0)
 
-def createTarFiles(psi_agente):
+def createTarFiles(psi_agente, log):
      #create tar.gz files
     for Testboard in psi_agente.Testboards:
         tarFileName = Testboard.parentDir
@@ -80,7 +80,7 @@ def createTarFiles(psi_agente):
             tarFileName=tarFileName[:-1]
         tarFileName += '.tar.gz'
         tar = tarfile.open(tarFileName, "w:gz")
-        print 'creating Tarfile: %s'%tarFileName 
+        log << 'Creating archive: %s' % tarFileName
         tar.add(Testboard.parentDir, arcname=Testboard.moduleDir);
 #        for name in ["file1", "file2", "file3"]:
 #    tar.add(name)
@@ -377,20 +377,20 @@ try:
             os.mkdir(Testboard.parentDir)
         return Testboard.parentDir
 
-    def wait_until_finished(los_agentes):
-        time.sleep(1)
-        finished = False
+    def wait_until_finished(log, los_agentes):
+        finished = all([agente.check_finished() for agente in los_agentes])
         while not finished:
-            time.sleep(1.0)
-            finished = all([agente.check_finished() for agente in los_agentes])
-            output = ' \t'
+            queue = []
             for agente in los_agentes:
-                output += '%s: %s\t'%(agente.agente_name,int(agente.check_finished()))
-            if not finished:
-                sys.stdout.write('%s\r' %output)
-            sys.stdout.flush()
-        Logger << "finished"
-        time.sleep(2)
+                if not agente.check_finished():
+                    queue.append(agente.agente_name)
+            if (len(queue) > 0):
+                sys.stdout.write("\r\x1b[2K" + log.get_prefix() + "Waiting for " + ", ".join(queue) + " ... ")
+                sys.stdout.flush()
+            time.sleep(0.25)
+            finished = all([agente.check_finished() for agente in los_agentes])
+            if finished:
+                sys.stdout.write("\r\x1b[2K")
 
     # Check whether the client is already running before trying to start it
     Logger << "Checking whether clients are runnning ..."
@@ -443,19 +443,26 @@ try:
     Logger << 'The following tests will be executed:'
     Logger.printn()
     test = test_chain.next()
+    number_of_tests = 0
     while test:
         Logger << "\t- %s" % test.test_str
         test = test.next()
+        number_of_tests += 1
 
     Logger.printv()
 
     #--------------LOOP over TESTS-----------------
 
     test = test_chain.next()
+    testno = 0
     while test:
         env = environment.environment(test.test_str, init)
         test.environment = env
         test.testname = test.test_str.split("@")[0]
+
+        testno += 1
+        Logger << "Test %i/%i: %s" % (testno, number_of_tests, test.test_str)
+        Logger.printn()
 
         for agente in los_agentes:
             agente.set_test(test)
@@ -464,7 +471,7 @@ try:
         Logger << "Preparing test %s ..." % test.test_str
         for agente in los_agentes:
             agente.prepare_test(test.test_str, env)
-        wait_until_finished(los_agentes)
+        wait_until_finished(Logger, los_agentes)
 
         Logger.printn()
 
@@ -472,7 +479,7 @@ try:
         Logger << "Executing test %s ..." % test.test_str
         for agente in los_agentes:
             agente.execute_test()
-        wait_until_finished(los_agentes)
+        wait_until_finished(Logger, los_agentes)
 
         Logger.printn()
 
@@ -480,7 +487,7 @@ try:
         Logger << "Cleaning up after test %s ..." % test.test_str
         for agente in los_agentes:
             agente.cleanup_test()
-        wait_until_finished(los_agentes)
+        wait_until_finished(Logger, los_agentes)
 
         Logger.printv()
         test = test.next()
@@ -490,13 +497,14 @@ try:
     for agente in los_agentes:
         agente.final_test_cleanup()
     # Wait for final cleanup to finish
-    wait_until_finished(los_agentes)
+    wait_until_finished(Logger, los_agentes)
 
     #-------------EXIT----------------
 
     Logger.printv()
     userQueries.query_any("Finished all tests. Press ENTER to terminate the clients. ", Logger)
 
+    Logger << "Asking clients to quit ..."
     for agente in los_agentes:
         agente.request_client_exit()
 
@@ -504,13 +512,13 @@ try:
     Logger << 'Subsystem connection closed.'
 
     time.sleep(1)
+    Logger << "Killing remaining children ..."
     killChildren()
     time.sleep(1)
 
     while client.anzahl_threads > 0:
         pass
     Logger.printv()
-    Logger << 'ciao!'
     try:
         os.stat(Directories['logDir'])
     except:
@@ -530,10 +538,14 @@ try:
                 shutil.copy2(configFile,dest)
             except:
                 raise
-    createTarFiles(los_agentes[0])
+    createTarFiles(los_agentes[0], Logger)
     tarList =['%s.tar.gz'%Testboard.parentDir.rstrip('/') for Tesboard in los_agentes[0].Testboards]
     uploadTarFiles(tarList,Logger)
                 #raise Exception('Could not copy Logfiles into testDirectory of Module %s\n%s ---> %s'%(Testboard.module,Directories['logDir'],Testboard.parentdir))
+
+    Logger.printv()
+    Logger << 'ciao!'
+
     del Logger
     
     try:
