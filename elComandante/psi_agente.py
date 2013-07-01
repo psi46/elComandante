@@ -83,8 +83,9 @@ class psi_agente(el_agente.el_agente):
             return False
         # Run before a test is executed
         self.activeTestboard = -1
-        #self.powercycle()
         self.currenttest = whichtest.split('@')[0]
+        if "IV" in self.currenttest:
+            self.powercycle()
         self.log << "%s: PrepareTest: currenttest: %s"%(self.agente_name,self.currenttest)
         if 'IV' in self.currenttest:
             activeTestboard = self.currenttest.split('_')
