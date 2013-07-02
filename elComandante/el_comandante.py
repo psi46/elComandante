@@ -562,7 +562,7 @@ class el_comandante:
                     raise
         self.createTarFiles(self.los_agentes[0], Logger)
         tarList =['%s.tar.gz'%Testboard.parentDir.rstrip('/') for Tesboard in self.los_agentes[0].Testboards]
-        #uploadTarFiles(tarList,Logger)
+        uploadTarFiles(tarList,Logger)
 
         Logger.printv()
         Logger << 'ciao!'
@@ -581,8 +581,8 @@ class el_comandante:
     ## Procedure called in the event of an exception
     ##
     ## Cleans up the lose ends when an exception occurs. It mainly
-    ## kills all the children. Fixme: It should ask the clients first
-    ## to bring everyting into a safe state.
+    ## kills all the children.
+    ## @FIXME It should ask the clients first to bring everyting into a safe state.
     def clean_up_exception(self):
         if len(self.los_agentes)>0 and self.los_agentes[0]:
             try:
