@@ -8,7 +8,7 @@ OFF=0
 
 
 class keithleyInterface:
-    def __init__(self,serialPortName):
+    def __init__(self,serialPortName,immidiateVoltage =-150):
         self.bOpen=False
         self.bOpenInformed=False
         self.serialPortName=serialPortName
@@ -21,6 +21,7 @@ class keithleyInterface:
         self.lastVoltage = 0
         self.openSerialPort()
         self.model =2400
+        self.immediateVoltage = immidiateVoltage
 
     
     def openSerialPort(self):
@@ -518,7 +519,7 @@ class keithleyInterface:
         self.setAverageFilterCount(3)
         self.setCurrentProtection(100e-6)
         self.setCurrentMeasurmentSpeed(10)
-        self.setImmidiateVoltage(-150)
+        self.setImmidiateVoltage(self.immidiateVoltage)
         self.clearErrorQueue()
         self.setComplianceAbortLevel('LATE')
 

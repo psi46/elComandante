@@ -41,6 +41,9 @@ parser.add_argument("-dir","--directory", dest='dataDir',
 parser.add_argument('-ts','--timestamp', dest='timestamp',
                        help='Timestamp for creation of file',
                        default=0)
+parser.add_argument('-iV','--immidiateVoltage', dest='immidiateVoltage',
+                       help='Bias voltage',
+                       default=-150)
 
 args = parser.parse_args()
 serialPort= args.serialPort
@@ -90,7 +93,7 @@ resistanceAbo='/keithley/resistance'
 client = sClient(serverZiel,serverPort,"keithleyClient")
 client.subscribe(aboName)
 client.send(aboName,'Connecting Keithley Client with Subsystem\n')
-keithley=keithleyInterface.keithleyInterface(serialPort)
+keithley=keithleyInterface.keithleyInterface(serialPort,args.immidiateVoltage)
 keithley.setOutput(OFF)
 #Logger << 'status:%s'%keithley.getOutputStatus()
 
