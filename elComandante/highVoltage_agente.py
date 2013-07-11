@@ -37,7 +37,7 @@ class highVoltage_agente(el_agente.el_agente):
         self.ivStop  = float(init.get('IV','Stop'))
         self.ivStep  = float(init.get('IV','Step'))
         self.ivDelay = float(init.get('IV','Delay'))
-        self.biasVoltage = float(init.get('Keithley','BiasVoltage'))
+        self.biasVoltage = -abs(float(init.get('Keithley','BiasVoltage')))
         self.active = init.getboolean("Keithley","KeithleyUse")
        
     def check_client_running(self):
@@ -63,7 +63,7 @@ class highVoltage_agente(el_agente.el_agente):
         command += "-dir %s "%(self.logDir)
         command += "-ts %s "%(self.timestamp)
         command += "-iV %s"%self.biasVoltage
-        self.log << "%s: Starting %s..." % (self.agente_name, self.client_name)
+        self.log << '%s: Starting %s..."%s" '% (self.agente_name, self.client_name,command)
 
         self.child = subprocess.Popen(command, shell = True, preexec_fn = preexec)
         return True
