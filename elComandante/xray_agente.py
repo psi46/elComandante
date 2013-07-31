@@ -74,7 +74,7 @@ class xray_agente(el_agente.el_agente):
 		## State of the high voltage
 		self.hvon = False
 		## State of the beam shutter
-		self.beamon = False
+		self.beamon = None
 		## State of the x-ray voltage
 		self.voltage = None
 		## State of the x-ray current
@@ -222,7 +222,7 @@ class xray_agente(el_agente.el_agente):
 				self.beamon = True
 			self.set_pending()
 		else:
-			if self.beamon:
+			if self.beamon or self.beamon == None:
 				self.sclient.send(self.subscription, ":SET:BEAM OFF\n")
 				self.beamon = False
 			if self.hvon and self.turn_off_hv:
