@@ -12,14 +12,12 @@
 
 import sys
 sys.path.insert(1, "../")
-from myutils import BetterConfigParser, sClient, decode, printer, preexec, testchain,scp,userQueries
-from myutils import Testboard as Testboarddefinition
+from myutils import BetterConfigParser, sClient, printer, testchain, scp, userQueries
 from time import strftime, localtime
 import time
-from shutil import copytree, rmtree, copyfile
+from shutil import copytree, rmtree
 import paramiko
 import os
-import subprocess
 import argparse
 import environment
 import xray_agente
@@ -30,12 +28,9 @@ import analysis_agente
 import highVoltage_agente
 import lowVoltage_agente
 import watchDog_agente
-import signal
 import socket
 import tarfile
 import glob
-import socket
-#import scp
 
 
 ## Base class for elComandante
@@ -122,6 +117,7 @@ class el_comandante:
         try:
             rmtree(dir)
         except:
+            self.log.warning("Unable to remove '%s'!" % dir)
             pass
 
     def uploadTarFiles(self, tarList):
@@ -313,14 +309,14 @@ class el_comandante:
 
     def start_subsystem_client(self):
         serverZiel=self.config.get('subsystem','Ziel')
-        Port = int(self.config.get('subsystem','Port'))
         serverPort = int(self.config.get('subsystem','serverPort'))
         self.subsystem_client = sClient(serverZiel,serverPort,"elComandante")
 
     def create_los_agentes(self, timestamp):
         # Create agentes that are responsible for client processes
         self.los_agentes.append(psi_agente.psi_agente(timestamp, self.log, self.subsystem_client))
-        self.los_agentes.append(highVoltage_agente.highVoltage_agente(timestamp,self.log,self.subsystem_client))
+        if self.init.getboolean("Keithley", "KeithleyUse"):
+            self.los_agentes.append(highVoltage_agente.highVoltage_agente(timestamp,self.log,self.subsystem_client))
         self.los_agentes.append(watchDog_agente.watchDog_agente(timestamp,self.log,self.subsystem_client))
         if self.init.getboolean("Xray", "XrayUse"):
             self.los_agentes.append(xray_agente.xray_agente(timestamp, self.log, self.subsystem_client))
@@ -451,7 +447,7 @@ class el_comandante:
         self.log.printn()
         #ToDo:
         for Testboard in self.los_agentes[0].Testboards:
-                parentDir = self.setupParentDir(timestamp,Testboard)
+                self.setupParentDir(timestamp,Testboard)
                 self.log << '\t- Testboard %s at address %s with module %s'%(Testboard.slot,Testboard.address,Testboard.module)
 
         self.log.printn()
