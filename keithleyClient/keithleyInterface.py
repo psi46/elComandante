@@ -477,7 +477,9 @@ class keithleyInterface:
         #:FORM:ELEM RES #READ RESISTANCE
         #:OUTPut <state>
         #:READ?
+
     def doLinearSweep(self,startValue,stopValue,stepValue,nSweeps,delay):
+        self.initKeithley(100e-6)
         self.clearErrorQueue()
         self.clearBuffer()
         self.setMeasurementDelay(delay)
@@ -504,7 +506,8 @@ class keithleyInterface:
         print 'doLinearSweep retVal %s'%retVal
         return retVal
                             
-    def initKeithley(self):
+    def initKeithley(self,protection = 500e-6):
+        time.sleep(1);
         self.setOutput(False)
         self.reset()
         self.clearBuffer()
@@ -522,6 +525,7 @@ class keithleyInterface:
         self.setImmidiateVoltage(self.immidiateVoltage)
         self.clearErrorQueue()
         self.setComplianceAbortLevel('LATE')
+        time.sleep(1);
 
     def identify(self):
         self.identifier = self.getAnswerForQuery('*IDN?')
