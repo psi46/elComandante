@@ -91,6 +91,10 @@ class highVoltage_agente(el_agente.el_agente):
         #todo: is the output on or off while cycling???/
         elif not whichtest == 'Cycle':
             self.sclient.send(self.subscription,':OUTP ON\n')
+            time.sleep(1)
+            self.sclient.send(self.subscription,':OUTP OFF\n')
+            time.sleep(1)
+            self.sclient.send(self.subscription,':OUTP ON\n')
         return True
 
     
@@ -98,10 +102,15 @@ class highVoltage_agente(el_agente.el_agente):
         if not self.active:
             return False
         # Runs a test
-        self.pending = True
-        self.sclient.clearPackets(self.subscription)
         if 'IV' in self.currenttest:
             self.doIVCurve()
+        else:
+            time.sleep(3)
+            self.sclient.send(self.subscription,':OUTP OFF\n')
+            time.sleep(1)
+            self.sclient.send(self.subscription,':OUTP ON\n')
+        self.pending = True
+        self.sclient.clearPackets(self.subscription)
         return True    
 
     def cleanup_test(self):

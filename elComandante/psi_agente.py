@@ -253,13 +253,13 @@ class psi_agente(el_agente.el_agente):
                                 #raise
                             if self.currenttest == 'powercycle':
                                 if index !=-1:
-                                    sleep(1)
+                                    sleep(3)
                                     TBsbusy = [TB.busy for TB in self.Testboards]
                                     TBsindex= [TB.slot for TB in self.Testboards]
                                     self.log<<"%s:  self.Testboards[%s] could not be opened: %s: %s-%s" % (self.agente_name,index, self.pending, TBsindex,TBsbusy)
                                     self.Testboards[index].failedPowercycles += 1
                                     
-                                    if self.Testboards[index].failedPowercycles < 20:
+                                    if self.Testboards[index].failedPowercycles < 3:
                                         self.log<<"%s:  self.Testboards[%s] restart Powecycle: %s: %s-%s" % (self.agente_name,index, self.pending, TBsindex,TBsbusy)
                                         self._execute_testboard(self.Testboards[index])
                                     else:
