@@ -3,12 +3,12 @@
 using namespace std;
 
 const char* fileName = "commander_Fulltest.root";
-const char* adFileName = "adDec.root"; 
+const char* adFileName = "commander_Fulltest.root"; 
 
 char fname[200];
 FILE *inputFile, *critFile;
 
-TCanvas *c1 = NULL;
+//TCanvas *c1 = NULL;
 TLatex *tl;     
 TLatex *ts;
 TLine *line;
@@ -51,6 +51,7 @@ void all() {
     if (strstr(afile, "M")) {
       cout << afile << endl;
       moduleSummary(afile);
+      cout << "It is done!" << endl;
     }
   }
 
@@ -148,8 +149,9 @@ void moduleSummary(const char *dirName = "", const char *module_type,const char 
   box = new TBox;
   box->SetFillColor(3);
   box->SetFillStyle(3004);
-	
-  c1 = new TCanvas("c1", "", 900, 700);
+  printf("Hello\n");
+
+  TCanvas *c1 = new TCanvas("c1", "", 900, 700);
   c1->Clear();
   c1->Divide(1,4);
     
@@ -161,7 +163,6 @@ void moduleSummary(const char *dirName = "", const char *module_type,const char 
   TH2D *mAddr      = new TH2D("mAddr",      "", 416, 0., 416., 160, 0., 160.);  
 
   double mThresholdmin(0.), mThresholdmax(255.);
-
 
   const int nfit = 5;  
   TString fitNames[] = {TString("Noise"), TString("Vcal Thr. Width"), TString("Rel. Gain Width"),
@@ -1177,7 +1178,7 @@ void fitPeaks(TH1D *h, const char *d, int chipId) {
   
   hpeak->DrawCopy("PESAME");
   
-  delete hpeak;
+  //delete hpeak;
 
 
 }
@@ -1273,7 +1274,6 @@ int readCriteria(const char *fcriteria) {
     return 0;
   }
   else {
-
     printf(Form("Reading grading criteria from %s ...\n\n",fname));      
     
     fclose(critFile);

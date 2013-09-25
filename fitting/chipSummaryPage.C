@@ -1,7 +1,7 @@
 #include <TMath.h>
 
 // -- data files ----------------------------------------------------------------------------------
-const char* fileName = "FullTest.root";
+const char* fileName = "commander_Fulltest.root";
 const char* adFileName = "adDec.root"; 
 const char* trimFileName = "trim.root" ;
 

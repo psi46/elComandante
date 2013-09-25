@@ -5,13 +5,11 @@ import ROOT
 import sys
 
 class Analyzer():
-    def __init__(self,dirName,ivDirName):
+    def __init__(self,dir):
         ROOT.gROOT.SetBatch(True)
         gMinuit = ROOT.TMinuit()
         ROOT.gSystem.Load("libpsi46ana.so")
-        self.dirName = dirName
-        self.ivDirName = ivDirName
-        self.type = "m" #'a' or 'b' for half modules
+        self.dirName = dir
         
     def fitAllPh(self, fitMode = 0):
         phFit = ROOT.PHCalibrationFit(fitMode)
@@ -29,30 +27,12 @@ class Analyzer():
         sCurve = ROOT.SCurve()
         sCurve.FitSCurve(self.dirName, roc, col, row)
 
-    def tmpProfile(self):
-        ROOT.gROOT.LoadMacro("tempProfile.C")
-        ROOT.readProfile(self.dirName,1) #? (0 = short test, 1 = full test or so)
-
-    def chipSummary(self):
-        ROOT.gROOT.LoadMacro("chipSummaryPage.C")
-        #chipSummaryPageShort.C
-        ROOT.chipSummaries(self.dirName,self.type)
-
-    def moduleSummary(self):
-        ROOT.gROOT.LoadMacro("moduleSummaryPage.C")
-        #moduleSummaryPageShort.C
-        ROOT.moduleSummary(self.dirName,self.type,self.ivDirName)
-
     def analyzeModule(self):
         self.fitAllPh()
         self.fitAllPh(3)
         self.fitAllSCurve()
-        #self.chipSummary()
-        #self.moduleSummary()
 
 if __name__ == '__main__':
-    parentDir = sys.argv[1]
-    dirName = sys.argv[2]
-    ivDirName = sys.argv[3]
-    analyzer = Analyzer(parentDir+dirName,parentDir+ivDirName)
+    dir = sys.argv[1]
+    analyzer = Analyzer(dir)
     analyzer.analyzeModule()
