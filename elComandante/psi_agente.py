@@ -171,7 +171,17 @@ class psi_agente(el_agente.el_agente):
 
     def _execute_testboard(self,Testboard): 
         Testboard.busy=True
-        self.sclient.send(self.subscription,':prog:TB%s:start %s,%s,commander_%s\n'%(Testboard.slot,self.Directories['testdefDir']+'/'+ self.currenttest,Testboard.testdir,self.currenttest))
+
+        # Determine the batch file name. If not specified in the .ini file this file name
+        # is equal to the test name.
+        batchFile = self.currenttest
+        try:
+            batchFile = self.init.get("Test " + self.currenttest, "batchFile")
+            self.log << "Using batch file " + batchFile
+        except:
+            pass
+
+        self.sclient.send(self.subscription,':prog:TB%s:start %s,%s,commander_%s\n'%(Testboard.slot,self.Directories['testdefDir']+'/'+ batchFile,Testboard.testdir,self.currenttest))
         self.sclient.clearPackets(self.subscription)
 
 
