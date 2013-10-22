@@ -31,6 +31,7 @@ import watchDog_agente
 import socket
 import tarfile
 import glob
+import traceback
 
 
 ## Base class for elComandante
@@ -603,15 +604,11 @@ elComandante = el_comandante()
 try:
     elComandante.run()
 except:
-    # Gather information about the exception
-    exc_type = sys.exc_info()[0]
-    exc_obj = sys.exc_info()[1]
-    exc_tb = sys.exc_info()[2]
+    # Print information about the exception
+    traceback.print_exc()
 
-    # Print the exception information
-    print "Exception (" + exc_type.__name__ + ") in " + exc_tb.tb_frame.f_code.co_filename + ", line " + str(exc_tb.tb_lineno) + ":"
-    print exc_obj
-    print ""
+    # Print an empty line
+    print
 
     # Wait for the user to acknowledge
     userQueries.query_any("An exception occurred. Press ENTER to close the program. ")
