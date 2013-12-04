@@ -109,7 +109,9 @@ def readCurrentIV():
                 current = float(data[1])
                 resistance = float(data[2])
                 #Logger << '%s: %s V - %s A'%(timestamp,data[0],data[1])
-                IVLogger << '%s: %s V - %s A'%(timestamp,data[0],data[1])
+
+                IVLogger << '%s\t%s\t%s'%(voltage,current,timestamp)
+                #IVLogger << '%s V \t  %s A \t %s'%(data[0],data[1],timestamp)
                 client.send(voltageAbo,'%s\n'%voltage)
                 client.send(currentAbo,'%s\n'%current)
                 client.send(resistanceAbo,'%s\n'%resistance)
@@ -160,7 +162,7 @@ def sweep():
     ivCurveLogger.set_logfile(testDir,'ivCurve.log')
     ivCurveLogger.disable_print()
 #    ivCurveLogger.timestamp = float(args.timestamp)
-    ivCurveLogger << '#timestamp\tvoltage(V)\tcurrent(A)'
+    ivCurveLogger << '#voltage(V)\tcurrent(A)\ttimestamp'
     while len(keithley.measurments)>0:
         npoint +=1
         measurement = keithley.measurments.popleft()
@@ -199,11 +201,11 @@ def sweep():
         except:
             Logger.warning("Couldn't send '%s'"%strA)
         try:
-            ivCurveLogger << '%d\t%+8.3f\t%+11.4e'%(timestamp,voltage,current)
+            ivCurveLogger << '%+8.3f\t%+11.4e\t%d'%(voltage,current,timestamp)
         except:
             Logger.warning("Couldn't write to ivCuvrveLogger")
         try: 
-            IVLogger << '%s\t%s\t%s'%(timestamp,voltage,current)
+            IVLogger << '%s\t%s\t%s'%(voltage,current,timestamp)
         except:
              Logger.warning("Couldn't write to ivLogger")
         #        client.sendData(resistanceAbo,'%s %s\n'%(timestamp,resistance))
