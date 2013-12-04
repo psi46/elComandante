@@ -3,6 +3,7 @@
 # Usage: ./Analyzer.py $parentDir $fullTestDir $ivDir
 import ROOT
 import sys
+import os
 
 class Analyzer():
     def __init__(self,dirName,ivDirName):
@@ -44,6 +45,18 @@ class Analyzer():
         ROOT.moduleSummary(self.dirName,self.type,self.ivDirName)
 
     def analyzeModule(self):
+        try:
+            self.fitAllPh()
+        except:
+            print 'couldnt fit All Ph'
+        try:
+            self.fitAllPh(3)
+        except:
+            print "couldn't fit all PH 3"
+        try:
+            self.fitAllSCurve()
+        except:
+            print "Couldn't fit all SCurve"
         self.fitAllPh()
         self.fitAllPh(3)
         self.fitAllSCurve()
@@ -52,7 +65,14 @@ class Analyzer():
 
 if __name__ == '__main__':
     parentDir = sys.argv[1]
-    dirName = sys.argv[2]
-    ivDirName = sys.argv[3]
-    analyzer = Analyzer(parentDir+dirName,parentDir+ivDirName)
-    analyzer.analyzeModule()
+    ivDirName = sys.argv[2]
+    for Folder in os.listdir(parentDir):
+        if 'Fulltest' in Folder:
+            print Folder
+            dirName = Folder+'/'
+            try:
+                analyzer = Analyzer(parentDir+dirName,parentDir+ivDirName)
+                analyzer.analyzeModule()
+            except:
+                pass
+    print 'done'
