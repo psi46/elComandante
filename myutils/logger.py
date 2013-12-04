@@ -1,18 +1,19 @@
 from time import strftime,time, localtime
 import os
 import logging
+import logging.handlers
 class printer:
     def __init__(self):
 
+        #logging.basicConfig(level=logging.INFO)
         self.set_prefix('    |  ')
         self.set_color('')
         self.verbosity=1
         self.loglevel=1
-        self.f = None
         self.timestamp = time()
         self.showOutput = True
-        self.logger1 = None
-        self.logFileHandler = None
+        #self.logger1 = None
+        self.outputfile = None
         self.name = 'none'
         
     def __del__(self):
@@ -23,16 +24,13 @@ class printer:
             print '----+-----------------------------------------------------------------------'
         if (self.showOutput):
             print '    |'
-        if self.f:
-            self.f.write('#---------------------------------------------------------\n\n')
-            self.f.close()
-        if self.logger1:
-            if self.logFileHandler:
-                self.logger1.removeHandler(self.logFileHandler)
+        self.close_logfiles()
             
             
     def set_name(self,name):
         self.name = name
+    def get_name(self):
+        return self.name
     def SetShowOutput(self):
         self.showOutput = True
     def UnsetShowOutput(self):
@@ -63,15 +61,26 @@ class printer:
         self.warningToFile(x)
 
     def warningToFile(self,log):
-        if self.logger1 and self.loglevel >0:
-            self.logger1.warning(log)
-            self.logFileHandler.flush()
+        #if self.logger1 and self.loglevel >0:
+        #    self.logger1.warning(log)
+        if self.outputfile and self.loglevel > 0 and not self.outputfile.closed:
+            self.outputfile.write('WARNING: %s\n'%log)
+            self.outputfile.flush()
+        #self.flushHandlers()
 
     def logToFile(self,log):
-        if self.logger1 and self.loglevel > 0:
-            self.logger1.info(log)
-            if self.logFileHandler:
-                self.logFileHandler.flush()
+        if self.outputfile and self.loglevel > 0 and not self.outputfile.closed:
+            self.outputfile.write('%s\n'%log)
+            self.outputfile.flush()
+        #if self.logger1 and self.loglevel > 0 and len(self.logger1.handlers) > 0:
+        #    self.logger1.info(log)
+        #self.flushHandlers()
+
+    def flushHandlers(self):
+        return
+        if self.logger1:
+            for handler in self.logger1.handlers:
+                handler.flush()
 
     @staticmethod
     def identifyer(color):
@@ -107,16 +116,44 @@ class printer:
     def set_logfile(self,path,fileName):
         path=path.rstrip('/')
         self._print('%s: Set Logfile to "%s/%s"'%(self.name,path,fileName))
-        self.logger1 = logging.getLogger('log%s'%self.name)
+        name = '%s/%s'%(path,fileName)
         self.check_path(path)
-        self.logFileHandler = logging.FileHandler('%s/%s'%(path,fileName))
-        self.logger1.addHandler(self.logFileHandler)
-        self.logger1.setLevel(logging.INFO) 
-        #self.f = open(path,'append')
-        x = '#\n#--------LOG from %s ---------\n#'%strftime("%a %d %b %Y at %Hh:%Mm:%Ss",localtime(self.timestamp))
-        self.logToFile(x)
-        #if self.f and self.loglevel > 0: self.f.write(x+'\n')
-        #self.f.write()
+        if self.outputfile:
+            if self.outputfile.name != name:
+                self.outputfile.close()
+
+        if not self.outputfile or self.outputfile.closed:
+            self.outputfile = open(name,'w')
+            x = '#\n#--------LOG from %s ---------\n#'%strftime("%a %d %b %Y at %Hh:%Mm:%Ss",localtime(self.timestamp))
+            self.logToFile(x)
+
+        #if not self.logger1:
+        #    loggerName = 'log_%s'%self.name
+        #    print 'getLogger: %s'%loggerName
+        #    self.logger1 = logging.getLogger('log_%s'%self.name)
+        
+        #print 'get FileHander'
+        #logFileHandler = logging.FileHandler('%s/%s'%(path,fileName))
+        #logFileHandler.setLevel(logging.INFO)
+        #print 'add File Handler'
+        #self.logger1.addHandler(logFileHandler)
+        #self.logger1.setLevel(logging.INFO) 
+
+    def close_logfiles(self):
+        if self.outputfile:
+            self.outputfile.close()
+
+        #if self.logger1:
+        #    #print 'closing %s logfiles of loggger %s'%(len(self.logger1.handlers),self.logger1.name)
+        #    for handler in self.logger1.handlers:
+        #        self.logger1.removeHandler(handler)
+
+        #        #print 'closing %s'%handler.baseFilename
+        #        handler.flush()
+        #        #handler.stream.close()
+        #        handler.close()
+        #        del handler
+        #    #print 'closed logfiles of loggger %s'%self.logger1.name
 
     def check_path(self,path):
         path = os.path.abspath(path)
@@ -131,13 +168,13 @@ class printer:
         self._print('')
         print '----+-----------------------------------------------------------------------'
         self._print('')
-        if self.f and self.loglevel > 0:
+        if self.loglevel > 0:
             self.logToFile('----------------\n') 
    
     def printn(self):
         if (self.showOutput):
             print '    |'
-        if self.f and self.loglevel > 0: 
+        if self.loglevel > 0: 
             self.logToFile('')
     
     def printw(self):
@@ -165,15 +202,36 @@ class printer:
 
 
 
+if __name__ == '__main__':
 # ---example---
 #
-#Logger = printer()
-#Logger.printw()
-#Logger.set_logfile('test.txt')
-#Logger << 'hello'+' Philipp '+ 'Eller'
+    Logger = printer()
+    Logger.printw()
+
+    Logger.set_logfile('.','test0.log')
+    Logger << 'hallo0'
+    Logger.close_logfiles()
+    #print len(Logger.logger1.handlers)
+    Logger<< 'Hallo1'
+    Logger.set_logfile('..','test0.log')
+
+    Logger<< 'Hallo2'
+    Logger<< 'Hallo2.1'
+    Logger.set_logfile('.','test2.log')
+
+    Logger<< 'Hallo2.2'
+    Logger<< 'Hallo2.3'
+    Logger<< 'Hallo3'
+    Logger.set_logfile('../..','test0.log')
+    Logger<< 'Hallo2.4'
+    Logger<< 'Hallo2.5'
+
+    Logger<< 'Hallo4'
 #Logger.printcolor('I am green','green')
 #Logger.printcolor('I am blue','blue')
 #Logger << 'we make a horizontal line now'
+#Logger.close_logfiles()
+#Logger.set_logfile('.','test3.txt')
 #Logger.printv()
 #Logger.warning('ouch! this is how a warning message looks like')
 #Logger << 'plain text'
