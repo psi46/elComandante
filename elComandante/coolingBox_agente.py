@@ -52,7 +52,7 @@ class coolingBox_agente(el_agente.el_agente):
         # Start a client process
         if not self.active:
             return True
-        command  = "xterm +sb -geometry 80x25+1200+0 -fs 10 -fa 'Mono' -e '"
+        command  = "xterm -T 'CoolingBox' +sb -geometry 80x25+1200+0 -fs 10 -fa 'Mono' -e '"
         command += "%s/%s "%(self.programDir,self.programName)
         command += "-d %s"%self.port
         #command += "|tee %s/%s'"%(self.logDir,self.logFileName)

@@ -101,7 +101,7 @@ class el_comandante:
             tarFileName = Testboard.parentDir
             if tarFileName.endswith('/'):
                 tarFileName=tarFileName[:-1]
-            tarFileName += '.tar.gz'
+            tarFileName += '.tar'
             tar = tarfile.open(tarFileName, "w:gz")
             self.log << 'Creating archive: %s' % tarFileName
             tar.add(Testboard.parentDir, arcname=Testboard.moduleDir);
@@ -130,9 +130,7 @@ class el_comandante:
         checkConfig = checkConfig and self.config.has_option('Transfer','user')
         checkConfig = checkConfig and self.config.has_option('Transfer','destination')
         if not checkConfig:
-            self.log.warning("cannot upload data since no alll needed options are defined: section 'Transfer', options: 'host,'port','user','destination'")
-            return
-        if len(tarList)==0:
+            self.log.warning("cannot upload data since no all needed options are defined: section 'Transfer', options: 'host,'port','user','destination'")
             return
         try:
             dest = self.config.get('Transfer','destination')
@@ -148,7 +146,7 @@ class el_comandante:
             for item in tarList:
                 fileName = item.split('/')[-1]
                 localStorage = self.directories['storageDir']
-                dir = fileName.rstrip('.tar.gz')
+                dir = fileName.rstrip('.tar')
                 if userQueries.query_yes_no("Do you want to upload the data of %s?"%(fileName),"yes",self.log):
                     self.log << 'uploading: \t%s --> %s:%s' % (fileName, self.config.get('Transfer','host'),dest)
                     ssh_client.put(item, dest, preserve_times=False)
@@ -162,7 +160,7 @@ class el_comandante:
                     #move Dir to localStorage
                     try:
                         localStorage = self.directories['storageDir']
-                        dir = fileName.rstrip('.tar.gz')
+                        dir = fileName.rstrip('.tar')
                         self.moveDirToStorage(dir,localStorage)
                     except Exception as e:
                         self.log.warning("Coulnt move directory: %s"%e)
@@ -170,7 +168,7 @@ class el_comandante:
                 else:
                     try:
                         localStorage = self.directories['storageDir']
-                        dir = fileName.rstrip('.tar.gz')
+                        dir = fileName.rstrip('.tar')
                         if userQueries.query_yes_no("Do you want to move directory '%s' to storage anyway?"%(dir,localStorage),self.log):
                             self.moveDirToStorage(dir,localStorage)
                     except Exception as e:
@@ -215,7 +213,7 @@ class el_comandante:
         if self.config.has_option('Transfer','checkForTars'):
            if not self.config.getboolean('Transfer','checkForTars'):
                return
-        tarList = glob.glob('%s/*.tar.gz'%dataDir)
+        tarList = glob.glob('%s/*.tar'%dataDir)
         self.uploadTarFiles(tarList)
 
     def parse_command_line_arguments(self):
@@ -231,6 +229,8 @@ class el_comandante:
             os.access(configDir,os.R_OK)
         except:
             raise Exception('configDir \'%s\' is not accessible'%configDir)
+
+
 
     def read_configuration(self, configDir):
         configFile = configDir+'/elComandante.conf'
@@ -255,10 +255,46 @@ class el_comandante:
         for dir in self.directories:
             self.directories[dir] = os.path.abspath(self.directories[dir].replace("$configDir$",configDir))
 
+    def set_operator(self):
+        operator = raw_input('Please enter the name of the operator:\t')
+        self.init.set('OperationDetails','Operator',operator)
+
+    def set_testCenter(self):
+        testCenter = raw_input('Please enter the name of your TestCenter:\t')
+        self.init.set('OperationDetails','TestCenter',testCenter)
+
+
+    def write_initialization(self, configDir):
+        hostname= socket.gethostname()
+        if not self.init.has_section('OperationDetails'):
+            self.init.add_section('OperationDetails')
+        self.init.set('OperationDetails','Hostname',hostname)
+     
+        if not self.init.has_option('OperationDetails','TestCenter'):
+            self.set_testCenter()
+
+        if not self.init.has_option('OperationDetails','Operator'):
+            self.set_operator()
+
+        print 'Hostname: ',self.init.get('OperationDetails','Hostname')
+        correct = False
+        while not correct:
+            print '\nOperator: ',self.init.get('OperationDetails','Operator')
+            print 'TestCenter: ',self.init.get('OperationDetails','TestCenter')
+            correct = userQueries.query_yes_no('Is this correct?')
+            if not correct:
+                self.set_testCenter()
+                self.set_operator()
+        with open(configDir+'elComandante.ini', 'wb') as configfile:
+            self.init.write(configfile)
+
+        print 'ini file has been updated'
+
     def read_initialization(self, configDir):
         iniFile = configDir+'/elComandante.ini'
         self.init = BetterConfigParser()
         self.init.read(iniFile)
+        self.write_initialization(configDir)
 
     def setup_directories(self):
         try:
@@ -289,7 +325,7 @@ class el_comandante:
         self.log.timestamp = timestamp
         self.log.set_logfile(self.directories['logDir'],'elComandante.log')
         self.log.printw()
-        self.log<<'Set LogFile to %s'%self.log.f
+        #self.log<<'Set LogFile to %s'%self.log.f
 
     def ensure_subserver_running(self):
         if os.system("ps -ef | grep -v grep | grep subserver > /dev/null"):
@@ -310,7 +346,7 @@ class el_comandante:
 
     def start_subsystem_client(self):
         serverZiel=self.config.get('subsystem','Ziel')
-        serverPort = int(self.config.get('subsystem','serverPort'))
+        serverPort = int(self.config.get('subsystem','Port'))
         self.subsystem_client = sClient(serverZiel,serverPort,"elComandante")
 
     def create_los_agentes(self, timestamp):
@@ -566,8 +602,7 @@ class el_comandante:
                 except:
                     raise
         self.createTarFiles(self.los_agentes[0])
-        tarList =['%s.tar.gz'%Testboard.parentDir.rstrip('/') for Tesboard in self.los_agentes[0].Testboards]
-        self.uploadTarFiles(tarList)
+        self.check_for_tar(self.directories['dataDir'])
 
         self.log.printv()
         self.log << 'ciao!'

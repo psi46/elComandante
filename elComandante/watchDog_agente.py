@@ -3,7 +3,7 @@ import os
 import subprocess
 import sys
 sys.path.insert(1,"../")
-from myutils import sClient,decode,printer,preexec
+from myutils import sClient,decode,printer,preexec,sclient
 from shutil import copyfile
 import time
 import el_agente
@@ -20,12 +20,14 @@ class watchDog_agente(el_agente.el_agente):
         self.sclient = None
         self.active = True
         self.pending = False
-        self.currentTestTempLogger = None
+        self.currentTestTempLogger = {}
+        self.currentTestDirs = {}
         self.testOverview ={}
         self.FAILED  = -1
         self.SUCCESS = +1
         self.UNKOWN  = -2
         self.BUSY    = 0
+        self.status = 'unkown'
         
         
     def setup_configuration(self, conf):
@@ -44,15 +46,28 @@ class watchDog_agente(el_agente.el_agente):
         self.subscriptions = {}
         self.subscriptions['temp'] = "/temperature/jumo"
         self.subscriptions['psi'] = "/psi"
+        self.subscriptions['watchDog'] = "/watchDog"
         serverZiel=conf.get('subsystem','Ziel')
         serverPort = conf.getint('subsystem','Port')
-        self.sclient = sClient(serverZiel,serverPort,"watchDog")
+        #print self.sclient
+        #print 'initialize WatchDog sclient',serverZiel,serverPort
+        self.sclient = sclient.sClient(serverZiel,serverPort,"watchDog")
+        self.sclient.setID('HALLO')
+        #print self.sclient
+        self.subscribe()
         return True
     
     def setup_initialization(self, init):
+        self.init = init
+
+        for tb, module in self.init.items('Modules'):
+            if self.init.getboolean('TestboardUse',tb):
+                pass
         return True;
+
     def check_logfiles_presence(self):
         return []
+
     def check_subscription(self):
         return True
 
@@ -60,6 +75,7 @@ class watchDog_agente(el_agente.el_agente):
         return False
 
     def start_client(self, timestamp):
+        #print 'START watch Dog'
         try:
             self.subscribe()
             return True
@@ -68,9 +84,14 @@ class watchDog_agente(el_agente.el_agente):
 
     
     def subscribe(self):
+#        print 'watchDog: subscribe: '
         if(self.active):
             for subscription in self.subscriptions:
+                #print subscription,self.subscriptions[subscription]
+                #print '\t%s - %s'%(subscription,self.subscriptions[subscription])
                 self.sclient.subscribe(self.subscriptions[subscription])
+                self.sclient.send(self.subscriptions[subscription],'Subscribed %s\n'%(self.subscriptions[subscription]))
+
 #            self.sclient.subscribe(self.subscription)
 
     def request_client_exit(self):
@@ -92,12 +113,36 @@ class watchDog_agente(el_agente.el_agente):
             return True
         return True
 
+    def set_tempLog(self):
+        for tb, module in self.init.items('Modules'):
+            if self.init.getboolean('TestboardUse',tb):
+                if self.currentTestTempLogger.has_key(tb):
+                    del self.currentTestTempLogger[tb]
+                self.currentTestTempLogger[tb] = printer()
+                self.currentTestTempLogger[tb].set_name('Test_Temp_Log_%s'%(tb))
+                self.currentTestTempLogger[tb].disable_print()
+    
+                if self.currentTestDirs.has_key(tb) and self.status != 'Prepare':
+              #      if self.currentTestTempLogger[tb].logger1 and k = 0:
+              #          loggerDict = self.currentTestTempLogger[tb].logger1.manager.loggerDict
+              #          print loggerDict
+              #          k=1
+                    dir = self.currentTestDirs[tb]
+                    fileName = 'TempLog_'+self.status+'.log'
+              #      self.currentTestTempLogger[tb].close_logfiles()
+              #      print 'new Temp Log for %s: %s %s, len = %s'%(tb,dir,fileName,len(self.currentTestTempLogger[tb].logger1.handlers))
+                    self.currentTestTempLogger[tb].set_logfile(dir,fileName)
 
     def prepare_test(self, test, environment):
         # Run before a test is executed
         if not self.active:
             return True
+
+        self.status = 'Prepare'
+
         self.currentTest = test
+        self.set_tempLog()
+
         self.readTemperatures()
         self.check_dew_point()
         self.check_testboards()
@@ -105,15 +150,23 @@ class watchDog_agente(el_agente.el_agente):
 
     def execute_test(self):
         # Initiate a test
+        #print 'create currentTest Logger: %s '%(name)
+        #self.set_tempLog('Templog_%s'%self.currentTest)
+
+        self.status = 'Execute'
+        self.set_tempLog()
+
         self.readTemperatures()
         self.check_dew_point()
         self.check_testboards()
-#        self.currentTestTempLogger = logging.getLogger('%sTemplog'%self.currentTest)
-#        self.currentTestTempLogger.handler = logging.FileHandler('%s/temperature.log')
         return True
 
 
     def cleanup_test(self):
+        self.status = 'Cleanup'
+        #self.set_tempLog('Templog_Cleanup_%s'%self.currentTest)
+        self.set_tempLog()
+
         self.currentTest = "none"
         # Run after a test has executed
         self.readTemperatures()
@@ -128,6 +181,7 @@ class watchDog_agente(el_agente.el_agente):
             sortedTests = sorted(testDict.items())
             testNo = max(testDict.keys())
             self.log << "%s  %s-%s\t%s-->%s" %(' '*len(self.agente_name),TB,testNo,self.testOverview[TB][testNo][0], self.testOverview[TB][testNo][1])
+
 #        self.log << msg
         #if 'waiting' not in self.status()
         #    self.log << "%s: Cleaning up %s ..."%(self.agente_name,test)
@@ -137,6 +191,13 @@ class watchDog_agente(el_agente.el_agente):
     def final_test_cleanup(self):
         # Cleanup after all tests have finished to return
         # everything to the state before the test
+        self.status = 'finalClenaup'
+
+        for i in self.currentTestTempLogger:
+            self.currentTestTempLogger[i].close_logfiles()
+        for tb, module in self.init.items('Modules'):
+            if self.init.getboolean('TestboardUse',tb):
+                self.currentTestTempLogger[tb] = None
 
         # create Config directory
         sortedOverview = sorted(self.testOverview.items())
@@ -189,10 +250,35 @@ class watchDog_agente(el_agente.el_agente):
         # Check whether the client has finished its task
         # but also check for errors and raise an exception
         # if one occurs.
+        self.getTestDirs()
         self.readTemperatures()
         self.check_dew_point()
         self.check_testboards()
         return True
+
+    def getTestDirs(self):
+        while True:
+            packet = self.sclient.getFirstPacket(self.subscriptions['watchDog'])
+            if packet.isEmpty():
+                break
+            if "pong" in packet.data.lower():
+                continue
+            data = packet.data
+            Time,coms,typ,msg = decode(data)[:4]
+            tb = 'TB'+coms[0][2:]
+            #tb = int(tb)
+            self.currentTestDirs[tb] = msg
+            currentTestLog =  self.currentTestTempLogger.get(tb,None)
+            if currentTestLog:
+                name = 'TempLog_%s'%self.status
+                fileName = '%s.log'%name
+                dir = self.currentTestDirs[tb]
+                currentTestLog.close_logfiles()
+                currentTestLog.set_logfile(dir,fileName)
+                currentTestLog.set_logfile(self.currentTestDirs[tb],fileName)
+
+
+            
 
     def readTemperatures(self):
         while True:
@@ -203,8 +289,13 @@ class watchDog_agente(el_agente.el_agente):
                 continue
             data = packet.data
             Time,coms,typ,msg = decode(data)[:4]
+
             if len(msg)>=1:
-                self.tempLog << "%s\t %s"%(Time,msg[0])
+                msg = "%s\t %s"%(Time,msg[0])
+                self.tempLog <<msg 
+                for i in self.currentTestTempLogger:
+                    if self.currentTestTempLogger[i]:
+                        self.currentTestTempLogger[i]<<msg
         return True
 
     def check_testboard(self,data):
@@ -275,6 +366,7 @@ class watchDog_agente(el_agente.el_agente):
             self.testOverview[tb_no][test_no] =[test_name,status]
                 
         pass
+
     def update_test_overview(self,tb_no,test_no,status,test_name):
         oldStatus = self.get_test_status(tb_no, test_no)
         if status.startswith('finished'):
@@ -292,6 +384,7 @@ class watchDog_agente(el_agente.el_agente):
     
     def check_dew_point(self):
         pass
+
     def set_pending(self):
         #self.sclient.send(self.subscription,":FINISHED\n")
         self.pending = True

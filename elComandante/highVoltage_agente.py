@@ -57,7 +57,7 @@ class highVoltage_agente(el_agente.el_agente):
         self.timestamp = timestamp
         if not self.active:
             return True
-        command  = "xterm +sb -geometry 80x25+1200+1300 -fs 10 -fa 'Mono' -e "
+        command  = "xterm  -T 'HighVoltage' +sb -geometry 80x25+1200+1300 -fs 10 -fa 'Mono' -e "
         command += "%s/keithleyClient.py "%(self.keithleyDir)
         command += "-d %s "%(self.keithleyPort)
         command += "-dir %s "%(self.logDir)
@@ -147,6 +147,8 @@ class highVoltage_agente(el_agente.el_agente):
         return self.ivDone
 
     def prepareIVCurve(self):
+        time.sleep(1)
+        self.sclient.clearPackets(self.subscription)
         self.ivDone = False
         self.sclient.send(self.subscription,':PROG:IV:START %s\n'%self.ivStart)
         self.sclient.send(self.subscription,':PROG:IV:STOP %s\n'%self.ivStop)
