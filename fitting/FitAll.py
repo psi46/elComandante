@@ -2,9 +2,27 @@
 import sys
 from subprocess import Popen
 
+import os
+import os.path
 parentDir=sys.argv[1]
 
-#for dirs in ['001_Fulltest_m10','003_Fulltest_m10','005_Fulltest_p17']:
-for dirs in ['000_Fulltest_p17','002_Fulltest_m10']:
-    #print './Fitter.py %s/%s'%(parentDir,dirs)
-    Popen(['./Fitter.py','%s/%s'%(parentDir,dirs)])
+print parentDir
+
+def LoopOverDir(parentDir,level):
+    dirs = os.listdir(parentDir)
+    for dir in dirs:
+        #print level,dir
+        dirName ='%s/%s'%(parentDir,dir)
+        if os.path.isdir(dirName) == False:
+            continue
+        #print dir
+        if 'Fulltest' in dir:
+            #print 'analyse'   
+            analyseDir = '%s/%s'%(parentDir,dir)
+            print '\t',level,'analyse',analyseDir
+            Popen(['./Fitter.py',analyseDir])
+        else:
+            LoopOverDir(dirName,level+1)
+
+
+LoopOverDir(parentDir,0)
