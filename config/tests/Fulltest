@@ -1,4 +1,3 @@
-roc 0:15
-FullTestAndCalibration
+FullTest
 PhCalibration
-Trim
+TrimLow
