@@ -5,6 +5,7 @@ import subprocess
 import sys
 import select
 from time import sleep
+import os
 class TBmaster(object):
     def __init__(self, TB, client, psiSubscription, Logger, color='black', psiVersion='psi46expert'):
         self.TB = TB
@@ -27,7 +28,12 @@ class TBmaster(object):
         self.Abort = False
 
     def _spawn(self,executestr):
-        self.proc = subprocess.Popen([executestr,''], shell = True, stdout = subprocess.PIPE, stdin = subprocess.PIPE)
+        my_env = os.environ
+        if my_env.has_key("LD_PRELOAD"):
+            my_env["LD_PRELOAD"] = "/opt/glibc-2.14/lib/libc.so.6:" + my_env["LD_PRELOAD"]
+        else:
+            my_env["LD_PRELOAD"] = "/opt/glibc-2.14/lib/libc.so.6:"
+        self.proc = subprocess.Popen([executestr,''], shell = True, stdout = subprocess.PIPE, stdin = subprocess.PIPE, env = my_env)
         self.busy = True
 
     def _kill(self):
