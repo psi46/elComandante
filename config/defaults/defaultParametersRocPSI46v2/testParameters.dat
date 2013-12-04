@@ -8,7 +8,7 @@ DacRange2 256
 
 -- Trimming --
 
-TrimVcal 60
+TrimVcal 40
 TrimNTrig 5
 TrimDoubleWbc 1
 
