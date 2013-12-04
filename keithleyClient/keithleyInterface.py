@@ -9,6 +9,7 @@ OFF=0
 
 class keithleyInterface:
     def __init__(self,serialPortName,immidiateVoltage =-150):
+        self.immidiateVoltage = immidiateVoltage
         self.bOpen=False
         self.bOpenInformed=False
         self.serialPortName=serialPortName
@@ -21,7 +22,6 @@ class keithleyInterface:
         self.lastVoltage = 0
         self.openSerialPort()
         self.model =2400
-        self.immediateVoltage = immidiateVoltage
 
     
     def openSerialPort(self):

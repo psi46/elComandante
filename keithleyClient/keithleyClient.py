@@ -210,8 +210,9 @@ def sweep():
     Logger << 'Results End, %s'% aboName
     client.send(IVAbo,'Results End\n')
     client.clearPackets(aboName)
-    client.send(aboName,':PROG:IV! FINISHED\n')
-    client.sendData(aboName,':PROG:IV! FINISHED\n')
+    #client.send(aboName,':PROG:IV! FINISHED\n')
+    sleep(1)
+    #client.sendData(aboName,':PROG:IV! FINISHED\n')
     client.send(voltageAbo,'Sweep Data Done\n')
     client.send(currentAbo,'Sweep Data Done\n')
     client.send(resistanceAbo,'Sweep Data Done\n')
