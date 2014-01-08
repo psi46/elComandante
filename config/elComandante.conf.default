@@ -4,8 +4,7 @@ testDefinitions: $configDir$/tests/
 moduleDB: <!Directories|baseDir!>/moduleDB/
 subserverDir: <!Directories|baseDir!>/subserverDATA/
 dataDir:<!Directories|baseDir!>/DATA/
-defaultParameters: $configDir$/defaults/
-jumoDir: <!Directories|baseDir!>/jumoClient/
+jumoDir: <!Directories|baseDir!>/coolingBox/
 keithleyDir: <!Directories|baseDir!>/keithleyClient/
 scriptDir: <!Directories|baseDir!>/analysisClient/scripts/
 
@@ -26,7 +25,6 @@ Full: defaultParametersModule
 [subsystem]
 Ziel: 127.0.0.1
 Port: 12333
-serverPort: 12334
 coolingBoxSubscription: /jumo
 keithleySubscription: /keithley
 psiSubscription: /psi
@@ -35,7 +33,7 @@ analysisSubscription: /analysis
 
 [jumoClient]
 port: /dev/ttyUSB0
-programName: jumoClient
+programName: coolingBoxClient.py
 
 [keithleyClient]
 #port: /dev/ttyUSB0
