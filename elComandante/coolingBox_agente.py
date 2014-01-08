@@ -54,10 +54,12 @@ class coolingBox_agente(el_agente.el_agente):
             return True
         command  = "xterm -T 'CoolingBox' +sb -geometry 80x25+1200+0 -fs 10 -fa 'Mono' -e '"
         command += "%s/%s "%(self.programDir,self.programName)
-        command += "-d %s"%self.port
+        command += "-d %s "%self.port
+        command += " -dir %s"%self.logDir
         #command += "|tee %s/%s'"%(self.logDir,self.logFileName)
         command += "'"
         self.log << "Starting %s ..." % self.client_name
+        self.log << "Command: '%s'"%command
         self.child = subprocess.Popen(command, shell = True, preexec_fn = preexec)
         return True;
 
@@ -76,7 +78,7 @@ class coolingBox_agente(el_agente.el_agente):
     # Kill a client with a SIGTERM signal
         if not self.active:
             return True
-        self.send(":PROG:STOP")
+        self.send(":PROG:STOP\n")
         time.sleep(1.0)
         try:
             self.child.kill()
@@ -129,14 +131,13 @@ class coolingBox_agente(el_agente.el_agente):
         #Heat Up again
         self.currentTest = "final_heating"
         self.log << "%s: Heating up ..." % self.agente_name
-        self.sclient.send(self.subscription,":PROG:HEAT\n")
+        self.sclient.send(self.subscription,":PROG:FINAL_HEAT\n")
         self.set_pending()
         return False
 
     def stabalizeTemperature(self,Temperature):
         self.currentTest = "stabalizeTemp"
-        self.sclient.send(self.subscription,":PROG:START 0\n")
-        self.sclient.send(self.subscription,":PROG:TEMP %s\n"%Temperature)
+        self.sclient.send(self.subscription,":PROG:START %s \n"%Temperature)
         time.sleep(1);
         self.sclient.clearPackets(self.subscription)
 
@@ -162,7 +163,10 @@ class coolingBox_agente(el_agente.el_agente):
         self.sclient.send(self.subscription,":PROG:STAT?\n")
         time.sleep(1.)
         bGotAnswer = False
+        counter  = 0 
         while not bGotAnswer:
+            if counter % 10 == 0 and counter != 0:
+                self.sclient.send(self.subscription,":PROG:STAT?\n")
             packet = self.sclient.getFirstPacket(self.subscription)
             if not packet.isEmpty() and not "pong" in packet.data.lower():
                 data = packet.data
@@ -177,6 +181,8 @@ class coolingBox_agente(el_agente.el_agente):
                             elif not 'heating' in msg.lower():
                                 self.final_test_cleanup()
             else:
+                if packet.isEmpty():
+                    counter += 1
                 time.sleep(1.0)
         return False
 
@@ -200,7 +206,7 @@ class coolingBox_agente(el_agente.el_agente):
                     if "prog" in coms[0].lower():
                         if "stat" in coms[1].lower() and typ == 'a':
                             bGotAnswer = True
-                            if 'stable' in msg.lower():
+                            if msg.lower().strip().startswith('stable'):
                                 self.log << "%s: Temperature stable at %s" % (self.agente_name, Time)
                                 self.pending = False
                             elif 'waiting' in msg.lower():
@@ -216,23 +222,38 @@ class coolingBox_agente(el_agente.el_agente):
                 time.sleep(1.0)
 
     def check_cycleRunning(self):
-        packet = self.sclient.getFirstPacket(self.subscription)
-        if not packet.isEmpty() and not "pong" in packet.data.lower():
-            data = packet.data
-            Time,coms,typ,msg = decode(data)[:4]
-            if len(coms)>1:
-                if "prog" in coms[0].lower():
-                    if  coms[1].lower().startswith("cycle") and typ == 'a' and 'finished' in msg.lower():
-                        self.pending = False
-                        self.log << "%s: Cycle has been finished" % self.agente_name
-                    elif "stat" in coms[1].lower() and typ == 'a':
-                        if "cycle_restart" in msg.lower():
-                            message = msg.split(' ')
-                            if len(message)==2:
-                                if is_number(message[1]):
-                                        self.log <<"%s: %s more Cycles to finish" % (self.agente_name,int(message[1])+1)
-                            else:
-                                self.log <<"%s: couldn't extract cycles out of msg '%s'" % (self.agente_name, msg)
+        self.sclient.clearPackets(self.subscription)
+        self.sclient.send(self.subscription,":PROG:STAT?\n")
+        time.sleep(1.)
+        bGotAnswer = False
+        counter = 0
+        while not bGotAnswer:
+            if counter %10 == 9:
+                self.sclient.send(self.subscription,":PROG:STAT?\n")
+
+            packet = self.sclient.getFirstPacket(self.subscription)
+            if not packet.isEmpty() and not "pong" in packet.data.lower():
+                data = packet.data
+                Time,coms,typ,msg = decode(data)[:4]
+                if len(coms)>1:
+                    if "prog" in coms[0].lower():
+                        if  coms[1].lower().startswith("cycle") and typ == 'a' and 'finished' in msg.lower():
+                            self.pending = False
+                            self.log << "%s: Cycle has been finished" % self.agente_name
+                            bGotAnswer = True
+                        elif "stat" in coms[1].lower() and typ == 'a':
+                            bGotAnswer = True
+                            if "cycle_restart" in msg.lower():
+                                message = msg.split(' ')
+                                if len(message)==2:
+                                    if is_number(message[1]):
+                                            self.log <<"%s: %s more Cycles to finish" % (self.agente_name,int(message[1])+1)
+                                else:
+                                    self.log <<"%s: couldn't extract cycles out of msg '%s'" % (self.agente_name, msg)
+            else:
+                if packet.isEmpty():
+                    counter+=1
+                time.sleep(1.)
         return not self.pending
 
     def set_pending(self):
