@@ -228,7 +228,9 @@ def analysePacket(coms,typ,msg):
     elif coms[0].find('HELP')>=0 and typ != 'a':
         printHelp()
     elif coms[0].lower().startswith('exit') and typ != 'a':
+        print 'stop controlling'
         jumo.stop_controlling()
+        time.sleep(1)
         client.closeConnection()
     else:
         Logger << 'not Valid Packet %s'%coms

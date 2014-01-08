@@ -12,6 +12,8 @@ class coolingBox():
         self.cycles = -1
         self.cycleAdditionalTemp = 2
         self.doCycle = False
+        self.RH_start_cooling = 10.0
+        self.RH_maximum = 30.00
         pass
         
         pass
@@ -47,7 +49,8 @@ class coolingBox():
         dewPoint = self.get_dew_point()
         relHum =  self.get_relative_humidity()
         retVal =  self.setpoint - dewPoint > self.temperature_safty_margin
-        retVal = retVal or relHum < 10.0
+        retVal = retVal or relHum < self.RH_start_cooling
+        retVal = retVal and relHum < self.RH_maximum
         #print '\tdewPoint: %s\t\t--> %s'%(dewPoint,retVal)
         if self.setpoint == -9999:
             return True

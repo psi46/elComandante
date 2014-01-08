@@ -143,12 +143,12 @@ class Imago500( minimalmodbus.Instrument ):
             except ValueError:
                 pass
 
-        def stop(self):
-            print 'stop'
-            try:
-                self.set_register(0x0172,0x0800)
-            except ValueError:
-                pass
+        #def stop(self):
+        #    print 'stop'
+        #    try:
+        #        self.set_register(0x0172,0x0800)
+        #    except ValueError:
+        #        pass
 
         def next(self):
             print 'next'
@@ -275,6 +275,7 @@ class Imago500( minimalmodbus.Instrument ):
             return self.get_float(address)
 
         def activate_manual_mode_controller(self,controllerNo):
+            print 'manual mode'
             if controllerNo < 1 or controllerNo > self.nControllers:
                 raise Exception
             address = 0x0173
@@ -282,6 +283,7 @@ class Imago500( minimalmodbus.Instrument ):
             self.set_register(address,0x200)
 
         def activate_auto_mode_controller(self,controllerNo):
+            print 'auto mode'
             if controllerNo < 1 or controllerNo > self.nControllers:
                 raise Exception
             address = 0x0173
@@ -291,6 +293,7 @@ class Imago500( minimalmodbus.Instrument ):
             
 
         def activate_manual_mode(self):
+            print 'manual mode'
             self.set_register(0x0172,0x200)
             self.set_register(0x0173,0x200)
             self.set_register(0x0174,0x200)
@@ -299,6 +302,7 @@ class Imago500( minimalmodbus.Instrument ):
 
 
         def activate_auto_mode(self):
+            print 'auto mode'
             self.set_register(0x0172,0x100)
             self.set_register(0x0173,0x100)
             self.set_register(0x0174,0x100)
@@ -372,6 +376,11 @@ class Imago500( minimalmodbus.Instrument ):
 
 
 
+        def stop(self):
+            self.activate_controllers(False,False)
+            self.set_Binary_control_contacts(False,False,False,False)
+            self.write_program_buffer()
+
         def flush_air(self):
             self.activate_controllers(False,False)
             self.set_Binary_control_contacts(True,False,True,False)
@@ -382,7 +391,7 @@ class Imago500( minimalmodbus.Instrument ):
             #self.set_parameter_set(1,0)
             #self.set_parameter_set(2,1)
             self.activate_controllers(True,False)
-            self.set_Binary_control_contacts(True,True,True,False)
+            self.set_Binary_control_contacts(False,True,True,False)
             self.write_program_buffer()
         
 

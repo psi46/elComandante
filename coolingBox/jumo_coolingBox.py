@@ -55,12 +55,15 @@ class jumo_coolingBox(coolingBox):
     def stop_controlling(self):
         if not self.controlling:
             return
+        if not self.isFake:
+            self.jumo.initialise_controlling()
+        print 'stop controlling'
+        self.jumo.stop()
         self.controlling = False
-        self.status = self.UNKOWN
+        print 'controlling',self.controlling
+        self.status = self.UNKNOWN
         if not self.isFake:
             self.jumo.activate_auto_mode()
-        if not self.isFake:
-            self.jumo.stop()
         if self.verbose > 0: print 'stop'
 
     def flushing(self):
@@ -110,6 +113,8 @@ class jumo_coolingBox(coolingBox):
             pass
 
     def check_setpoint(self):
+        if not self.controlling:
+            return
         now = int(time.time())
         if now % 10 != 0:
             return
@@ -151,6 +156,7 @@ class jumo_coolingBox(coolingBox):
     def stabilize(self):
         if not self.controlling: 
             return
+   
         if self.verbose>2: print '\nstabilize',time.time()
         if self.status == self.UNKNOWN and self.controlling:
             print 'status unkown, start flushing'
