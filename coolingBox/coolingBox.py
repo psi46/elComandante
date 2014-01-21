@@ -2,6 +2,13 @@ import math
 import time
 
 class coolingBox():
+    UNKNOWN = -1
+    FLUSHING = 0
+    COOLING = 1
+    HEATING = 2
+    FINAL_HEATING = 3
+    
+
     def __init__(self):
         self.setpoint = -9999
         self.maxHumidity = 30
@@ -14,9 +21,20 @@ class coolingBox():
         self.doCycle = False
         self.RH_start_cooling = 10.0
         self.RH_maximum = 30.00
+        self.status = self.UNKNOWN
         pass
         
-        pass
+    def is_cooling(self):
+        return self.status == self.COOLING
+    def is_heating(self):
+        return self.status == self.HEATING
+    def is_flushing(self):
+        return self.status == self.FLUSHING
+    def is_unkown(self):
+        return self.status == self.UNKNOWN
+    def is_final_heating(self):
+        return self.status == self.FINAL_HEATING
+
     def start_controlling(self):
         pass
 
@@ -50,7 +68,8 @@ class coolingBox():
         relHum =  self.get_relative_humidity()
         retVal =  self.setpoint - dewPoint > self.temperature_safty_margin
         retVal = retVal or relHum < self.RH_start_cooling
-        retVal = retVal and relHum < self.RH_maximum
+        if not self.is_unkown() and not self.is_flushing():
+            retVal = retVal or relHum < self.RH_maximum
         #print '\tdewPoint: %s\t\t--> %s'%(dewPoint,retVal)
         if self.setpoint == -9999:
             return True

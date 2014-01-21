@@ -11,11 +11,6 @@ from coolingBox import coolingBox
 
 
 class jumo_coolingBox(coolingBox):
-    UNKNOWN = -1
-    FLUSHING = 0 
-    COOLING = 1
-    HEATING = 2
-    FINAL_HEATING = 3
 
     def __init__(self,device,baudrate=9600,slaveaddress=1):
         coolingBox.__init__(self)

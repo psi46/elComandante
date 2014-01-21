@@ -60,6 +60,7 @@ Logger<<'SerialPort: %s'% serialPort
 serverZiel = '127.0.0.1'
 serverPort = 12334
 aboName = '/jumo'
+errorAbo = '/error'
 tempAbo = '/temperature/jumo'
 humAbo = '/humidity'
 dewPointAbo = '/temperature/dewPoint'
@@ -67,7 +68,7 @@ client = sClient(serverZiel,serverPort,"coolingboxClient")
 client.subscribe(aboName)
 client.send(aboName,'Connecting coolingBox Client with Subsystem\n')
 jumo = jumo_coolingBox.jumo_coolingBox(serialPort)
-jumo.set_setpoint(args.immidiateTemperature)
+jumo.set_setpoint(float(args.immidiateTemperature))
 
 def handler(signum, frame):
     jumo.stop_controlling()
@@ -170,14 +171,14 @@ def analyseProg(coms,typ,msg):
         pass
 
     elif coms[0].startswith('STAT') and typ == 'q':
-        if not jumo.controlling or jumo.status == jumo.UNKNOWN:
+        if not jumo.controlling or jumo.is_unkown():
             status = 'waiting'
         elif jumo.doCycle:
             if jumo.is_stable():
                 client.send(aboName,':PROG:CYCLE! FINISHED\n')
                 return
             status = 'CYCLING %s'%jumo.cycles
-        elif jumo.status == jumo.FINAL_HEATING:
+        elif jumo.is_final_heating():
             status = 'FINAL_HEATING'
         elif jumo.is_stable():
             status = 'STABLE'
@@ -242,14 +243,30 @@ def sendMeasurements():
     client.send(humAbo,'%2.2f\n'%hum)
     client.send(dewPointAbo,'%2.2f\n'%jumo.get_dew_point())
 
+def check_if_dry(isDry):
+    if not jumo.is_dry():
+        if isDry:
+            hum = jumo.get_relative_humidity()
+            temp = jumo.get_temperature() 
+            client.send(aboName,'ERROR: Box not dry anymore, %2.1f %%, %2.1f degC'%(hum,temp))
+            client.send(errorAbo,'coolingbox: not dry anymore!: %2.1f %%, %2.1f degC '%(hum,temp))
+        isDry = False
+    else:
+        isDry = True
+        pass
+    return isDry
+
 
 def mainLoop():
 
     sleep(0.5)
     counter = 0 
     lastMeasurementSend = time.time()
+    isDry = False
     while client.anzahl_threads > 0 and End == False and client.isClosed == False: 
+        isDry = check_if_dry(isDry)
         
+
         packet = client.getFirstPacket(aboName)
 
         now = time.time()
@@ -267,7 +284,7 @@ def mainLoop():
         timeStamp,coms,typ,msg,command = decode(data)
         # 'T:',timeStamp, 'Comand:',command
         #Logger << '%s: %s, %s, %s'%(timeStamp,len(coms),typ,msg)
-        dataOut = '%s\n'%packet.Print()
+        #dataOut = '%s\n'%packet.Print()
         if len(coms)>0:
             analysePacket(coms,typ,msg)
         pass   
