@@ -35,11 +35,15 @@ class Imago500( minimalmodbus.Instrument ):
 
         def wait_for_unlock(self):
             i = 0
+            locked = time.time()
             while self.lock:
                 time.sleep(.1)
                 i+=1
-                if i%1000 == 0:
-                    print ' wait for unlock: ',i
+                if i%100 == 0:
+                    now = time.time()
+                    print 'reste unlock: after %s seconds'%(now-locked)
+                    self.lock = False
+
 
         def get_register(self,address):
             while True:
