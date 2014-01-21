@@ -12,10 +12,11 @@
         
     if a value is not present, it is filled with 'unknown' or in case of time with -1
 """
+verbose = False
 def decode(data):
     #type: (q)uestion, (a)nswer or (c)ommand
     dataArray=data.split(' ')
-#    print dataArray
+    if verbose: print dataArray
     if len(dataArray)==0 or (len(dataArray)==1 and dataArray[0]==''):
         time = -1
         coms =[]
@@ -24,19 +25,24 @@ def decode(data):
         msg = ''
         command = ''
     elif len(dataArray)>0:
+        if verbose: print 'length dataArray: ',len(dataArray)
         if is_number(dataArray[0]):
             time = dataArray[0] 
             if len(data.split(' ',1))>1:
                 command = data.split(' ',1)[1]
             else:
                 command = data
-                print data
+                if verbose: print data
             dataArray=dataArray[1:]
+            if verbose: print 'has timestamp: ',time,dataArray
         else:
             time = -1
             command = data
         if len(dataArray)==2:
             coms, msg = dataArray
+        elif len(dataArray)>2:
+            coms = dataArray[0]
+            msg = ' '.join(dataArray[1:])
         elif len(dataArray)==1 and dataArray[0].find(':')==0:
             coms = dataArray[0]
             msg = 'unknown'
