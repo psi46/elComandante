@@ -78,7 +78,7 @@ class el_comandante:
         try:
             for subscription in self.subscriptionList:
                 self.subsystem_client.send(subscription,':prog:exit\n')
-            time.sleep(1)
+            time.sleep(3)
         except:
             pass
 
@@ -88,6 +88,7 @@ class el_comandante:
         except:
             pass
 
+        time.sleep(1)
         # Kill the client processes
         for agente in self.los_agentes:
             try:
