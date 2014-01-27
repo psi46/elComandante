@@ -315,8 +315,11 @@ class el_comandante:
         else:
             if nLogFiles>0:
                 if userQueries.query_yes_no('Do you want to overwrite \'%s\'?'%logFiles,default='no'):
-                    rmtree(self.directories['logDir'])
-                    os.mkdir(self.directories['logDir'])
+                    try:
+                        rmtree(self.directories['logDir'])
+                        os.mkdir(self.directories['logDir'])
+                    except:
+                        pass
                 else:
                     raise Exception('LogDir is not empty. Please clean logDir: %s'%self.directories['logDir'])
 

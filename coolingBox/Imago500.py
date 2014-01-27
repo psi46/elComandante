@@ -46,7 +46,9 @@ class Imago500( minimalmodbus.Instrument ):
 
 
         def get_register(self,address):
+            ntries = 0
             while True:
+                ntries +=1
                 try:
                     self.wait_for_unlock()
                     self.lock = True
@@ -61,10 +63,16 @@ class Imago500( minimalmodbus.Instrument ):
                     self.lock = False
                     print 'ValueError'
                     pass
+                if ntries>20:
+                    print 'cannot get_register after',ntries
+                    a = 0
+                time.sleep(.1)
             return a
 
         def get_registers(self,address,number):
+            ntries = 0
             while True:
+                ntries += 1
                 try:
                     self.wait_for_unlock()
                     self.lock = True
@@ -79,11 +87,17 @@ class Imago500( minimalmodbus.Instrument ):
                     self.lock = False
                     print 'ValueError'
                     pass
+                if ntries>20:
+                    print 'cannot get_registers after',ntries
+                    a = number*[0]
+                time.sleep(.1)
             return a
 
 
         def get_long(self,address):
+            ntries = 0
             while True:
+                ntries +=1
                 try:
                     self.wait_for_unlock()
                     self.lock = True
@@ -99,6 +113,10 @@ class Imago500( minimalmodbus.Instrument ):
                     self.lock = False
                     print 'ValueError'
                     pass
+                if ntries>20:
+                    print 'cannot get_long after',ntries
+                    a = 0
+                time.sleep(.1)
             return a
         
 
@@ -127,7 +145,9 @@ class Imago500( minimalmodbus.Instrument ):
         def set_float(self,address,value):
             a = minimalmodbus._bytestringToValuelist(minimalmodbus._floatToBytestring(value),2)
             b = [a[1],a[0]]
+            ntries = 0
             while True:
+                ntries += 1
                 try:
                     self.set_registers(address,b)
                     break
@@ -139,6 +159,9 @@ class Imago500( minimalmodbus.Instrument ):
                     else:
                         print 'float not set correctly, retry, %s!=%s'%(currentValue,value)
                     pass
+                if ntries>20:
+                    print 'cannot set_float after',ntries
+                time.sleep()
 
         def start(self):
             print 'start'
@@ -196,7 +219,11 @@ class Imago500( minimalmodbus.Instrument ):
 
         def get_float(self,address):
             a = self.get_registers(address,2)
-            return convert_MODbus_to_standard_float(a)
+            try:
+                retVal = self.convert_MODbus_to_standard_float(a)
+            except:
+                retVal = -9999999
+            return retVal
 
         def convert_MODbus_to_standard_float(self,a):
             if len(a) != 2:
@@ -206,12 +233,23 @@ class Imago500( minimalmodbus.Instrument ):
 
 
         def read_conditions(self):
-            a = self.get_registers(0x00A6,6)
-            temp1 = self.convert_MODbus_to_standard_float(a[0:2])
-            temp2 = self.convert_MODbus_to_standard_float(a[2:4])
-            hum = self.convert_MODbus_to_standard_float(a[4:6])
-            self.currentTemp = temp2
-            self.currentHum = hum
+            bReadConditions = False
+            i = 0
+            while not bReadConditions and i < 10:
+                if i>3:
+                    print 'read conditions: ',i
+                i+= 1
+                try:
+                    a = self.get_registers(0x00A6,6)
+                    temp1 = self.convert_MODbus_to_standard_float(a[0:2])
+                    temp2 = self.convert_MODbus_to_standard_float(a[2:4])
+                    hum = self.convert_MODbus_to_standard_float(a[4:6])
+                    self.currentTemp = temp2
+                    self.currentHum = hum
+                    bReadConditions = True
+                    time.sleep(.3)
+                except:
+                    pass
 
 
         
