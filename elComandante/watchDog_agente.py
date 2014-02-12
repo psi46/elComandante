@@ -327,6 +327,10 @@ class watchDog_agente(el_agente.el_agente):
                     test_no = testName[0]
                     testTemp = testName[2]
                     testName = testName[1]
+                elif len(testName) >3:
+                    test_no = testName[0]
+                    testTemp = testName[-1]
+                    testName = '_'.join(testName[1:-1])
                 else:
                     self.log.warning("%s: Couln't convert testName: %s, '%s'"%(self.agente_name,testName,data))
             if test_no ==-1:
