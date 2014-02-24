@@ -17,7 +17,7 @@ class TBmaster(object):
         self.client.subscribe(self.TBSubscription)
         self.dir = ''
         self.psiVersion = psiVersion
-
+        self.pyXar = psiVersion.endswith('pyXar')
         self.failed = False
         self.busy = False
         self.testName ='unkown'
@@ -121,7 +121,10 @@ class TBmaster(object):
         self._resetVariables()
         self.dir = dir
         self.Logger << 'executing psi46 %s in TB%s'%(whichTest,self.TB)
-        executestr='%s -dir %s -f %s -r %s.root -log %s.log'%(self.psiVersion,dir,whichTest,fname,fname)
+        if self.pyXar:
+            executestr='%s --dir %s --nogui < %s'%(self.psiVersion,dir,whichTest)
+        else:
+            executestr='%s -dir %s -f %s -r %s.root -log %s.log'%(self.psiVersion,dir,whichTest,fname,fname)
         self._spawn(executestr)
         self.failed=self._readout()
         self._answer()
@@ -130,7 +133,10 @@ class TBmaster(object):
         self._resetVariables()
         self.dir = dir
         self.Logger << 'open TB%s'%(self.TB)
-        executestr='%s -dir %s -r %s.root -log %s.log'%(self.psiVersion,dir,fname,fname)
+        if self.pyXar:
+            executestr='%s --dir %s --nogui'%(self.psiVersion,dir,fname,fname)
+        else:
+            executestr='%s -dir %s -r %s.root -log %s.log'%(self.psiVersion,dir,fname,fname)
         self._spawn(executestr)
         self.failed=self._readout()
         self._answer()

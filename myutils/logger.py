@@ -49,14 +49,14 @@ class printer:
         
 
     def printcolor(self,x,color=''):
-        A='\033[1;3%sm'%(self.identifyer(color))
-        B='\033[1;m'
+        A='\x1b[1;3%sm'%(self.identifyer(color))
+        B='\x1b[0m'
         self._print(A + x + B)
         self.logToFile(x)
 
     def warning(self,x):
-        A='\033[1;31m'
-        B='\033[1;m'
+        A='\x1b[1;31m'
+        B='\x1b[0m'
         self._print(A + x + B)
         self.warningToFile(x)
 
@@ -95,8 +95,8 @@ class printer:
 
     def set_color(self,color):
         if not color == '':
-            self.A='\033[1;3%sm'%(self.identifyer(color))
-            self.B='\033[1;m'
+            self.A='\x1b[1;3%sm'%(self.identifyer(color))
+            self.B='\x1b[0m'
         else:
             self.A=''
             self.B=''

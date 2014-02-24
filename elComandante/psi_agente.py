@@ -35,7 +35,6 @@ class psi_agente(el_agente.el_agente):
         for tb, module in init.items('Modules'):
             if init.getboolean('TestboardUse',tb):
                 self.Testboards.append(Testboarddefinition(int(tb[2]),module,self.conf.get('TestboardAddress',tb),init.get('ModuleType',tb)))
-                #Testboards[-1].tests=testlist
                 self.Testboards[-1].defparamdir=self.Directories['defaultParameters']+'/'+self.conf.get('defaultParameters',self.Testboards[-1].type)
                 self.log << '\t- Testboard %s at address %s with Module %s'%(self.Testboards[-1].slot,self.Testboards[-1].address,self.Testboards[-1].module)
         self.numTestboards = len(init.items('Modules'))
@@ -301,9 +300,9 @@ class psi_agente(el_agente.el_agente):
         return not self.pending
 
     def _setupdir_testboard(self,Testboard):
-        if not self.currenttest == 'powercycle':
-            self.log << 'Setting up the directory: %s'%Testboard.testdir
-            self.log << '... with Parameters from: %s' % self.test.parent.parameter_dir[Testboard.slot]
+        #if not self.currenttest == 'powercycle':
+        self.log << 'Setting up the directory: %s'%Testboard.testdir
+        self.log << '... with Parameters from: %s' % self.test.parent.parameter_dir[Testboard.slot]
         #copy directory
         try:
             self.test.parameter_dir[Testboard.slot] = Testboard.testdir
@@ -321,7 +320,10 @@ class psi_agente(el_agente.el_agente):
         """ Changes config files in the already copied test directory according to test definitions
             from elComandante's init file. """
         # Change testboard name
-        self._config_file_content_substitute(Testboard.testdir + "/configParameters.dat", {"testboardName":Testboard.address})
+        if Testboard.DTB:
+            self._config_file_content_substitute(Testboard.testdir + "/tb", {"id":Testboard.address})
+        else:
+            self._config_file_content_substitute(Testboard.testdir + "/configParameters.dat", {"testboardName":Testboard.address})
 
         # Get test specific config parameters (if available)
         params = ()
@@ -391,8 +393,12 @@ class psi_agente(el_agente.el_agente):
             if not line[keyfield] in keys:
                 continue
             line[datafield] = keys[line[keyfield]]
-            lines[i] = " ".join(line)
-            lines[i] += '\n'
+            if line[datafield].startswith('DTB') and line[keyfield] == 'id':
+                lines[i] = " : ".join(line)
+                lines[i] += '\n'
+            else:
+                lines[i] = " ".join(line)
+                lines[i] += '\n'
 
         try:
             # Write the new file

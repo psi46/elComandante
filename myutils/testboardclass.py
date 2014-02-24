@@ -16,6 +16,8 @@ class Testboard:
         self.dataDir ='.'
         self.moduleDir ='MXXXX'
         self.failedPowercycles =0
+        self.DTB = self.address.startswith('DTB')
+
     @property
     def parentDir(self):
         return '%s/%s/'%(self.dataDir,self.moduleDir)
