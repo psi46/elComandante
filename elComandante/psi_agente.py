@@ -334,8 +334,18 @@ class psi_agente(el_agente.el_agente):
 
         for par in params:
             file = par[0]
+            if '.cfg' in file:
+                section,pair = par[1].split(':')
+                key,value = pair.split('=')
+                config_file = BetterConfigParser()
+                config_file.read(Testboard.testdir + "/" + file)
+                config_file.set(section,key,value)
+                write_file = open(Testboard.testdir + "/" + file, 'write')
+                config_file.write(write_file)
+                write_file.close()
+                continue
             # Check for valid keys that represent config files
-            if "testParameters" in file or "dacParameters" in file or "configParameters" in file:
+            elif "testParameters" in file or "dacParameters" in file or "configParameters" in file:
                 pass
             elif "tbmParameters" in file or "tbParameters" in file:
                 pass
