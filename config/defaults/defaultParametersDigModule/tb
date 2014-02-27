@@ -1,0 +1,21 @@
+[Testboard]
+#id = DTB_WRQ4OZ
+id = DTB_WRMU7H
+max_ia = 1199
+max_id = 1000
+max_va = 1699
+max_vd = 2500
+hv_on = True
+pg_cal = 101
+pg_trg = 16
+pg_resr = 25
+tct_wbc = 5
+
+clk = 4
+#clk
+ctr = 4
+#clk+15
+sda = 19
+#clk+5
+tin = 9
+deser160phase = 4
