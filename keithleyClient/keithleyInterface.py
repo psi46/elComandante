@@ -462,7 +462,7 @@ class keithleyInterface:
     
     def initFourWireResistensMeasurement(self):
         #self.reset()
-        self.setSenseFunction('\'RESISTANCE\'')
+        self.setSenseFunction('RESISTANCE')
         self.setConcurrentMeasurments()
         self.setSenseResistanceMode('AUTO')
         self.setSenseResistanceRange(2e3)
