@@ -67,7 +67,18 @@ dewPointAbo = '/temperature/dewPoint'
 client = sClient(serverZiel,serverPort,"coolingboxClient")
 client.subscribe(aboName)
 client.send(aboName,'Connecting coolingBox Client with Subsystem\n')
-jumo = jumo_coolingBox.jumo_coolingBox(serialPort)
+counter = 0
+initializedJumo = False
+while not initializedJumo  and counter < 10:
+    try:
+        jumo = jumo_coolingBox.jumo_coolingBox(serialPort)
+        initializedJumo = True
+    except:
+        counter += 1
+        time.sleep(.5)
+        print 'Could not initialize Jumo. Try again: %d/10'%counter
+if not initializedJumo:
+    raise Exception('Cannot initalize Jumo after 10 tries')
 jumo.set_setpoint(float(args.immidiateTemperature))
 
 def handler(signum, frame):
