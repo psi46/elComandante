@@ -24,7 +24,7 @@ Full: defaultParametersModule
 
 [subsystem]
 Ziel: 127.0.0.1
-Port: 12333
+Port: 12334
 coolingBoxSubscription: /jumo
 keithleySubscription: /keithley
 psiSubscription: /psi
