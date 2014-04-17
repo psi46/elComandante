@@ -176,7 +176,6 @@ class psi_agente(el_agente.el_agente):
         batchFile = self.currenttest
         try:
             batchFile = self.init.get("Test " + self.currenttest, "batchFile")
-            self.log << "Using batch file " + batchFile
         except:
             pass
 

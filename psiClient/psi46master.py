@@ -180,7 +180,7 @@ def sendStatsTB(TBno):
     if len(TBmasters) > TBno: 
         TB = TBmasters[TBno]
         name = TB.get_directory_name()
-        Logger << "Stat TB %s, %s %s"%(TBno, TB.failed,TB.busy)
+        #Logger << "Stat TB %s, %s %s"%(TBno, TB.failed,TB.busy)
         TB.sendTBStatus()
         if TB.busy:
             client.send(psiSubscription,':STAT:TB%s! %s:busy\n'%(TBno,name))
