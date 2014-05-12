@@ -296,6 +296,7 @@ class psi_agente(el_agente.el_agente):
 
             self.pending = any([Testboard.busy for Testboard in self.Testboards])
         self.pending = any([Testboard.busy for Testboard in self.Testboards])
+        #self.log<<[Testboard.busy for Testboard in self.Testboards]
         return not self.pending
 
     def _setupdir_testboard(self,Testboard):

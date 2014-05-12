@@ -134,7 +134,7 @@ class TBmaster(object):
         self.dir = dir
         self.Logger << 'open TB%s'%(self.TB)
         if self.pyXar:
-            executestr='%s --dir %s --nogui'%(self.psiVersion,dir,fname,fname)
+            executestr='%s --dir %s --nogui'%(self.psiVersion,dir)
         else:
             executestr='%s -dir %s -r %s.root -log %s.log'%(self.psiVersion,dir,fname,fname)
         self._spawn(executestr)
