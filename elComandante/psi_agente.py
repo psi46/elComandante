@@ -11,6 +11,8 @@ import environment
 import signal
 import el_agente
 import subprocess
+import glob
+import shutil
 
 
 class psi_agente(el_agente.el_agente):
@@ -308,6 +310,12 @@ class psi_agente(el_agente.el_agente):
             self.test.parameter_dir[Testboard.slot] = Testboard.testdir
             self.sclient.send('/watchDog',':TB%s:TESTDIR! %s\n'%(Testboard.slot,Testboard.testdir))
             copytree(self.test.parent.parameter_dir[Testboard.slot], Testboard.testdir)
+            if Testboard.DTB:
+                directories = [d for d in os.listdir(Testboard.testdir) if os.path.isdir(d)] 
+                if len(directories) > 0:
+                    latest_subdir = max(directories, key=os.path.getmtime)
+                    for filename in glob.glob(os.path.join(latest_subdir, '*.*')):
+                        shutil.copy(filename, Testboard.testdir)
             self._setup_configfiles(Testboard)
         except IOError as e:
             self.log.warning("I/O error({0}): {1}".format(e.errno, e.strerror))
