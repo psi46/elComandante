@@ -310,12 +310,17 @@ class psi_agente(el_agente.el_agente):
             self.test.parameter_dir[Testboard.slot] = Testboard.testdir
             self.sclient.send('/watchDog',':TB%s:TESTDIR! %s\n'%(Testboard.slot,Testboard.testdir))
             copytree(self.test.parent.parameter_dir[Testboard.slot], Testboard.testdir)
-            if Testboard.DTB:
-                directories = [d for d in os.listdir(self.test.parent.parameter_dir[Testboard.slot]) if os.path.isdir(d)] 
+            if Testboard.DTB:    
+                self.log.warning("if Testboard.DTB is fulfilled") 
+                print self.test.parent.parameter_dir[Testboard.slot]
+                directories = [self.test.parent.parameter_dir[Testboard.slot]+d for d in os.listdir(self.test.parent.parameter_dir[Testboard.slot]) if os.path.isdir(self.test.parent.parameter_dir[Testboard.slot]+d)] 
                 if len(directories) > 0:
+                    self.log.warning("len(directories)>0 is fulfilled") 
                     latest_subdir = max(directories, key=os.path.getmtime)
+                    print latest_subdir
                     for filename in glob.glob(os.path.join(latest_subdir, '*.*')):
                         shutil.copy(filename, Testboard.testdir)
+                        self.log.warning("copying %s to folder %s" %(filename, Testboard.testdir)) 
             self._setup_configfiles(Testboard)
         except IOError as e:
             self.log.warning("I/O error({0}): {1}".format(e.errno, e.strerror))
@@ -339,7 +344,6 @@ class psi_agente(el_agente.el_agente):
             params = self.init.items("Test " + self.test.testname)
         except:
             return
-
         for par in params:
             file = par[0]
             if '.cfg' in file:
