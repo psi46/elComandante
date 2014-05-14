@@ -311,7 +311,7 @@ class psi_agente(el_agente.el_agente):
             self.sclient.send('/watchDog',':TB%s:TESTDIR! %s\n'%(Testboard.slot,Testboard.testdir))
             copytree(self.test.parent.parameter_dir[Testboard.slot], Testboard.testdir)
             if Testboard.DTB:
-                directories = [d for d in os.listdir(Testboard.testdir) if os.path.isdir(d)] 
+                directories = [d for d in os.listdir(self.test.parent.parameter_dir[Testboard.slot]) if os.path.isdir(d)] 
                 if len(directories) > 0:
                     latest_subdir = max(directories, key=os.path.getmtime)
                     for filename in glob.glob(os.path.join(latest_subdir, '*.*')):
