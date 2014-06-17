@@ -17,7 +17,14 @@ class TBmaster(object):
         self.client.subscribe(self.TBSubscription)
         self.dir = ''
         self.psiVersion = psiVersion
-        self.pyXar = psiVersion.endswith('pyXar')
+        if self.psiVersion.lower().endswith("psi46expert"):
+            self.version ='psi46expert'
+        elif self.psiVersion.lower().endswith("pyxar"):
+            self.version ='pyxar'
+        elif self.psiVersion.lower().endswith("pxar"):
+            self.version ='pxar'
+        else:
+            self.version = 'unknown'
         self.failed = False
         self.busy = False
         self.testName ='unkown'
@@ -57,8 +64,8 @@ class TBmaster(object):
         self.ClosePSI = False
         self.Abort = False
 
-    def _readAllSoFar(self, retVal = ''): 
-        while (select.select([self.proc.stdout],[],[],0)[0]!=[]) and self.proc.poll() is None:   
+    def _readAllSoFar(self, retVal = ''):
+        while (select.select([self.proc.stdout],[],[],0)[0]!=[]) and self.proc.poll() is None:
             retVal += self.proc.stdout.read(1)
         return retVal
 
@@ -110,8 +117,8 @@ class TBmaster(object):
         else:
             self.client.send(self.psiSubscription,':STAT:TB%s! %s:finished\n'%(self.TB,name))
             self.Logger << ':Test %s finished in TB%s'%(name,self.TB)
-            
-            
+
+
     def get_directory_name(self):
         dir = self.dir.rstrip('/')
         name = dir.split('/')[-1]
@@ -121,8 +128,11 @@ class TBmaster(object):
         self._resetVariables()
         self.dir = dir
         self.Logger << 'executing psi46 %s in TB%s'%(whichTest,self.TB)
-        if self.pyXar:
+        if self.version == 'pyxar':
             executestr='%s --dir %s --nogui < %s'%(self.psiVersion,dir,whichTest)
+        elif self.version == 'pxar':
+            # cat test | ../bin/pXar -d whereever
+            executestr = 'cat {testfile} | {psiVersion} -dir {dir}  -r {rootfilename}.root -log {logfilename}.log'.format(testfile = whichTest, psiVersion = self.psiVersion, dir = dir, rootfilename = fname, logfilename = fname)
         else:
             executestr='%s -dir %s -f %s -r %s.root -log %s.log'%(self.psiVersion,dir,whichTest,fname,fname)
         self._spawn(executestr)
@@ -133,8 +143,11 @@ class TBmaster(object):
         self._resetVariables()
         self.dir = dir
         self.Logger << 'open TB%s'%(self.TB)
-        if self.pyXar:
+        if self.version == 'pyxar':
             executestr='%s --dir %s --nogui'%(self.psiVersion,dir)
+        elif self.version == 'pxar':
+            # cat test | ../bin/pXar -d whereever
+            executestr = '{psiVersion} -dir {dir}  -r {rootfilename}.root -log {logfilename}.log'.format(psiVersion = self.psiVersion, dir = dir, rootfilename = fname, logfilename = fname)
         else:
             executestr='%s -dir %s -r %s.root -log %s.log'%(self.psiVersion,dir,fname,fname)
         self._spawn(executestr)
@@ -143,7 +156,7 @@ class TBmaster(object):
         while not self.ClosePSI:
             pass
         self.Logger << 'CLOSE TB %s HERE'%(self.TB)
-        self.proc.communicate(input='exit\n')[0] 
+        self.proc.communicate(input='exit\n')[0]
         self.proc.poll()
         if (None == self.proc.returncode):
             try:
@@ -151,7 +164,7 @@ class TBmaster(object):
             except:
                 self.Logger << 'Process already killed'
         self._answer()
-        
+
     def sendTBStatus(self):
         self._answer()
-        
+
