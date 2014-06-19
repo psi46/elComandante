@@ -6,11 +6,13 @@ subserverDir: <!Directories|baseDir!>/subserverDATA/
 dataDir:<!Directories|baseDir!>/DATA/
 jumoDir: <!Directories|baseDir!>/coolingBox/
 keithleyDir: <!Directories|baseDir!>/keithleyClient/
+defaultParameters: /home/vtavolar/Documents/psi46test/pxar/data/
 scriptDir: <!Directories|baseDir!>/analysisClient/scripts/
+
 
 [TestboardAddress]
 #TB0: DPE00SPH
-TB0: DPE00JA9
+TB0: DTB_WS6UZO
 #TB0: DPCDKAPA
 #TB0: DPCDKAPA
 TB1: DPE00T0D
@@ -19,7 +21,7 @@ TB3: DPE00J4X
 #TB3: DPE00J72
 
 [defaultParameters]
-Roc: defaultParametersRocPSI46v2
+Roc: defaultParametersRocPSI46digV21
 Full: defaultParametersModule
 
 [subsystem]
@@ -32,12 +34,12 @@ xraySubscription: /xray
 analysisSubscription: /analysis
 
 [jumoClient]
-port: /dev/ttyUSB0
+port: /dev/ttyJUMO
 programName: coolingBoxClient.py
 
 [keithleyClient]
 #port: /dev/ttyUSB0
-port: /dev/ttyF0
+port: /dev/ttyUSB1
 
 [lowVoltageClient]
 lowVoltageType: yoctorelay
@@ -52,7 +54,8 @@ turnOffHV: False
 beamOffBetweenTests: False
 
 [psiClient]
-psiVersion: /usr/local/bin/psi46expert
+#psiVersion: /usr/local/bin/psi46expert
+psiVersion: /home/vtavolar/Documents/psi46test/pxar/bin/pXar
 
 [Transfer]
 host: cmspixel.pi.infn.it
@@ -63,4 +66,4 @@ user: eth
 #port: 9922
 #destination: /data/cooling-box/DATA
 #user: bachmair
-checkForTars: True
+checkForTars: False

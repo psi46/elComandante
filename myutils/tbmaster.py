@@ -132,7 +132,8 @@ class TBmaster(object):
             executestr='%s --dir %s --nogui < %s'%(self.psiVersion,dir,whichTest)
         elif self.version == 'pxar':
             # cat test | ../bin/pXar -d whereever
-            executestr = 'cat {testfile} | {psiVersion} -dir {dir}  -r {rootfilename}.root -log {logfilename}.log'.format(testfile = whichTest, psiVersion = self.psiVersion, dir = dir, rootfilename = fname, logfilename = fname)
+            #executestr = 'cat {testfile} | {psiVersion} -dir {dir}  -r {rootfilename}.root -log {logfilename}.log'.format(testfile = whichTest, psiVersion = self.psiVersion, dir = dir, rootfilename = fname, logfilename = fname)
+            executestr = 'cat %(testfile)s | %(psiVersion)s -d %(dir)s  -r %(rootfilename)s.root'%{'testfile' : whichTest, 'psiVersion' : self.psiVersion, 'dir' : dir, 'rootfilename' : fname} 
         else:
             executestr='%s -dir %s -f %s -r %s.root -log %s.log'%(self.psiVersion,dir,whichTest,fname,fname)
         self._spawn(executestr)
@@ -147,9 +148,10 @@ class TBmaster(object):
             executestr='%s --dir %s --nogui'%(self.psiVersion,dir)
         elif self.version == 'pxar':
             # cat test | ../bin/pXar -d whereever
-            executestr = '{psiVersion} -dir {dir}  -r {rootfilename}.root -log {logfilename}.log'.format(psiVersion = self.psiVersion, dir = dir, rootfilename = fname, logfilename = fname)
+            executestr = '%(psiVersion)s -d %(dir)s  -r %(rootfilename)s.root'%{'psiVersion' : self.psiVersion, 'dir' : dir, 'rootfilename' : fname}
         else:
             executestr='%s -dir %s -r %s.root -log %s.log'%(self.psiVersion,dir,fname,fname)
+	self.Logger << 'exec string  = %s'%executestr
         self._spawn(executestr)
         self.failed=self._readout()
         self._answer()

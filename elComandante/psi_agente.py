@@ -333,7 +333,7 @@ class psi_agente(el_agente.el_agente):
         """ Changes config files in the already copied test directory according to test definitions
             from elComandante's init file. """
         # Change testboard name
-        if Testboard.DTB:
+	if Testboard.DTB and os.path.isfile(Testboard.testdir + "/tb"):
             self._config_file_content_substitute(Testboard.testdir + "/tb", {"id":Testboard.address})
         else:
             self._config_file_content_substitute(Testboard.testdir + "/configParameters.dat", {"testboardName":Testboard.address})

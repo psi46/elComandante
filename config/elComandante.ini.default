@@ -29,6 +29,7 @@ Delay: 2
 
 [Keithley]
 KeithleyUse: True
+BiasVoltage = -150
 
 [LowVoltage]
 LowVoltageUse: False
