@@ -1,4 +1,5 @@
 import os
+import glob
 import sys
 sys.path.insert(1, "../")
 from myutils import BetterConfigParser, sClient, decode, printer, preexec
@@ -332,6 +333,11 @@ class psi_agente(el_agente.el_agente):
     def _setup_configfiles(self, Testboard):
         """ Changes config files in the already copied test directory according to test definitions
             from elComandante's init file. """
+
+        # Delete all root files which are already in the directory
+        root_files = glob.glob(Testboard.testdir+'/*.root')
+        for f in root_files:
+            os.remove(f)
         # Change testboard name
 	if Testboard.DTB and os.path.isfile(Testboard.testdir + "/tb"):
             self._config_file_content_substitute(Testboard.testdir + "/tb", {"id":Testboard.address})
