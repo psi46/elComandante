@@ -21,6 +21,7 @@ class watchDog_agente(el_agente.el_agente):
         self.active = True
         self.pending = False
         self.currentTestTempLogger = {}
+        self.currentTestHumLogger = {}
         self.currentTestDirs = {}
         self.testOverview ={}
         self.FAILED  = -1
@@ -45,6 +46,7 @@ class watchDog_agente(el_agente.el_agente):
         #todo find a better way to define list...
         self.subscriptions = {}
         self.subscriptions['temp'] = "/temperature/jumo"
+        self.subscriptions['hum']  = "/humidity"
         self.subscriptions['psi'] = "/psi"
         self.subscriptions['watchDog'] = "/watchDog"
         serverZiel=conf.get('subsystem','Ziel')
@@ -52,7 +54,7 @@ class watchDog_agente(el_agente.el_agente):
         #print self.sclient
         #print 'initialize WatchDog sclient',serverZiel,serverPort
         self.sclient = sclient.sClient(serverZiel,serverPort,"watchDog")
-        self.sclient.setID('HALLO')
+        self.sclient.setID('watchDogClient')
         #print self.sclient
         self.subscribe()
         return True
@@ -112,6 +114,21 @@ class watchDog_agente(el_agente.el_agente):
         if not self.active:
             return True
         return True
+    
+    def set_humLog(self):
+        for tb, module in self.init.items('Modules'):
+            if self.init.getboolean('TestboardUse',tb):
+                if self.currentTestHumLogger.has_key(tb):
+                    del self.currentTestHumLogger[tb]
+                self.currentTestHumLogger[tb] = printer()
+                self.currentTestHumLogger[tb].set_name('Test_Hum_Log_%s'%(tb))
+                self.currentTestHumLogger[tb].disable_print()
+
+                if self.currentTestDirs.has_key(tb): # and self.status != 'Prepare':
+                    dir = self.currentTestDirs[tb]
+                    fileName = 'HumLog_'+self.status+'.log'
+                    self.currentTestHumLogger[tb].set_logfile(dir,fileName)
+
 
     def set_tempLog(self):
         for tb, module in self.init.items('Modules'):
@@ -142,8 +159,10 @@ class watchDog_agente(el_agente.el_agente):
 
         self.currentTest = test
         self.set_tempLog()
+        self.set_humLog()
 
         self.readTemperatures()
+        self.readHumidity()
         self.check_dew_point()
         self.check_testboards()
         return True
@@ -155,8 +174,10 @@ class watchDog_agente(el_agente.el_agente):
 
         self.status = 'Execute'
         self.set_tempLog()
+        self.set_humLog()
 
         self.readTemperatures()
+        self.readHumidity()
         self.check_dew_point()
         self.check_testboards()
         return True
@@ -166,10 +187,12 @@ class watchDog_agente(el_agente.el_agente):
         self.status = 'Cleanup'
         #self.set_tempLog('Templog_Cleanup_%s'%self.currentTest)
         self.set_tempLog()
+        self.set_humLog()
 
         self.currentTest = "none"
         # Run after a test has executed
         self.readTemperatures()
+        self.readHumidity()
         self.check_dew_point()
         self.check_testboards()
         if not self.active:
@@ -195,9 +218,13 @@ class watchDog_agente(el_agente.el_agente):
 
         for i in self.currentTestTempLogger:
             self.currentTestTempLogger[i].close_logfiles()
+        for i in self.currentTestHumLogger:
+            self.currentTestHumLogger[i].close_logfiles()
+
         for tb, module in self.init.items('Modules'):
             if self.init.getboolean('TestboardUse',tb):
                 self.currentTestTempLogger[tb] = None
+                self.currentTestHumLogger[tb] = None
 
         # create Config directory
         sortedOverview = sorted(self.testOverview.items())
@@ -252,6 +279,7 @@ class watchDog_agente(el_agente.el_agente):
         # if one occurs.
         self.getTestDirs()
         self.readTemperatures()
+        self.readHumidity()
         self.check_dew_point()
         self.check_testboards()
         return True
@@ -268,15 +296,24 @@ class watchDog_agente(el_agente.el_agente):
             tb = 'TB'+coms[0][2:]
             #tb = int(tb)
             self.currentTestDirs[tb] = msg
-            currentTestLog =  self.currentTestTempLogger.get(tb,None)
-            if currentTestLog:
+            currentTempLog =  self.currentTestTempLogger.get(tb,None)
+            if currentTempLog:
                 name = 'TempLog_%s'%self.status
                 fileName = '%s.log'%name
                 dir = self.currentTestDirs[tb]
-                currentTestLog.close_logfiles()
-                currentTestLog.set_logfile(dir,fileName)
-                currentTestLog.set_logfile(self.currentTestDirs[tb],fileName)
+                currentTempLog.close_logfiles()
+                currentTempLog.set_logfile(dir,fileName)
+                currentTempLog.set_logfile(self.currentTestDirs[tb],fileName)
 
+            currentHumLog =  self.currentTestHumLogger.get(tb,None)
+            if currentHumLog:
+                print 'CREATE HUMLOG'
+                name = 'HumLog_%s'%self.status
+                fileName = '%s.log'%name
+                dir = self.currentTestDirs[tb]
+                currentHumLog.close_logfiles()
+                currentHumLog.set_logfile(dir,fileName)
+                currentHumLog.set_logfile(self.currentTestDirs[tb],fileName)
 
             
 
@@ -296,6 +333,24 @@ class watchDog_agente(el_agente.el_agente):
                 for i in self.currentTestTempLogger:
                     if self.currentTestTempLogger[i]:
                         self.currentTestTempLogger[i]<<msg
+        return True
+
+    def readHumidity(self):
+        while True:
+            packet = self.sclient.getFirstPacket(self.subscriptions['hum'])
+            if packet.isEmpty():
+                break
+            if "pong" in packet.data.lower():
+                continue
+            data = packet.data
+            Time,coms,typ,msg = decode(data)[:4]
+
+            if len(msg)>=1:
+                msg = "%s\t %s"%(Time,msg[0])
+                self.tempLog <<msg 
+                for i in self.currentTestHumLogger:
+                    if self.currentTestHumLogger[i]:
+                        self.currentTestHumLogger[i]<<msg
         return True
 
     def check_testboard(self,data):
