@@ -442,8 +442,13 @@ while client.anzahl_threads > 0 and End == False and client.isClosed == False:
     
     packet = client.getFirstPacket(aboName)
     
+    if counter%20 == 0:      
+        if not doingSweep:
+            readCurrentIV()
+
     if packet.isEmpty():
         sleep(.5)
+        counter +=1
         continue
 	counter +=1
 
@@ -462,9 +467,6 @@ while client.anzahl_threads > 0 and End == False and client.isClosed == False:
         client.send(aboName,dataOut)
     #string retVal = keithley.setOutput(ON)
         
-    if counter%10 == 0:      
-        if not doingSweep:
-            readCurrentIV()
     pass   
         
         
