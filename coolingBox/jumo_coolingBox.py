@@ -19,7 +19,7 @@ class jumo_coolingBox(coolingBox):
         self.status = self.UNKNOWN
         self.cycles = -1
         self.reachedSetpointTime = time.time()*10
-        self.timeUntillStable = 30
+        self.timeUntillStable = 180
         self.isFake = False
         self.last_measurement = 0
         self.measurement_distance = 1
