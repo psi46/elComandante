@@ -237,6 +237,8 @@ class jumo_coolingBox(coolingBox):
                 log_message += 'UnStable - time left: {time}s'.format(time=int(self.timeUntillStable - (now-self.reachedSetpointTime)))
             elif now-self.reachedSetpointTime -self.timeUntillStable < 2:
                 log_message += 'Stable'
+            else:
+                log_message += 'Stable'
         sys.stdout.write('\r'+' '*self.buffer_length)
         sys.stdout.write(log_message)
         sys.stdout.flush()
