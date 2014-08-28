@@ -73,10 +73,10 @@ while not initializedJumo  and counter < 10:
     try:
         jumo = jumo_coolingBox.jumo_coolingBox(serialPort)
         initializedJumo = True
-    except:
+    except Exception as e:
         counter += 1
         time.sleep(.5)
-        print 'Could not initialize Jumo. Try again: %d/10'%counter
+        print 'Could not initialize Jumo. Try again: %d/10, %s'%(counter,e)
 if not initializedJumo:
     raise Exception('Cannot initalize Jumo after 10 tries')
 jumo.set_setpoint(float(args.immidiateTemperature))
