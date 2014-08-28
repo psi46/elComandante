@@ -41,6 +41,11 @@ class watchDog_agente(el_agente.el_agente):
         self.tempLog.set_logfile(self.logDir, self.temp_log_filename)
         self.tempLog.disable_print()
 
+        self.humidity_log_filename = "humidity.log"
+        self.humidity_log = printer()
+        self.humidity_log.set_name('Humidity')
+        self.humidity_log.set_logfile(self.logDir, self.humidity_log_filename)
+        self.humidity_log.disable_print()
         # todo find a better way to define list...
         self.subscriptions = {
             'temp': "/temperature/jumo",
@@ -345,7 +350,7 @@ class watchDog_agente(el_agente.el_agente):
 
             if len(msg) >= 1:
                 msg = "%s\t %s" % (Time, msg[0])
-                self.tempLog << msg
+                self.humidity_log << msg
                 for i in self.currentTestHumLogger:
                     if self.currentTestHumLogger[i]:
                         self.currentTestHumLogger[i] << msg
