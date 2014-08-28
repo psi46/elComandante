@@ -230,7 +230,7 @@ class jumo_coolingBox(coolingBox):
                 #print 'temp not good'
             elif now-self.reachedSetpointTime<0:
                 if self.verbose: print 'reached setpoint %s'%now
-                log_message += 'Stable'
+                log_message += 'Reached Setpoint'
                 self.reachedSetpointTime = now
             elif now-self.reachedSetpointTime < self.timeUntillStable:
                 if self.verbose >1 :print '%s more seconds to be stable'%int(self.timeUntillStable - (now-self.reachedSetpointTime))
