@@ -312,7 +312,7 @@ class watchDog_agente(el_agente.el_agente):
 
             currentHumLog = self.currentTestHumLogger.get(tb, None)
             if currentHumLog:
-                print 'CREATE HUMLOG'
+                #print 'CREATE HUMLOG'
                 name = 'HumLog_%s' % self.status
                 fileName = '%s.log' % name
                 current_dir = self.currentTestDirs[tb]
