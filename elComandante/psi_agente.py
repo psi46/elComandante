@@ -156,7 +156,7 @@ class psi_agente(el_agente.el_agente):
         self.pending = True
         # Runs a test
         self.sclient.clearPackets(self.subscription)
-        if self.currenttest.lower().startswith('iv') or self.currenttest.lower().startswith('cycle'):
+        if self.currenttest.lower().startswith('iv') or self.currenttest.lower().startswith('cycle') or self.currenttest.lower().startswith('leakagecurrent'):
             self.pending = False
             return True
         elif not self.currenttest == 'powercycle':
@@ -463,9 +463,10 @@ class psi_agente(el_agente.el_agente):
     def open_testboard(self,Testboard,poff=False):
         self.sclient.clearPackets(self.subscription)
         self.log << "%s: Opening Testboard %s ..." % (self.agente_name, Testboard.slot)
-        self.sclient.send(self.subscription,':prog:TB%s:open %s, %s\n'%(Testboard.slot,Testboard.testdir,Testboard.currenttest)) 
         if poff:
-            self.sclient.send(self.subscription,':prog:TB%s:poff %s, %s\n'%(Testboard.slot,Testboard.testdir,Testboard.currenttest)) 
+            self.sclient.send(self.subscription,':prog:TB%s:openpoff %s, %s\n'%(Testboard.slot,Testboard.testdir,self.currenttest)) 
+        else:
+            self.sclient.send(self.subscription,':prog:TB%s:open %s, %s\n'%(Testboard.slot,Testboard.testdir,self.currenttest)) 
     
     def close_testboard(self,Testboard):
         self.log << "%s: Closing Testboard %s ..." % (self.agente_name, Testboard.slot)
