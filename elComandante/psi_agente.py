@@ -92,14 +92,24 @@ class psi_agente(el_agente.el_agente):
                 self.currenttest = 'IV'
                 self.activeTestboard = int(activeTestboard[1].strip('TB'))
                 #print 'active testboard for IV is: %s'%self.activeTestboard
+        elif 'leakageCurrent' in self.currenttest:
+            activeTestboard = self.currenttest.split('_')
+            if len(activeTestboard) == 2:
+                if 'PON' in self.currenttest:
+                    self.currenttest = 'leakageCurrentPON'
+                elif 'POFF' in self.currenttest:
+                    self.currenttest = 'leakageCurrentPOFF'
+                self.activeTestboard = int(activeTestboard[1].strip('TB'))
+                #print 'active testboard for IV is: %s'%self.activeTestboard
         for Testboard in self.Testboards:
             self._prepare_testboard(Testboard)
         self.pending = False
         return True
 
     def _prepare_testboard(self,Testboard):
-        if 'IV' in self.currenttest:
+        if 'IV' in self.currenttest or 'leakageCurrent' in self.currenttest:
             if Testboard.slot != self.activeTestboard:
+            #check if it's this TB's turn
                 return
         if self.test.environment.temperature >=0:
             tempString = "p%s"%int(self.test.environment.temperature)
@@ -111,6 +121,12 @@ class psi_agente(el_agente.el_agente):
         if 'IV' in self.currenttest:
             self.sclient.send(self.highVoltageSubscription,":PROG:IV:TESTDIR %s\n"%Testboard.testdir)
             self.open_testboard(Testboard)
+        elif 'leakageCurrent' in self.currenttest:
+            poff = False
+            if 'POFF' in self.currenttest:
+                poff = True
+            self.sclient.send(self.highVoltageSubscription, ":PROG:LEAKAGECURRENT:TESTDIR %s\n"%Testboard.testdir)
+            self.open_testboard(Testboard,poff)
 
     def powercycle(self):
         self.currenttest='powercycle'
@@ -190,7 +206,7 @@ class psi_agente(el_agente.el_agente):
         # Run after a test has executed
         if not self.active:
             return True
-        if 'IV' in self.currenttest:
+        if 'IV' in self.currenttest or 'leakageCurrent' in self.currenttest:
             for Testboard in self.Testboards:
                 if Testboard.slot == self.activeTestboard:
                     self.close_testboard(Testboard)
@@ -444,10 +460,12 @@ class psi_agente(el_agente.el_agente):
             self.log.warning("Couldn't remove directory")
             pass
 
-    def open_testboard(self,Testboard):
+    def open_testboard(self,Testboard,poff=False):
         self.sclient.clearPackets(self.subscription)
         self.log << "%s: Opening Testboard %s ..." % (self.agente_name, Testboard.slot)
         self.sclient.send(self.subscription,':prog:TB%s:open %s, %s\n'%(Testboard.slot,Testboard.testdir,Testboard.currenttest)) 
+        if poff:
+            self.sclient.send(self.subscription,':prog:TB%s:poff %s, %s\n'%(Testboard.slot,Testboard.testdir,Testboard.currenttest)) 
     
     def close_testboard(self,Testboard):
         self.log << "%s: Closing Testboard %s ..." % (self.agente_name, Testboard.slot)

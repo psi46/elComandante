@@ -106,6 +106,13 @@ def closeTB(TBno):
         TB.ClosePSI = True
         TB.testName = 'close'
 
+def poffTB(TBno):
+    if TBno >=0:
+        TB = TBmasters[TBno]
+        if TB.busy:
+            Logger << 'sending poff...'
+            TB.poff()
+
 def startTestTB(TBno,msg):
     if TBno>=0:
         TB = TBmasters[TBno]
@@ -154,6 +161,8 @@ def analyseProg_TB(coms,msg,typ,TBno):
         if typ == 'c':  
             if coms[2].startswith('open'):
                 openTB(TBno,msg)
+            elif coms[2].startswith('poff'):
+                poffTB(TBno)
             elif coms[2].startswith('close'):
                 closeTB(TBno) and TBno >=0 
             elif coms[2].startswith('start'):

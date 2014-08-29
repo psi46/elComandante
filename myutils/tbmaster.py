@@ -151,7 +151,7 @@ class TBmaster(object):
             executestr = '%(psiVersion)s -d %(dir)s  -r %(rootfilename)s.root'%{'psiVersion' : self.psiVersion, 'dir' : dir, 'rootfilename' : fname}
         else:
             executestr='%s -dir %s -r %s.root -log %s.log'%(self.psiVersion,dir,fname,fname)
-	self.Logger << 'exec string  = %s'%executestr
+        self.Logger << 'exec string  = %s'%executestr
         self._spawn(executestr)
         self.failed=self._readout()
         self._answer()
@@ -166,6 +166,10 @@ class TBmaster(object):
             except:
                 self.Logger << 'Process already killed'
         self._answer()
+
+    def poff(self):
+        self.proc.communicate(input='tb poff\n')[0]
+        self.proc.poll()
 
     def sendTBStatus(self):
         self._answer()
