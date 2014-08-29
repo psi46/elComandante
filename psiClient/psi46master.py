@@ -83,7 +83,7 @@ TBmasters=[]
 for i in range(numTB):
     TBmasters.append(TBmaster(i, client, psiSubscription, Logger, next(color), psiVersion))
 
-def openTB(TBno,msg):
+def openTB(TBno,msg,poff=False):
     if TBno>=0:
         TB = TBmasters[TBno]
         splittedMsg =msg.split(',')
@@ -94,7 +94,7 @@ def openTB(TBno,msg):
             #raise Exception
         dir, fname = splittedMsg
         if not TB.busy:
-            TB.DoTest = Thread(target=TB.openTB, args=(dir,fname,))
+            TB.DoTest = Thread(target=TB.openTB, args=(dir,fname,poff,))
             TB.DoTest.start()
             TB.testNo = int(dir.rstrip('/').split('/')[-1].split('_')[0])
             TB.testName = 'open'
@@ -105,13 +105,6 @@ def closeTB(TBno):
         Logger << 'trying to close TB...'
         TB.ClosePSI = True
         TB.testName = 'close'
-
-def poffTB(TBno):
-    if TBno >=0:
-        TB = TBmasters[TBno]
-        if TB.busy:
-            Logger << 'sending poff...'
-            TB.poff()
 
 def startTestTB(TBno,msg):
     if TBno>=0:
@@ -160,9 +153,10 @@ def analyseProg_TB(coms,msg,typ,TBno):
     if len(coms)==3:
         if typ == 'c':  
             if coms[2].startswith('open'):
-                openTB(TBno,msg)
-            elif coms[2].startswith('poff'):
-                poffTB(TBno)
+                poff = False
+                if 'poff' in coms[2]:
+                    poff = True
+                openTB(TBno,msg,poff)
             elif coms[2].startswith('close'):
                 closeTB(TBno) and TBno >=0 
             elif coms[2].startswith('start'):

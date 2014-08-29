@@ -140,7 +140,7 @@ class TBmaster(object):
         self.failed=self._readout()
         self._answer()
 
-    def openTB(self,dir,fname):
+    def openTB(self,dir,fname,poff=False):
         self._resetVariables()
         self.dir = dir
         self.Logger << 'open TB%s'%(self.TB)
@@ -148,9 +148,11 @@ class TBmaster(object):
             executestr='%s --dir %s --nogui'%(self.psiVersion,dir)
         elif self.version == 'pxar':
             # cat test | ../bin/pXar -d whereever
-            executestr = '%(psiVersion)s -d %(dir)s  -r %(rootfilename)s.root'%{'psiVersion' : self.psiVersion, 'dir' : dir, 'rootfilename' : fname}
+            executestr = '%(psiVersion)s -d %(dir)s -r %(rootfilename)s.root'%{'psiVersion' : self.psiVersion, 'dir' : dir, 'rootfilename' : fname}
         else:
             executestr='%s -dir %s -r %s.root -log %s.log'%(self.psiVersion,dir,fname,fname)
+            if poff:
+                executestr+=' -t poff -i'
         self.Logger << 'exec string  = %s'%executestr
         self._spawn(executestr)
         self.failed=self._readout()
@@ -166,10 +168,6 @@ class TBmaster(object):
             except:
                 self.Logger << 'Process already killed'
         self._answer()
-
-    def poff(self):
-        self.proc.communicate(input='tb poff\n')[0]
-        self.proc.poll()
 
     def sendTBStatus(self):
         self._answer()
