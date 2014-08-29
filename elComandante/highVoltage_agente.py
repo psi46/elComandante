@@ -12,7 +12,7 @@ import signal
 import el_agente
 import subprocess
 
-    
+
 class highVoltage_agente(el_agente.el_agente):
     def __init__(self, timestamp,log, sclient):
         el_agente.el_agente.__init__(self,timestamp, log, sclient)
@@ -20,9 +20,10 @@ class highVoltage_agente(el_agente.el_agente):
         self.client_name = "keithleyClient"
         self.currenttest=None
         self.ivDone = True
+        self.leakageCurrentTestDone = True
         self.log = log
         self.active = True
-        
+
     def setup_configuration(self, conf):
        # self.conf = conf
         self.numerator = 0
@@ -31,15 +32,16 @@ class highVoltage_agente(el_agente.el_agente):
         self.keithleyPort = conf.get("keithleyClient","port")
         #do i need logdir?
         self.logDir = conf.get("Directories", "dataDir") + "/logfiles/"
-        
+
     def setup_initialization(self, init):
         self.ivStart = float(init.get('IV','Start'))
         self.ivStop  = float(init.get('IV','Stop'))
         self.ivStep  = float(init.get('IV','Step'))
         self.ivDelay = float(init.get('IV','Delay'))
+        self.leakageCurrentMeasurementTime = float(init.get('LeakageCurrent','Duration'))
         self.biasVoltage = -abs(float(init.get('Keithley','BiasVoltage')))
         self.active = init.getboolean("Keithley","KeithleyUse")
-       
+
     def check_client_running(self):
         if not self.active:
             return False
@@ -88,6 +90,8 @@ class highVoltage_agente(el_agente.el_agente):
         #todo
         if 'IV' in self.currenttest:
             self.prepareIVCurve();
+        elif 'leakagecurrent' in self.currenttest.lower():
+            self.prepareLeakageCurrent()
         #todo: is the output on or off while cycling???/
         elif not whichtest == 'Cycle':
             self.sclient.send(self.subscription,':OUTP ON\n')
@@ -97,13 +101,15 @@ class highVoltage_agente(el_agente.el_agente):
             self.sclient.send(self.subscription,':OUTP ON\n')
         return True
 
-    
+
     def execute_test(self):
         if not self.active:
             return False
         # Runs a test
         if 'IV' in self.currenttest:
             self.doIVCurve()
+        elif 'leakagecurrent' in self.currenttest.lower():
+            pass
         else:
             time.sleep(3)
             self.sclient.send(self.subscription,':OUTP OFF\n')
@@ -111,7 +117,7 @@ class highVoltage_agente(el_agente.el_agente):
             self.sclient.send(self.subscription,':OUTP ON\n')
         self.pending = True
         self.sclient.clearPackets(self.subscription)
-        return True    
+        return True
 
     def cleanup_test(self):
         # Run after a test has executed
@@ -139,6 +145,8 @@ class highVoltage_agente(el_agente.el_agente):
                 data = packet.data
                 if 'IV' in self.currenttest:
                     return self.checkIVCurveFinished(data)
+                elif 'leakagecurrent' in self.currenttest.lower():
+                    return self.checkLeakageCurrentFinished(data)
                 else:
                     pass
             else:
@@ -156,10 +164,26 @@ class highVoltage_agente(el_agente.el_agente):
         self.sclient.send(self.subscription,':PROG:IV:DELAY %s\n'%self.ivDelay)
         #todo: wait for PROG:IV:TESTDIR
 
+    def checkLeakageCurrentFinished(self,data):
+        Time,coms,typ,msg = decode(data)[:4]
+        if len(coms) > 1:
+            if 'PROG' in coms[0].upper() and 'LEAKAGECURRENT' in coms[1].upper() and typ == 'a' and ('FINISHED' in msg.upper()):
+                self.log << '\t--> IV-Curve FINISHED'
+                self.leakageCurrentTestDone = True
+            else:
+                pass
+        return self.leakageCurrentTestDone
+
+    def prepareLeakageCurrent(self):
+        time.sleep(1)
+        self.sclient.clearPackets(self.subscription)
+        self.leakageCurrentTestDone = False
+        self.sclient.send(self.subscription,':PROG:LEAKAGECURRENT:TIME %s\n'%self.leakageCurrentMeasurementTime)
+
     def doIVCurve(self):
 #        self.sclient.send(self.subscription,':PROG:IV:TESTDIR %s\n'%testdir)
         self.sclient.send(self.subscription,':PROG:IV MEAS\n')
-        
+
     def checkIVCurveFinished(self,data):
         Time,coms,typ,msg = decode(data)[:4]
         if len(coms) > 1:
@@ -169,7 +193,7 @@ class highVoltage_agente(el_agente.el_agente):
             else:
                 pass
         return self.ivDone
-    
+
     def checkDir(self,testDir):
         #todo
         return True
