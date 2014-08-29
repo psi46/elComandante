@@ -27,8 +27,11 @@ Stop: -100
 Step: 10
 Delay: 2
 
+[LeakageCurrent]
+Duration: 1200 
+
 [Keithley]
-KeithleyUse: True
+KeithleyUse: False
 BiasVoltage = -150
 
 [LowVoltage]
