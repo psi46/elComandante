@@ -301,9 +301,12 @@ def mainLoop():
         pass   
     client.send(aboName,':prog:stat! exit\n')    
     Logger << 'exiting...'
+    jumo.stop_controlling()
     client.closeConnection()
 
+
 def endClient():
+    jumo.stop_controlling()
     while client.anzahl_threads > 0:
         sleep(1)
         pass            
