@@ -156,6 +156,7 @@ class TBmaster(object):
         self.Logger << 'exec string  = %s'%executestr
         self._spawn(executestr)
         self.failed=self._readout()
+        self.Logger << 'done, failed = %s'%self.failed
         self._answer()
         while not self.ClosePSI:
             pass

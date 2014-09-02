@@ -390,19 +390,21 @@ def finish_leakage_current_measurement():
         Logger << "Received Signal for Finished Leakagecurrent Measurement but no measurement active"
 
 def initialise_leakage_current_measurement():
+    pass
+
+def do_leakage_current_measurement():
     #check directory
     global Logger, do_leakage_current_measurement, leakage_current_measurement_time
-    Logger << "Start Leakage Current Measurement for {time} s in directory '{dir}'".format(time=leakage_current_measurement_time,
+    Logger << "Start Leakage Current Measurement for {mtime} s in directory '{dir}'".format(mtime=leakage_current_measurement_time,
                                                                                            dir=leakage_current_dir)
-    outMsg = ":PROG:LEAKAGECURRENT:START! time: {time}s, dir: {dir}".format(time=leakage_current_measurement_time,
+    outMsg = ":PROG:LEAKAGECURRENT:START! time: {mtime}s, dir: {dir}".format(mtime=leakage_current_measurement_time,
                                                                             dir=leakage_current_dir)
     Logger << outMsg
     outMsg += '\n'
     client.send(aboName, outMsg)
-    Timer(leakage_current_measurement_time, finish_leakage_current_measurement, ()).start()
     do_leakage_current_measurement = True
-    Logger << "DONE"
-    pass
+    Timer(leakage_current_measurement_time, finish_leakage_current_measurement, ()).start()
+    Logger << "leakage measurement running..."
 
 def parse_leakage_current_testdir(typ, msg):
     global LeakageCurrentLogger, leakage_current_dir
@@ -454,7 +456,7 @@ def analyse_leakage_current(coms, typ, msg):
         parse_leakage_current_testdir(typ, msg)
         pass
     elif coms[0].find('START') >= 0:
-        initialise_leakage_current_measurement()
+        do_leakage_current_measurement()
         pass
 
 

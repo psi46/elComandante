@@ -109,7 +109,11 @@ class highVoltage_agente(el_agente.el_agente):
         if 'IV' in self.currenttest:
             self.doIVCurve()
         elif 'leakagecurrent' in self.currenttest.lower():
-            pass
+            time.sleep(3)
+            self.sclient.send(self.subscription,':OUTP OFF\n')
+            time.sleep(1)
+            self.sclient.send(self.subscription,':OUTP ON\n')
+            self.doLeakageCurrent()
         else:
             time.sleep(3)
             self.sclient.send(self.subscription,':OUTP OFF\n')
@@ -152,7 +156,7 @@ class highVoltage_agente(el_agente.el_agente):
             else:
                 #self.log << "packet is Empty %s,\t pong in data.lower:%s"%(packet.isEmpty(),packet.data.lower())
                 pass
-        return self.ivDone
+        return self.ivDone and self.leakageCurrentTestDone
 
     def prepareIVCurve(self):
         time.sleep(1)
@@ -168,7 +172,7 @@ class highVoltage_agente(el_agente.el_agente):
         Time,coms,typ,msg = decode(data)[:4]
         if len(coms) > 1:
             if 'PROG' in coms[0].upper() and 'LEAKAGECURRENT' in coms[1].upper() and typ == 'a' and ('FINISHED' in msg.upper()):
-                self.log << '\t--> IV-Curve FINISHED'
+                self.log << '\t--> leakageCurrent measurement FINISHED'
                 self.leakageCurrentTestDone = True
             else:
                 pass
@@ -183,6 +187,10 @@ class highVoltage_agente(el_agente.el_agente):
     def doIVCurve(self):
 #        self.sclient.send(self.subscription,':PROG:IV:TESTDIR %s\n'%testdir)
         self.sclient.send(self.subscription,':PROG:IV MEAS\n')
+
+    def doLeakageCurrent(self):
+#        self.sclient.send(self.subscription,':PROG:IV:TESTDIR %s\n'%testdir)
+        self.sclient.send(self.subscription,':PROG:LEAKAGECURRENT:START\n')
 
     def checkIVCurveFinished(self,data):
         Time,coms,typ,msg = decode(data)[:4]
