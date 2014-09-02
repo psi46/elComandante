@@ -392,7 +392,7 @@ def finish_leakage_current_measurement():
 def initialise_leakage_current_measurement():
     pass
 
-def do_leakage_current_measurement():
+def exec_leakage_current_measurement():
     #check directory
     global Logger, do_leakage_current_measurement, leakage_current_measurement_time
     Logger << "Start Leakage Current Measurement for {mtime} s in directory '{dir}'".format(mtime=leakage_current_measurement_time,
@@ -451,13 +451,10 @@ def analyse_leakage_current(coms, typ, msg):
     global Logger
     if coms[0].find('TIME') >= 0:
         parse_leakage_current_measurement_time(typ, msg)
-        pass
     elif coms[0].find('TESTDIR') >= 0:
         parse_leakage_current_testdir(typ, msg)
-        pass
     elif coms[0].find('START') >= 0:
-        do_leakage_current_measurement()
-        pass
+        exec_leakage_current_measurement()
 
 
 def analyseProg(coms, typ, msg):
