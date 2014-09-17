@@ -500,7 +500,7 @@ class el_comandante:
             else:
                 whichtest = test.test_str
                 env = 17.0
-            if whichtest== "IV" or 'leakageCurrent' in whichtest:
+            if whichtest== "IV" or whichtest=='leakageCurrentPON' or whichtest=='leakageCurrentPOFF':
                 test_str_list = []
                 for Testboard in self.los_agentes[0].Testboards:
                     test_str_list.append('%s_TB%s@%s' % (whichtest, Testboard.slot, env))
