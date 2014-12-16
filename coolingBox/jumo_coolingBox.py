@@ -16,7 +16,7 @@ class jumo_coolingBox(coolingBox):
     def __init__(self,device,baudrate=9600,slaveaddress=1):
         coolingBox.__init__(self)
         #self.jumo = Imago500(device,slaveaddress)
-        self.jumo = Imago500.Imago500('/dev/ttyUSB0',1)
+        self.jumo = Imago500.Imago500(device,1)
         self.status = self.UNKNOWN
         self.cycles = -1
         self.reachedSetpointTime = time.time()*10
