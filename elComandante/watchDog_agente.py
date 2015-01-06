@@ -21,6 +21,7 @@ class watchDog_agente(el_agente.el_agente):
         self.pending = False
         self.currentTestTempLogger = {}
         self.currentTestHumLogger = {}
+        self.currentTestCurLogger = {}
         self.currentTestDirs = {}
         self.testOverview = {}
         self.FAILED = -1
@@ -46,10 +47,17 @@ class watchDog_agente(el_agente.el_agente):
         self.humidity_log.set_name('Humidity')
         self.humidity_log.set_logfile(self.logDir, self.humidity_log_filename)
         self.humidity_log.disable_print()
+
+        self.cur_log_filename = "current.log"
+        self.curLog = printer()
+        self.curLog.set_name('Current')
+        self.curLog.set_logfile(self.logDir, self.cur_log_filename)
+        self.curLog.disable_print()
         # todo find a better way to define list...
         self.subscriptions = {
             'temp': "/temperature/jumo",
             'hum': "/humidity",
+            'cur': "/jumo/current",
             'psi': "/psi",
             'watchDog': "/watchDog"
         }
@@ -134,6 +142,20 @@ class watchDog_agente(el_agente.el_agente):
                     fileName = 'HumLog_' + self.status + '.log'
                     self.currentTestHumLogger[tb].set_logfile(current_dir, fileName)
 
+    def set_curLog(self):
+        for tb, module in self.init.items('Modules'):
+            if self.init.getboolean('TestboardUse', tb):
+                if tb in self.currentTestCurLogger:
+                    del self.currentTestCurLogger[tb]
+                self.currentTestCurLogger[tb] = printer()
+                self.currentTestCurLogger[tb].set_name('Test_Hum_Log_%s' % tb)
+                self.currentTestCurLogger[tb].disable_print()
+
+                if tb in self.currentTestDirs:  # and self.status != 'Prepare':
+                    current_dir = self.currentTestDirs[tb]
+                    fileName = 'CurLog_' + self.status + '.log'
+                    self.currentTestCurLogger[tb].set_logfile(current_dir, fileName)
+
     def set_tempLog(self):
         for tb, module in self.init.items('Modules'):
             if self.init.getboolean('TestboardUse', tb):
@@ -164,10 +186,12 @@ class watchDog_agente(el_agente.el_agente):
 
         self.currentTest = test
         self.set_tempLog()
-        self.set_humLog()
+        self.set_humLog()   
+        self.set_curLog()
 
         self.read_temperatures()
         self.read_humidity()
+        self.read_current()
         self.check_dew_point()
         self.check_testboards()
         return True
@@ -180,9 +204,11 @@ class watchDog_agente(el_agente.el_agente):
         self.status = 'Execute'
         self.set_tempLog()
         self.set_humLog()
+        self.set_curLog()
 
         self.read_temperatures()
         self.read_humidity()
+        self.read_current()
         self.check_dew_point()
         self.check_testboards()
         return True
@@ -192,11 +218,13 @@ class watchDog_agente(el_agente.el_agente):
         # self.set_tempLog('Templog_Cleanup_%s'%self.currentTest)
         self.set_tempLog()
         self.set_humLog()
+        self.set_curLog()
 
         self.currentTest = "none"
         # Run after a test has executed
         self.read_temperatures()
         self.read_humidity()
+        self.read_current()
         self.check_dew_point()
         self.check_testboards()
         if not self.active:
@@ -225,10 +253,13 @@ class watchDog_agente(el_agente.el_agente):
             self.currentTestTempLogger[i].close_logfiles()
         for i in self.currentTestHumLogger:
             self.currentTestHumLogger[i].close_logfiles()
+        for i in self.currentTestCurLogger:
+            self.currentTestCurLogger[i].close_logfiles()
 
         for tb, module in self.init.items('Modules'):
             if self.init.getboolean('TestboardUse', tb):
                 self.currentTestTempLogger[tb] = None
+                self.currentTestCurLogger[tb] = None
                 self.currentTestHumLogger[tb] = None
 
         # create Config directory
@@ -285,6 +316,7 @@ class watchDog_agente(el_agente.el_agente):
         self.getTestDirs()
         self.read_temperatures()
         self.read_humidity()
+        self.read_current()
         self.check_dew_point()
         self.check_testboards()
         return True
@@ -319,6 +351,24 @@ class watchDog_agente(el_agente.el_agente):
                 currentHumLog.close_logfiles()
                 currentHumLog.set_logfile(current_dir, fileName)
                 currentHumLog.set_logfile(self.currentTestDirs[tb], fileName)
+
+    def read_current(self):
+        while True:
+            packet = self.sclient.getFirstPacket(self.subscriptions['cur'])
+            if packet.isEmpty():
+                break
+            if "pong" in packet.data.lower():
+                continue
+            data = packet.data
+            Time, coms, typ, msg = decode(data)[:4]
+
+            if len(msg) >= 1:
+                msg = "%s\t %s" % (Time, msg[0])
+                self.curLog << msg
+                for i in self.currentTestCurLogger:
+                    if self.currentTestCurLogger[i]:
+                        self.currentTestCurLogger[i] << msg
+        return True
 
     def read_temperatures(self):
         while True:
