@@ -275,6 +275,11 @@ class jumo_coolingBox(coolingBox):
             if self.verbose > 1: print 'stable'
             return True
         return False
+
+    def get_current(self):
+        self.update_measurements()
+        cur = self.jumo.get_current()
+        return float(cur)
     
     def get_temperature(self):
         self.update_measurements()

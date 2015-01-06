@@ -25,6 +25,7 @@ class Imago500( minimalmodbus.Instrument ):
             time.sleep(.1)
             self.currentHum = 100
             self.currentTemp = 9999
+            self.currentCurrent = -1.
             self.lock = False
 
         def initialise_controlling(self):
@@ -240,12 +241,14 @@ class Imago500( minimalmodbus.Instrument ):
                     print 'read conditions: ',i
                 i+= 1
                 try:
-                    a = self.get_registers(0x00A6,6)
+                    a = self.get_registers(0x00A6,8)
                     temp1 = self.convert_MODbus_to_standard_float(a[0:2])
                     temp2 = self.convert_MODbus_to_standard_float(a[2:4])
                     hum = self.convert_MODbus_to_standard_float(a[4:6])
+                    current = self.convert_MODbus_to_standard_float(a[6:8])
                     self.currentTemp = temp2
                     self.currentHum = hum
+                    self.currentCurrent = current
                     bReadConditions = True
                     time.sleep(.3)
                 except:
@@ -452,6 +455,9 @@ class Imago500( minimalmodbus.Instrument ):
         
         def get_temperature(self):
             return self.currentTemp
+
+        def get_current(self):
+            return self.currentCurrent
 
         def get_relative_humidity(self):
             return self.currentHum

@@ -28,7 +28,7 @@ parser.add_argument("-d", "--device", dest="serialPort",
                        default=defSerialPort)
 
 parser.add_argument("-dir","--directory", dest='dataDir',
-                       help='directory where LogFilse is Stored',
+                       help='directory where LogFiles is Stored',
                        default='.')
 
 parser.add_argument('-ts','--timestamp', dest='timestamp',
@@ -63,6 +63,7 @@ aboName = '/jumo'
 errorAbo = '/error'
 tempAbo = '/temperature/jumo'
 humAbo = '/humidity'
+curAbo = '/jumo/current'
 dewPointAbo = '/temperature/dewPoint'
 client = sClient(serverZiel,serverPort,"coolingboxClient")
 client.subscribe(aboName)
@@ -219,6 +220,10 @@ def analyseMeasure(coms,typ,msg):
         hum = jumo.get_relative_humidity()
         client.send(aboName,':MEAS:HUM! %2.1f'%hum)
         pass
+    elif coms[0].upper().startswith('CUR'):
+        cur = jumo.get_current()
+        client.send(aboName,':MEAS:CUR! %2.1f'%hum)
+        pass
     elif coms[0].upper().startswith('DEWPOINT'):
         dewpoint = jumo.get_dew_point()
         client.send(aboName,':MEAS:DEWPOINT! %2.1f'%dewpoint)
@@ -250,9 +255,12 @@ def analysePacket(coms,typ,msg):
 def sendMeasurements():
     temp = jumo.get_temperature()
     hum = jumo.get_relative_humidity()
+    cur = jumo.get_current()
     client.send(tempAbo,'%2.2f\n'%temp)
     client.send(humAbo,'%2.2f\n'%hum)
+    client.send(curAbo,'%2.2f\n'%cur)
     client.send(dewPointAbo,'%2.2f\n'%jumo.get_dew_point())
+    #Logger<<"Temp: %5.1fdegC\tHum: %5.1f %%\tCur: %4.1f A"%(temp,hum,cur)
 
 def check_if_dry(isDry):
     if not jumo.is_dry():
