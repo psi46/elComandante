@@ -448,11 +448,15 @@ class el_comandante:
         while True:
             try:
                 module_type = self.init.get("ModuleType", "TB" + `tb`)
-                dir = self.config.get("defaultParameters", module_type)
+                try:
+                    dir = self.config.get("defaultParametersTB"+str(tb), module_type)
+                except:
+                    dir = self.config.get("defaultParameters", module_type)
             except:
                 break
             else:
                 dir = self.directories['defaultParameters'] + '/' + dir
+                self.log << "append " + dir + " to dir_list"
                 dir_list.append(dir)
                 tb += 1
         test_chain.parameter_dir = dir_list
