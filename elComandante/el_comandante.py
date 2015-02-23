@@ -547,12 +547,16 @@ class el_comandante:
             self.log.printn()
 
             # Execute tests
+            startTime = time.time()
             self.log << "Executing test %s ..." % test.test_str
             for agente in self.los_agentes:
                 agente.execute_test()
             self.wait_until_finished()
 
             self.log.printn()
+            endTime = time.time()
+            testDuration = divmod(endTime-startTime, 60)
+            self.log << " test took %i seconds (%i min %i sec)" % (endTime-startTime, testDuration[0], testDuration[1])
 
             # Cleanup tests
             self.log << "Cleaning up after test %s ..." % test.test_str
