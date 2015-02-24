@@ -13,6 +13,7 @@
 import sys
 sys.path.insert(1, "../")
 from myutils import BetterConfigParser, sClient, printer, testchain, scp, userQueries
+from collections import OrderedDict
 from time import strftime, localtime
 import time
 from shutil import copytree, rmtree
@@ -293,7 +294,7 @@ class el_comandante:
 
     def read_initialization(self, configDir):
         iniFile = configDir+'/elComandante.ini'
-        self.init = BetterConfigParser()
+        self.init = BetterConfigParser(dict_type=OrderedDict)
         self.init.read(iniFile)
         self.write_initialization(configDir)
 
