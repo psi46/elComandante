@@ -448,10 +448,7 @@ class el_comandante:
         while True:
             try:
                 module_type = self.init.get("ModuleType", "TB" + `tb`)
-                try:
-                    dir = self.config.get("defaultParametersTB"+str(tb), module_type)
-                except:
-                    dir = self.config.get("defaultParameters", module_type)
+                dir = self.config.get("defaultParameters", module_type)
             except:
                 break
             else:

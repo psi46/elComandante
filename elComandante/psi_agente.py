@@ -38,10 +38,7 @@ class psi_agente(el_agente.el_agente):
         for tb, module in init.items('Modules'):
             if init.getboolean('TestboardUse',tb):
                 self.Testboards.append(Testboarddefinition(int(tb[2]),module,self.conf.get('TestboardAddress',tb),init.get('ModuleType',tb)))
-                try:
-                    defaultParameterDirectory = self.conf.get('defaultParametersTB'+str(self.Testboards[-1].slot),self.Testboards[-1].type)
-                except:
-                    defaultParameterDirectory = self.conf.get('defaultParameters',self.Testboards[-1].type)
+                defaultParameterDirectory = self.conf.get('defaultParameters',self.Testboards[-1].type)
                 self.Testboards[-1].defparamdir=self.Directories['defaultParameters']+'/'+ defaultParameterDirectory
                 self.log << '\t- Testboard %s at address %s with Module %s reading configuration from %s '%(self.Testboards[-1].slot,self.Testboards[-1].address,self.Testboards[-1].module, defaultParameterDirectory)
         self.numTestboards = len(init.items('Modules'))
