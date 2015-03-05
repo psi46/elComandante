@@ -285,6 +285,7 @@ while client.anzahl_threads > 0 and client.isClosed == False:
 		if len(commands) == 2 and commands[0].upper() == "SET":
 			if commands[1].upper() == "TARGET":
 				target = message
+				shutter_previous = shutter
 				if target in targets:
 					log << "Moving to target " + target + " ..."
 					motor_stage.move_absolute(targets[target])
@@ -295,6 +296,15 @@ while client.anzahl_threads > 0 and client.isClosed == False:
 				else:
 					error = "Invalid target selected."
 					log.warning(error)
+				if shutter != shutter_previous:
+					success = xray_generator.set_beam_shutter(shutter_previous, 0)
+					success = success and xray_generator.set_beam_shutter(shutter, 1)
+					if not success:
+						error = "Unable to close shutter %d and open shutter %d"%(shutter_previous,shutter)
+						log.warning(error)
+						client.send(abo, ":ERROR %s\n" % error)
+					else:
+						log << "Closed shutter %d and opened shutter %d"%(shutter_previous,shutter)				
 			elif commands[1].upper() == "VOLTAGE":
 				kV = int(message)
 				log << "Setting voltage to " + `kV` + " kV ..."

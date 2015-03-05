@@ -58,7 +58,7 @@ class psi_agente(el_agente.el_agente):
         self.timestamp = timestamp
         if not self.active:
             return True
-        command = "xterm -T 'PSI46master' +sb -geometry 120x20+0+300 -fs 10 -fa 'Mono' -e "
+        command = "xterm -T 'PSI46master' +sb -sl 5000 -geometry 120x50+660+32 -fs 10 -fa 'Mono' -e "
         command += "python ../psiClient/psi46master.py "
         command += "-dir %s "%(self.Directories['logDir'])
         command += "-num %s"%self.numTestboards
@@ -329,7 +329,7 @@ class psi_agente(el_agente.el_agente):
             self.sclient.send('/watchDog',':TB%s:TESTDIR! %s\n'%(Testboard.slot,Testboard.testdir))
             copytree(self.test.parent.parameter_dir[Testboard.slot], Testboard.testdir)
             if Testboard.DTB:    
-                self.log.warning("if Testboard.DTB is fulfilled") 
+                #self.log.warning("if Testboard.DTB is fulfilled") 
                 print self.test.parent.parameter_dir[Testboard.slot]
                 directories = [self.test.parent.parameter_dir[Testboard.slot]+d for d in os.listdir(self.test.parent.parameter_dir[Testboard.slot]) if os.path.isdir(self.test.parent.parameter_dir[Testboard.slot]+d)] 
                 if len(directories) > 0:
