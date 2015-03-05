@@ -31,6 +31,7 @@
 ## None or "" can be specified as well, for direct beam instead of
 ## a fluorescence target. Default values are 17 degrees, 30 kV, 10 mA,
 ## and direct beam.
+
 class environment():
     def __init__(self, test_str, init):
         self.temperature = 17
@@ -38,8 +39,23 @@ class environment():
         self.xray_voltage = 30
         self.xray_current = 10
         self.xray_target = ""
-        self.name = str(self.temperature)
+        self.name = ""
+        self.updateName()
         self.decode(test_str, init)
+    def __repr__(self):
+        retVal = '@ENV_%s: %s degC'%(self.name,self.temperature)
+        if self.xray:
+            retVal += " Xray with %sV, %sA, target:'%s'"%(self.xray_voltage,self.xray_current, self.xray_target)
+        return retVal
+    
+    def updateName(self):
+        if self.temperature < 0:
+            name = 'm'
+        else:
+            name = 'p'
+        name += str(int(abs(self.temperature)))
+        self.name =  name
+    
     def decode(self, test_str, init):
         # Test should be a string like bla@Env
         env = test_str.split("@")
@@ -50,6 +66,7 @@ class environment():
         # Check whether it is just a number
         try:
             self.temperature = float(env)
+            self.updateName()
             return
         except:
             pass
