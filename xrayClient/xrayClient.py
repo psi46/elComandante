@@ -297,7 +297,7 @@ while client.anzahl_threads > 0 and client.isClosed == False:
 					error = "Invalid target selected."
 					log.warning(error)
 				if shutter != shutter_previous:
-					success = true
+					success = True
 					if shutter_previous != 0 : 
 						success = xray_generator.set_beam_shutter(shutter_previous, 0)
 					success = success and xray_generator.set_beam_shutter(shutter, 1)
