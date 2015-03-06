@@ -297,7 +297,9 @@ while client.anzahl_threads > 0 and client.isClosed == False:
 					error = "Invalid target selected."
 					log.warning(error)
 				if shutter != shutter_previous:
-					success = xray_generator.set_beam_shutter(shutter_previous, 0)
+					success = true
+					if shutter_previous != 0 : 
+						success = xray_generator.set_beam_shutter(shutter_previous, 0)
 					success = success and xray_generator.set_beam_shutter(shutter, 1)
 					if not success:
 						error = "Unable to close shutter %d and open shutter %d"%(shutter_previous,shutter)
@@ -368,15 +370,15 @@ while client.anzahl_threads > 0 and client.isClosed == False:
 					client.send(abo, ":ERROR %s\n" % error)
 
 				if on:
-					log << "Turning beam on ..."
+					log << "Turning beam on by opening shutter %d..."%shutter
 				else:
-					log << "Turning beam off ..."
+					log << "Turning beam off by closing shutter %d..."%shutter
 				success = xray_generator.set_beam_shutter(shutter, on)
 				if not success:
 					if on:
-						error = "Unable to turn on the beam."
+						error = "Unable to turn on the beam by opening shutter %d."%shutter
 					else:
-						error = "Unable to turn off the beam."
+						error = "Unable to turn off the beam by opening shutter %d."%shutter
 					log.warning(error)
 					client.send(abo, ":ERROR %s\n" % error)
 				else:
