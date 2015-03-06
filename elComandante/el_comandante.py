@@ -13,6 +13,7 @@
 import sys
 sys.path.insert(1, "../")
 from myutils import BetterConfigParser, sClient, printer, testchain, scp, userQueries
+from collections import OrderedDict
 from time import strftime, localtime
 import time
 from shutil import copytree, rmtree
@@ -293,7 +294,7 @@ class el_comandante:
 
     def read_initialization(self, configDir):
         iniFile = configDir+'/elComandante.ini'
-        self.init = BetterConfigParser()
+        self.init = BetterConfigParser(dict_type=OrderedDict)
         self.init.read(iniFile)
         self.write_initialization(configDir)
 
@@ -453,6 +454,7 @@ class el_comandante:
                 break
             else:
                 dir = self.directories['defaultParameters'] + '/' + dir
+                self.log << "append " + dir + " to dir_list"
                 dir_list.append(dir)
                 tb += 1
         test_chain.parameter_dir = dir_list
@@ -543,12 +545,16 @@ class el_comandante:
             self.log.printn()
 
             # Execute tests
+            startTime = time.time()
             self.log << "Executing test %s ..." % test.test_str
             for agente in self.los_agentes:
                 agente.execute_test()
             self.wait_until_finished()
 
             self.log.printn()
+            endTime = time.time()
+            testDuration = divmod(endTime-startTime, 60)
+            self.log << " test took %i seconds (%i min %i sec)" % (endTime-startTime, testDuration[0], testDuration[1])
 
             # Cleanup tests
             self.log << "Cleaning up after test %s ..." % test.test_str

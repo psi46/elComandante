@@ -38,8 +38,9 @@ class psi_agente(el_agente.el_agente):
         for tb, module in init.items('Modules'):
             if init.getboolean('TestboardUse',tb):
                 self.Testboards.append(Testboarddefinition(int(tb[2]),module,self.conf.get('TestboardAddress',tb),init.get('ModuleType',tb)))
-                self.Testboards[-1].defparamdir=self.Directories['defaultParameters']+'/'+self.conf.get('defaultParameters',self.Testboards[-1].type)
-                self.log << '\t- Testboard %s at address %s with Module %s'%(self.Testboards[-1].slot,self.Testboards[-1].address,self.Testboards[-1].module)
+                defaultParameterDirectory = self.conf.get('defaultParameters',self.Testboards[-1].type)
+                self.Testboards[-1].defparamdir=self.Directories['defaultParameters']+'/'+ defaultParameterDirectory
+                self.log << '\t- Testboard %s at address %s with Module %s reading configuration from %s '%(self.Testboards[-1].slot,self.Testboards[-1].address,self.Testboards[-1].module, defaultParameterDirectory)
         self.numTestboards = len(init.items('Modules'))
     def check_client_running(self):
         if not self.active:
@@ -57,7 +58,7 @@ class psi_agente(el_agente.el_agente):
         self.timestamp = timestamp
         if not self.active:
             return True
-        command = "xterm -T 'PSI46master' +sb -geometry 120x20+0+300 -fs 10 -fa 'Mono' -e "
+        command = "xterm -T 'PSI46master' +sb -sl 5000 -geometry 120x50+660+32 -fs 10 -fa 'Mono' -e "
         command += "python ../psiClient/psi46master.py "
         command += "-dir %s "%(self.Directories['logDir'])
         command += "-num %s"%self.numTestboards
@@ -328,7 +329,7 @@ class psi_agente(el_agente.el_agente):
             self.sclient.send('/watchDog',':TB%s:TESTDIR! %s\n'%(Testboard.slot,Testboard.testdir))
             copytree(self.test.parent.parameter_dir[Testboard.slot], Testboard.testdir)
             if Testboard.DTB:    
-                self.log.warning("if Testboard.DTB is fulfilled") 
+                #self.log.warning("if Testboard.DTB is fulfilled") 
                 print self.test.parent.parameter_dir[Testboard.slot]
                 directories = [self.test.parent.parameter_dir[Testboard.slot]+d for d in os.listdir(self.test.parent.parameter_dir[Testboard.slot]) if os.path.isdir(self.test.parent.parameter_dir[Testboard.slot]+d)] 
                 if len(directories) > 0:
