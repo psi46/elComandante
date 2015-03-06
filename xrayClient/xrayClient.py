@@ -277,6 +277,7 @@ shutter = 3 # FIXME: Read from config
 # query arrives, at which FINISHED is sent back.
 
 log << "Waiting for commands ..."
+beam_turned_on_once = False
 while client.anzahl_threads > 0 and client.isClosed == False:
 	packet = client.getFirstPacket(abo)
 	if not packet.isEmpty():
@@ -296,7 +297,7 @@ while client.anzahl_threads > 0 and client.isClosed == False:
 				else:
 					error = "Invalid target selected."
 					log.warning(error)
-				if shutter != shutter_previous:
+				if shutter != shutter_previous and beam_turned_on_once:
 					success = True
 					if shutter_previous != 0 : 
 						success = xray_generator.set_beam_shutter(shutter_previous, 0)
@@ -384,6 +385,7 @@ while client.anzahl_threads > 0 and client.isClosed == False:
 				else:
 					if on:
 						log << "Beam on."
+						beam_turned_on_once = True
 					else:
 						log << "Beam off."
 		elif len(commands) == 1 and commands[0].upper() == "FINISHED":
