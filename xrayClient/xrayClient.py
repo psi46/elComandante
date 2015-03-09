@@ -277,6 +277,7 @@ shutter = 3 # FIXME: Read from config
 # query arrives, at which FINISHED is sent back.
 
 log << "Waiting for commands ..."
+beam_turned_on_once = False
 while client.anzahl_threads > 0 and client.isClosed == False:
 	packet = client.getFirstPacket(abo)
 	if not packet.isEmpty():
@@ -285,6 +286,7 @@ while client.anzahl_threads > 0 and client.isClosed == False:
 		if len(commands) == 2 and commands[0].upper() == "SET":
 			if commands[1].upper() == "TARGET":
 				target = message
+				shutter_previous = shutter
 				if target in targets:
 					log << "Moving to target " + target + " ..."
 					motor_stage.move_absolute(targets[target])
@@ -295,6 +297,17 @@ while client.anzahl_threads > 0 and client.isClosed == False:
 				else:
 					error = "Invalid target selected."
 					log.warning(error)
+				if shutter != shutter_previous and beam_turned_on_once:
+					success = True
+					if shutter_previous != 0 : 
+						success = xray_generator.set_beam_shutter(shutter_previous, 0)
+					success = success and xray_generator.set_beam_shutter(shutter, 1)
+					if not success:
+						error = "Unable to close shutter %d and open shutter %d"%(shutter_previous,shutter)
+						log.warning(error)
+						client.send(abo, ":ERROR %s\n" % error)
+					else:
+						log << "Closed shutter %d and opened shutter %d"%(shutter_previous,shutter)				
 			elif commands[1].upper() == "VOLTAGE":
 				kV = int(message)
 				log << "Setting voltage to " + `kV` + " kV ..."
@@ -358,20 +371,21 @@ while client.anzahl_threads > 0 and client.isClosed == False:
 					client.send(abo, ":ERROR %s\n" % error)
 
 				if on:
-					log << "Turning beam on ..."
+					log << "Turning beam on by opening shutter %d..."%shutter
 				else:
-					log << "Turning beam off ..."
+					log << "Turning beam off by closing shutter %d..."%shutter
 				success = xray_generator.set_beam_shutter(shutter, on)
 				if not success:
 					if on:
-						error = "Unable to turn on the beam."
+						error = "Unable to turn on the beam by opening shutter %d."%shutter
 					else:
-						error = "Unable to turn off the beam."
+						error = "Unable to turn off the beam by opening shutter %d."%shutter
 					log.warning(error)
 					client.send(abo, ":ERROR %s\n" % error)
 				else:
 					if on:
 						log << "Beam on."
+						beam_turned_on_once = True
 					else:
 						log << "Beam off."
 		elif len(commands) == 1 and commands[0].upper() == "FINISHED":

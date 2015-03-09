@@ -33,6 +33,20 @@ class TBmaster(object):
         self.DoTest= False
         self.ClosePSI= False
         self.Abort = False
+        self.trimVcal = 40 #default
+        self.init = BetterConfigParser()
+        self.init.read("../config/elComandante.ini")
+        try:
+            testParameters = self.init.get('Test Trim','testParameters')
+            pos1 = testParameters.find("=")
+            if pos1 > 0:
+                testParametersName = testParameters[0:pos1]
+                testParametersValue = testParameters[pos1+1:]
+                if testParametersName.lower() == "vcal":
+                    self.trimVcal = int(testParametersValue)
+                    self.Logger << "using option '-T %s' when calling pxar"%self.trimVcal
+        except:
+            self.Logger << "no [Test Trim] section found in ini file, trying default '-T %s'"%self.trimVcal
 
     def _spawn(self,executestr):
         my_env = os.environ
@@ -133,7 +147,8 @@ class TBmaster(object):
         elif self.version == 'pxar':
             # cat test | ../bin/pXar -d whereever
             #executestr = 'cat {testfile} | {psiVersion} -dir {dir}  -r {rootfilename}.root -log {logfilename}.log'.format(testfile = whichTest, psiVersion = self.psiVersion, dir = dir, rootfilename = fname, logfilename = fname)
-            executestr = 'cat %(testfile)s | %(psiVersion)s -d %(dir)s  -r %(rootfilename)s.root'%{'testfile' : whichTest, 'psiVersion' : self.psiVersion, 'dir' : dir, 'rootfilename' : fname} 
+            logIDString = 'TB%s'%self.TB
+            executestr = 'cat %(testfile)s | %(psiVersion)s -d %(dir)s -T %(trimVcal)i -r %(rootfilename)s.root -L %(logIDString)s'%{'testfile' : whichTest, 'psiVersion' : self.psiVersion, 'dir' : dir, 'rootfilename' : fname, 'trimVcal' : self.trimVcal, 'logIDString' : logIDString} 
         else:
             executestr='%s -dir %s -f %s -r %s.root -log %s.log'%(self.psiVersion,dir,whichTest,fname,fname)
         self._spawn(executestr)
