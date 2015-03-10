@@ -49,9 +49,9 @@ class TBmaster(object):
                 testParametersValue = testParameters[pos1+1:]
                 if testParametersName.lower() == "vcal":
                     self.trimVcal = int(testParametersValue)
-                    self.Logger << "using option '-T %s' when calling pxar"%self.trimVcal
+                    self.Logger << "TB%s: using option '-T %s' when calling pxar"%(self.TB, self.trimVcal)
         except:
-            self.Logger << "no [Test Trim] section found in ini file, using untrimmed parameters"
+            self.Logger << "TB%s: no [Test Trim] section found in ini file, using untrimmed parameters"%self.TB
 
     def _spawn(self,executestr):
         my_env = os.environ
@@ -155,7 +155,7 @@ class TBmaster(object):
             logIDString = 'TB%s'%self.TB
             trimParameters = ''
             if self.trimVcal >= 0:
-                trimParameters = '-T %(trimVcal)i'%self.trimVcal
+                trimParameters = '-T %i'%self.trimVcal
             executestr = 'cat %(testfile)s | %(psiVersion)s -d %(dir)s %(trim)s -r %(rootfilename)s.root -L %(logIDString)s'%{'testfile' : whichTest, 'psiVersion' : self.psiVersion, 'dir' : dir, 'rootfilename' : fname, 'trim' : trimParameters, 'logIDString' : logIDString} 
         else:
             executestr='%s -dir %s -f %s -r %s.root -log %s.log'%(self.psiVersion,dir,whichTest,fname,fname)

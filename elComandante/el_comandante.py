@@ -592,7 +592,7 @@ class el_comandante:
             totalDuration += testDuration[1]
             testDurationMinSec = divmod(testDuration[1], 60)
             self.log << "    {0:<30} {1:>4d} min {2:>2d} sec".format(testDuration[0], int(testDurationMinSec[0]), int(testDurationMinSec[1]))
-        self.log << "  ---------------------------------------------"
+        self.log << "  --------------------------------------------------"
         testDurationMinSec = divmod(totalDuration, 60)
         self.log << "    {0:<30} {1:>4d} min {2:>2d} sec".format("total", int(testDurationMinSec[0]), int(testDurationMinSec[1]))
        
