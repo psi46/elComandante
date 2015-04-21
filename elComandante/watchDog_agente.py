@@ -214,11 +214,36 @@ class watchDog_agente(el_agente.el_agente):
         return True
 
     def cleanup_test(self):
-        self.status = 'Cleanup'
-        # self.set_tempLog('Templog_Cleanup_%s'%self.currentTest)
-        self.set_tempLog()
-        self.set_humLog()
-        self.set_curLog()
+        sortedOverview = sorted(self.testOverview.items())
+
+        isPowerCycle = False
+        for item in sortedOverview:
+            testDict = item[1]
+            sortedTests = sorted(testDict.items())
+            if 'powercycle' in sortedTests[-1][1][0].lower():
+                isPowerCycle = True
+
+        agenteFiller = ' ' * len(self.agente_name)
+        # create a set from test numbers
+        testNumbers = set()
+        for item in sortedOverview:
+            testDict = item[1]
+
+        if (isPowerCycle == True):
+            self.log << "Doing powercycle, do not create cleanup logfiles. Directory will be overwritable after file handles have been released."
+            for tb, module in self.init.items('Modules'):
+                if self.init.getboolean('TestboardUse', tb):
+                    # release file handles to prevent os creating .nfs* files when directory is deleted and files are not closed
+                    self.currentTestTempLogger[tb].close_logfiles()
+                    self.currentTestHumLogger[tb].close_logfiles()
+                    self.currentTestCurLogger[tb].close_logfiles()
+
+        else:
+            self.status = 'Cleanup'
+            # self.set_tempLog('Templog_Cleanup_%s'%self.currentTest)
+            self.set_tempLog()
+            self.set_humLog()
+            self.set_curLog()
 
         self.currentTest = "none"
         # Run after a test has executed

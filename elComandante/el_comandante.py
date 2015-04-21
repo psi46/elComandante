@@ -389,13 +389,16 @@ class el_comandante:
 
     def wait_until_finished(self):
         finished = all([agente.check_finished() for agente in self.los_agentes])
+        time0 = time.time()
         while not finished:
             queue = []
             for agente in self.los_agentes:
                 if not agente.check_finished():
                     queue.append(agente.agente_name)
             if (len(queue) > 0):
-                sys.stdout.write("\r\x1b[2K" + self.log.get_prefix() + "Waiting for " + ", ".join(queue) + " ... ")
+                time1 = time.time()
+                timeDuration = divmod(time1-time0, 60)
+                sys.stdout.write("\r\x1b[2K" + self.log.get_prefix() + "Waiting for " + ", ".join(queue) + " ... %d min %d sec"%(timeDuration[0], timeDuration[1]))
                 sys.stdout.flush()
             time.sleep(0.25)
             finished = all([agente.check_finished() for agente in self.los_agentes])
@@ -524,7 +527,9 @@ class el_comandante:
 
         test = test_chain.next()
         testno = 0
+        test_chain_durations = []
         while test:
+            startTimeCompleteTest = time.time()
             env = environment.environment(test.test_str, self.init)
             test.environment = env
             test.testname = test.test_str.split("@")[0]
@@ -538,9 +543,14 @@ class el_comandante:
 
             # Prepare for the tests
             self.log << "Preparing test %s ..." % test.test_str
+            startTime = time.time()
             for agente in self.los_agentes:
                 agente.prepare_test(test.test_str, env)
             self.wait_until_finished()
+            endTime = time.time()
+
+            testDuration = divmod(endTime-startTime, 60)
+            self.log << "Preparation took %i seconds (%i min %i sec)" % (endTime-startTime, testDuration[0], testDuration[1])
 
             self.log.printn()
 
@@ -554,8 +564,7 @@ class el_comandante:
             self.log.printn()
             endTime = time.time()
             testDuration = divmod(endTime-startTime, 60)
-            self.log << " test took %i seconds (%i min %i sec)" % (endTime-startTime, testDuration[0], testDuration[1])
-
+            self.log << "Test took %i seconds (%i min %i sec)" % (endTime-startTime, testDuration[0], testDuration[1])
             # Cleanup tests
             self.log << "Cleaning up after test %s ..." % test.test_str
             for agente in self.los_agentes:
@@ -563,6 +572,8 @@ class el_comandante:
             self.wait_until_finished()
 
             self.log.printv()
+            endTimeCompleteTest = time.time()
+            test_chain_durations.append([test.test_str, endTimeCompleteTest-startTimeCompleteTest])
             test = test.next()
 
         # Final cleanup
@@ -575,7 +586,17 @@ class el_comandante:
         #-------------EXIT----------------
 
         self.log.printv()
-        userQueries.query_any("Finished all tests. Press ENTER to terminate the clients. ", self.log)
+        self.log << "Finished all tests. Summary of test durations:"
+        totalDuration = 0
+        for testDuration in test_chain_durations:
+            totalDuration += testDuration[1]
+            testDurationMinSec = divmod(testDuration[1], 60)
+            self.log << "    {0:<30} {1:>4d} min {2:>2d} sec".format(testDuration[0], int(testDurationMinSec[0]), int(testDurationMinSec[1]))
+        self.log << "  --------------------------------------------------"
+        testDurationMinSec = divmod(totalDuration, 60)
+        self.log << "    {0:<30} {1:>4d} min {2:>2d} sec".format("total", int(testDurationMinSec[0]), int(testDurationMinSec[1]))
+       
+        userQueries.query_any("Press ENTER to terminate the clients. ", self.log)
 
         self.log << "Asking clients to quit ..."
         for agente in self.los_agentes:

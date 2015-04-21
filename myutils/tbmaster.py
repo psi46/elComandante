@@ -33,7 +33,12 @@ class TBmaster(object):
         self.DoTest= False
         self.ClosePSI= False
         self.Abort = False
-        self.trimVcal = 40 #default
+
+        # default value in Vcal units, -1 means use untrimmed parameters
+        #  this setting is overwritten if [Test Trim] is specified in the ini file
+        #  containg testParameters=Vcal=*
+        self.trimVcal = -1 
+
         self.init = BetterConfigParser()
         self.init.read("../config/elComandante.ini")
         try:
@@ -44,9 +49,9 @@ class TBmaster(object):
                 testParametersValue = testParameters[pos1+1:]
                 if testParametersName.lower() == "vcal":
                     self.trimVcal = int(testParametersValue)
-                    self.Logger << "using option '-T %s' when calling pxar"%self.trimVcal
+                    self.Logger << "TB%s: using option '-T %s' when calling pxar"%(self.TB, self.trimVcal)
         except:
-            self.Logger << "no [Test Trim] section found in ini file, trying default '-T %s'"%self.trimVcal
+            self.Logger << "TB%s: no [Test Trim] section found in ini file, using untrimmed parameters"%self.TB
 
     def _spawn(self,executestr):
         my_env = os.environ
@@ -148,7 +153,10 @@ class TBmaster(object):
             # cat test | ../bin/pXar -d whereever
             #executestr = 'cat {testfile} | {psiVersion} -dir {dir}  -r {rootfilename}.root -log {logfilename}.log'.format(testfile = whichTest, psiVersion = self.psiVersion, dir = dir, rootfilename = fname, logfilename = fname)
             logIDString = 'TB%s'%self.TB
-            executestr = 'cat %(testfile)s | %(psiVersion)s -d %(dir)s -T %(trimVcal)i -r %(rootfilename)s.root -L %(logIDString)s'%{'testfile' : whichTest, 'psiVersion' : self.psiVersion, 'dir' : dir, 'rootfilename' : fname, 'trimVcal' : self.trimVcal, 'logIDString' : logIDString} 
+            trimParameters = ''
+            if self.trimVcal >= 0:
+                trimParameters = '-T %i'%self.trimVcal
+            executestr = 'cat %(testfile)s | %(psiVersion)s -d %(dir)s %(trim)s -r %(rootfilename)s.root -L %(logIDString)s'%{'testfile' : whichTest, 'psiVersion' : self.psiVersion, 'dir' : dir, 'rootfilename' : fname, 'trim' : trimParameters, 'logIDString' : logIDString} 
         else:
             executestr='%s -dir %s -f %s -r %s.root -log %s.log'%(self.psiVersion,dir,whichTest,fname,fname)
         self._spawn(executestr)

@@ -14,7 +14,7 @@ import el_agente
 import subprocess
 import glob
 import shutil
-
+import errno
 
 class psi_agente(el_agente.el_agente):
     def __init__(self, timestamp,log, sclient):
@@ -58,7 +58,12 @@ class psi_agente(el_agente.el_agente):
         self.timestamp = timestamp
         if not self.active:
             return True
-        command = "xterm -T 'PSI46master' +sb -sl 5000 -geometry 120x50+660+32 -fs 10 -fa 'Mono' -e "
+        xtermParameters = "'PSI46master' +sb -sl 5000 -geometry 120x50+660+32 -fs 10 -fa 'Mono' -e"
+        try:
+            xtermParameters = self.conf.get('psiClient','xtermParameters')
+        except:
+            self.log << "using default xterm config parameters"
+        command = "xterm -T %s"%xtermParameters
         command += "python ../psiClient/psi46master.py "
         command += "-dir %s "%(self.Directories['logDir'])
         command += "-num %s"%self.numTestboards
@@ -164,9 +169,37 @@ class psi_agente(el_agente.el_agente):
             pass
         else:
             self.log << 'Powercycling Testboards'
-        for Testboard in self.Testboards:
-            self._execute_testboard(Testboard)
-        sleep(1)
+        self.log << 'self.currenttest.lower() = "%s"'%self.currenttest.lower()
+        if self.currenttest.lower().startswith('pause'):
+            self.log << self.currenttest;
+            pos1 = self.currenttest.find('(')
+            pos2 = self.currenttest.find(')')
+            durationSeconds = 0
+
+            if pos1 >= 0 and pos2 >= 0:
+                duration = self.currenttest[pos1+1:pos2]
+                duration = duration.split("=")
+                if duration[0].lower().strip() in ['s', 'sec', 'seconds']:
+                    durationSeconds = int(duration[1].strip())
+                    self.log << "Pausing for %d seconds..."%int(duration[1])
+                elif duration[0].lower().strip() in ['m', 'min', 'minutes']:
+                    durationSeconds = int(duration[1].strip()) * 60
+                    self.log << "Pausing for %d minutes..."%int(duration[1])
+                elif duration[0].lower().strip() in ['h', 'hrs', 'hours']:
+                    durationSeconds = int(duration[1].strip()) * 60 * 60
+                    self.log << "Pausing for %d hours..."%int(duration[1])
+            else:
+                self.log << "Format: Pause(unit=number)@17  unit=s[econds]/m[inutes]/h[ours]"
+
+            pauseStart = time.time()
+            while time.time() < pauseStart + durationSeconds:
+                sleep(1)
+
+        else:
+            for Testboard in self.Testboards:
+                self._execute_testboard(Testboard)
+            sleep(1)
+
         self.sclient.clearPackets(self.subscription)
         return True    
 
@@ -323,6 +356,16 @@ class psi_agente(el_agente.el_agente):
         #if not self.currenttest == 'powercycle':
         self.log << 'Setting up the directory: %s'%Testboard.testdir
         self.log << '... with Parameters from: %s' % self.test.parent.parameter_dir[Testboard.slot]
+
+        #check if destination directory already exists
+        if (os.path.isdir(Testboard.testdir) and os.listdir(Testboard.testdir) == []):
+            self.log << "Path does already exist, but is empty: '%s'"%Testboard.testdir
+            try:
+                rmtree(Testboard.testdir) 
+            except Exception as e:
+                self.log.warning("Couldn't remove directory, error: %s"%repr(e))
+                pass
+
         #copy directory
         try:
             self.test.parameter_dir[Testboard.slot] = Testboard.testdir
@@ -455,10 +498,14 @@ class psi_agente(el_agente.el_agente):
             raise
 
     def _deldir(self,Testboard):
+        self.log << "deleting '%s'"%Testboard.testdir
         try:
-            rmtree(Testboard.testdir)
-        except:
-            self.log.warning("Couldn't remove directory")
+            rmtree(Testboard.testdir) 
+        except Exception as e:
+            # for use with NFS:
+            # if files, which are still open, are delted by rmtree, the os leaves .nfs* files in the directory
+            # this causes rmtree to fail when deleting the parent directory which is wrongly assumed empty
+            self.log.warning("Couldn't remove directory, error: %s"%repr(e))
             pass
 
     def open_testboard(self,Testboard,poff=False):
