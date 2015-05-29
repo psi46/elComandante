@@ -170,6 +170,7 @@ def exitProg():
    Logger << 'exit'
    #
    if not reduce(lambda x,y: x or y, [TB.busy for TB in TBmasters]):
+       global End
        End = True
    else:
        for TB in TBmasters:
@@ -210,11 +211,15 @@ def analysePacket(packet):
         if coms[0].startswith('prog') and coms[1].startswith('tb'):
             analyseProg_TB(coms,msg,typ,TBno)
             return
-        elif coms[0].startswith('prog') and coms[1].startswith('exit'):
+        elif coms[0].startswith('exit'):
             exitProg()
             return
         elif coms[0].startswith('stat') and coms[1].startswith('tb') and typ == 'q':
             sendStatsTB(TBno)
+            return
+    elif len(coms)>0:
+        if coms[0].startswith('exit'):
+            exitProg()
             return
     Logger << 'unknown command: %s, %s'%(coms, msg) 
 

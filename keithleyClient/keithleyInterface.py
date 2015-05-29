@@ -17,7 +17,7 @@ class keithleyInterface:
         self.readSleepTime=0.2
         self.baudrate = 57600
         self.commandEndCharacter=chr(13)+chr(10)
-        self.removeCharacters = '\r\n\x00\x13\x10'
+        self.removeCharacters = '\r\n\x00\x13\x10\x11'
         self.measurments = deque()
         self.lastVoltage = 0
         self.openSerialPort()
@@ -42,7 +42,7 @@ class keithleyInterface:
             pass
         
         self.initKeithley()
- 
+
     def getLastVoltage(self):
         return self.lastVoltage
     
@@ -68,7 +68,7 @@ class keithleyInterface:
             time.sleep(self.readSleepTime)
             i+=1
         ts =time.time()
-        maxTime = 20
+        maxTime = 300
         k=0
         print "start reading data at %s"%(ts)
         while True:
@@ -77,7 +77,8 @@ class keithleyInterface:
                 k+=1
             if len(out) > 1:
                 print 'DATA: "%s"'%out.strip(self.removeCharacters), out.endswith(self.commandEndCharacter),
-                print ord(out[-2]),ord(out[-1]),ord(self.commandEndCharacter[0]),ord(self.commandEndCharacter[1]),len(out)
+                try: print ord(out[-2]),ord(out[-1]),ord(self.commandEndCharacter[0]),ord(self.commandEndCharacter[1]),len(out)
+                except: print "Error trying: 'print ord(out[-2]),ord(out[-1]),ord(self.commandEndCharacter[0]),ord(self.commandEndCharacter[1]),len(out)'"
             if out.endswith(self.commandEndCharacter):
                 print 'Found Valid Package'
                 break
@@ -89,7 +90,8 @@ class keithleyInterface:
             time.sleep(self.readSleepTime)
         if time.time()-ts>maxTime:
             print "Tried reading for %s seconds."%(time.time()-ts),out
-            print ord(out[-2]),ord(out[-1]),ord(self.commandEndCharacter[0]),ord(self.commandEndCharacter[1])
+            try: print ord(out[-2]),ord(out[-1]),ord(self.commandEndCharacter[0]),ord(self.commandEndCharacter[1])
+            except: print "Error trying: 'print ord(out[-2]),ord(out[-1]),ord(self.commandEndCharacter[0]),ord(self.commandEndCharacter[1]),len(out)'"
             return ''
         print 'received after %s/%s tries: %s'%(i,k,out)
         return out
@@ -167,7 +169,8 @@ class keithleyInterface:
             answer= self.getAnswerForQuery(data)
 #        print answer
         if len(answer)>0 and not answer=='':
-            stat = int(answer)
+            if answer.isdigit():
+                stat = int(answer)
         else:
             stat = -1
         return stat
@@ -249,7 +252,6 @@ class keithleyInterface:
 #            retVal *= self.write(':SENS:FUNC \'RESISTANCE\'')
             retVal *= self.write(':SENS:FUNC \'CURR:DC\'')
             out = self.getAnswerForQuery(':SENS:FUNC?')
-            print out
             return retVal
         else:
             return self.write(':FUNC:CONC OFF')
@@ -416,6 +418,9 @@ class keithleyInterface:
         bit = 0x08
         if int(statusword)&bit == bit:
 	    print 'keithley is tripped'
+            self.clearErrorQueue()
+            self.clearBuffer()
+            time.sleep(1)
             return True
         return False
     
