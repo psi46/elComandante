@@ -117,10 +117,13 @@ class psi_agente(el_agente.el_agente):
             if Testboard.slot != self.activeTestboard:
             #check if it's this TB's turn
                 return
-        if self.test.environment.temperature >=0:
-            tempString = "p%s"%int(self.test.environment.temperature)
+        if self.test.environment.xray and (self.test.environment.xray_target == "" or self.test.environment.xray_target.lower() == "none"):
+            tempString = self.test.environment.name
         else:
-            tempString = "m%s"%(-1*int(self.test.environment.temperature))
+            if self.test.environment.temperature >=0:
+                tempString = "p%s"%int(self.test.environment.temperature)
+            else:
+                tempString = "m%s"%(-1*int(self.test.environment.temperature))
 
         Testboard.testdir = Testboard.parentDir + '/%s_%s_%s/' % (str(Testboard.numerator).zfill(3), self.currenttest, tempString)
         self._setupdir_testboard(Testboard)
@@ -169,7 +172,6 @@ class psi_agente(el_agente.el_agente):
             pass
         else:
             self.log << 'Powercycling Testboards'
-        self.log << 'self.currenttest.lower() = "%s"'%self.currenttest.lower()
         if self.currenttest.lower().startswith('pause'):
             self.log << self.currenttest;
             pos1 = self.currenttest.find('(')

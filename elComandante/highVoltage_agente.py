@@ -115,8 +115,8 @@ class highVoltage_agente(el_agente.el_agente):
             self.sclient.send(self.subscription,':OUTP ON\n')
             self.doLeakageCurrent()
         else:
-            time.sleep(3)
-            self.sclient.send(self.subscription,':OUTP OFF\n')
+            #time.sleep(3)
+            #self.sclient.send(self.subscription,':OUTP OFF\n')
             time.sleep(1)
             self.sclient.send(self.subscription,':OUTP ON\n')
         self.pending = True

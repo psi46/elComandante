@@ -95,3 +95,9 @@ class environment():
             self.name = env
         except:
             pass
+
+        # exception for x-ray environments, drop "MHz/cm2" or "MHz" in environment name
+        if "mhz" in env.lower():
+            pos = env.lower().find("mhz")
+            self.name = env[0:pos]
+            self.xray = True

@@ -18,7 +18,7 @@ class keithleyInterface:
         self.readSleepTime = 0.2
         self.baudrate = 57600
         self.commandEndCharacter = '\r\n'
-        self.removeCharacters = '\r\n\x00\x13\x10'
+        self.removeCharacters = '\r\n\x00\x13\x10\x11'
         self.measurments = deque()
         self.lastVoltage = 0
         self.openSerialPort()
