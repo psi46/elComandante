@@ -133,9 +133,9 @@ class psi_agente(el_agente.el_agente):
         self.currenttest='powercycle'
         for Testboard in self.Testboards:
             self._prepare_testboard(Testboard)
-        time.sleep(1)
+        time.sleep(4)
         self.execute_test()
-        time.sleep(1)
+        time.sleep(4)
         self.log <<" %s: do internal power_cycle" %(self.agente_name)
         start_time = time.time()
         while True:
