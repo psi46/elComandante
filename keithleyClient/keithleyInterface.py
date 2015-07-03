@@ -44,7 +44,7 @@ class keithleyInterface:
             pass
         
         self.initKeithley()
- 
+
     def getLastVoltage(self):
         return self.lastVoltage
     
@@ -96,7 +96,8 @@ class keithleyInterface:
             time.sleep(self.readSleepTime)
         if time.time()-ts>maxTime:
             print "Tried reading for %s seconds."%(time.time()-ts),out
-#            print ord(out[-2]),ord(out[-1]),ord(self.commandEndCharacter[0]),ord(self.commandEndCharacter[1])
+#            try: print ord(out[-2]),ord(out[-1]),ord(self.commandEndCharacter[0]),ord(self.commandEndCharacter[1])
+#            except: print "Error trying: 'print ord(out[-2]),ord(out[-1]),ord(self.commandEndCharacter[0]),ord(self.commandEndCharacter[1]),len(out)'"
             return ''
         self.check_busy(out)
         if self.verbose:
@@ -195,7 +196,8 @@ class keithleyInterface:
                 print "data: '%s' output: '%s'"%(data, " ".join("{0:2x}".format(ord(c)) for c in answer)) 
 #        print answer
         if len(answer)>0 and not answer=='':
-            stat = int(answer)
+            if answer.isdigit():
+                stat = int(answer)
         else:
             stat = -1
         return stat
@@ -277,7 +279,6 @@ class keithleyInterface:
 #            retVal *= self.write(':SENS:FUNC \'RESISTANCE\'')
             retVal *= self.write(':SENS:FUNC \'CURR:DC\'')
             out = self.getAnswerForQuery(':SENS:FUNC?')
-            print out
             return retVal
         else:
             return self.write(':FUNC:CONC OFF')
@@ -445,6 +446,9 @@ class keithleyInterface:
         bit = 0x08
         if int(statusword)&bit == bit:
 	    print 'keithley is tripped'
+            self.clearErrorQueue()
+            self.clearBuffer()
+            time.sleep(1)
             return True
         return False
     
