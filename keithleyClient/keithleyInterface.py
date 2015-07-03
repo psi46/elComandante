@@ -9,20 +9,22 @@ OFF=0
 
 class keithleyInterface:
     def __init__(self,serialPortName,immidiateVoltage =-150):
+        self.timeout = 60
+        self.verbose = False
         self.immidiateVoltage = immidiateVoltage
+        self.is_busy = False
         self.bOpen=False
         self.bOpenInformed=False
         self.serialPortName=serialPortName
         self.writeSleepTime=0.1
         self.readSleepTime=0.2
         self.baudrate = 57600
-        self.commandEndCharacter=chr(13)+chr(10)
+        self.commandEndCharacter=chr(13)+chr(10) # 13:CR, 10 LF
         self.removeCharacters = '\r\n\x00\x13\x11\x10'
         self.measurments = deque()
         self.lastVoltage = 0
         self.openSerialPort()
         self.model =2400
-
     
     def openSerialPort(self):
         try:
@@ -47,6 +49,11 @@ class keithleyInterface:
         return self.lastVoltage
     
     def write(self,data):
+        while self.is_busy:
+            ret = self.read()
+            'Device is busy: ',ret
+        if self.verbose:
+            print 'Write: ',data
         data+=self.commandEndCharacter
         if self.bOpen:
             output = self.serial.write(data)
@@ -68,30 +75,32 @@ class keithleyInterface:
             time.sleep(self.readSleepTime)
             i+=1
         ts =time.time()
-        maxTime = 20
+        maxTime = self.timeout
         k=0
-        print "start reading data at %s"%(ts)
+#        print "start reading data at %s"%(ts)
         while True:
             while self.serial.inWaiting() > 0 and time.time()-ts<maxTime and not out.endswith(self.commandEndCharacter):
                 out += self.serial.read(1)
                 k+=1
-            if len(out) > 1:
-                print 'DATA: "%s"'%out.strip(self.removeCharacters), out.endswith(self.commandEndCharacter),
-                print ord(out[-2]),ord(out[-1]),ord(self.commandEndCharacter[0]),ord(self.commandEndCharacter[1]),len(out)
+#            if len(out) > 1:
+#                print 'DATA: "%s"'%out.strip(self.removeCharacters), out.endswith(self.commandEndCharacter),
+#                print ord(out[-2]),ord(out[-1]),ord(self.commandEndCharacter[0]),ord(self.commandEndCharacter[1]),len(out)
             if out.endswith(self.commandEndCharacter):
-                print 'Found Valid Package'
+#                print 'Found Valid Package'
                 break
             if time.time()-ts>maxTime:
                 break
             if minLength > 0 and len(out) >= minLength:
-                print 'out is long enough',len(out)
+#                print 'out is long enough',len(out)
                 break
             time.sleep(self.readSleepTime)
         if time.time()-ts>maxTime:
             print "Tried reading for %s seconds."%(time.time()-ts),out
-            print ord(out[-2]),ord(out[-1]),ord(self.commandEndCharacter[0]),ord(self.commandEndCharacter[1])
+#            print ord(out[-2]),ord(out[-1]),ord(self.commandEndCharacter[0]),ord(self.commandEndCharacter[1])
             return ''
-        print 'received after %s/%s tries: %s'%(i,k,out)
+        self.check_busy(out)
+        if self.verbose:
+            print 'busy: %r, received after %s/%s tries: %s'%(self.is_busy,i,k,out)
         return out
 
     def read2(self,minLength=1):
@@ -107,7 +116,7 @@ class keithleyInterface:
             time.sleep(self.readSleepTime)
             i+=1
         ts =time.time()
-        maxTime = 20
+        maxTime = self.timeout
         k=0
         #print "start reading %s data at %s"%(minLength,ts)
         while len(out)<minLength and time.time()-ts<maxTime:
@@ -118,9 +127,24 @@ class keithleyInterface:
         if time.time()-ts>maxTime:
             print "Tried reading for %s seconds."%(time.time()-ts)
             return ''
-        #print 'received after %s/%s tries: %s'%(i,k,out)
+        if self.verbose:
+            print 'received after %s/%s tries: %s'%(i,k,out)
+        self.check_busy(out)
         return out
-        
+    
+    def check_busy(self,data):
+        if len(data) == 0:
+            return
+        if data[0] == '\x11': # XON
+            if self.verbose:
+                print 'Found XON'
+            self.is_busy = False
+        elif data[0] == '\x13':
+            if self.verbose:
+                print 'Found XOFF'
+            self.is_busy = True
+        self.check_busy(data[1:])
+            
     def isOpen(self): #OK
         if not self.bOpen:
             return False
@@ -163,8 +187,12 @@ class keithleyInterface:
         data = ':OUTP?'
         answer = self.getAnswerForQuery(data)
 #        print 'length ',len(answer)
-        while len(answer)>1 and not self.is_number(answer):
+        if self.verbose:
+            print "data: '%s' output: '%s'"%(data, " ".join("{0:2x}".format(ord(c)) for c in answer))
+        while len(answer)>1 and not self.is_number(answer):        
             answer= self.getAnswerForQuery(data)
+            if self.verbose:
+                print "data: '%s' output: '%s'"%(data, " ".join("{0:2x}".format(ord(c)) for c in answer)) 
 #        print answer
         if len(answer)>0 and not answer=='':
             stat = int(answer)
@@ -279,6 +307,7 @@ class keithleyInterface:
         if not self.validCurrent(range):
             raise Exception('setting CurrentMeasurmentRange: not valid current: %s'%range)
         return self.write(':SENS:CURR:RANG %s'%range)
+
     def setCurrentMeasurmentSpeed(self,value):
         if value <0.01 or value >10:
             raise Exception ('Current NPLC not valid: %s'%value)
@@ -421,11 +450,15 @@ class keithleyInterface:
     
     
     def getAnswerForQuery(self,data,minlength =1):
-        print 'getAnswer for query: %s'%data
+        if self.verbose:
+            print 'getAnswer for query: %s'%data
+        #%":".join("{:02x}".format(ord(c)) for c in data)
         self.write(data)
         time.sleep(self.readSleepTime)
         data = self.read(minlength)
-        print 'length is %s'%len(data),'"%s"'%data.strip(self.removeCharacters)
+        
+        if self.verbose:
+            print 'getAnswerForQuery:: length is %s'%len(data),'"%s"'%data.strip(self.removeCharacters)
         return self.clearString(data)
     
     def  validVoltage(self,value): #TODO Write function which 'knows' if the voltage is possible
@@ -469,15 +502,25 @@ class keithleyInterface:
     def readSweepOutput(self,nTrig,firstCall):
         time.sleep(1.0)
         data =''
-        if firstCall:
-            data = self.read(69)
-        else:
-            data= self.read(70)
-        timestamp = time.time()
-        isLastOfSweep= (data.find('\r')>=0)
-        print 'isLastOfSweep',isLastOfSweep,data.endswith(self.commandEndCharacter)
-        data = self.clearString(data)
-        retVal = self.convertData(timestamp,data)
+        invalid = True
+        while invalid:
+            if firstCall:
+                data = self.read(69)
+            else:
+                data= self.read(70)
+            timestamp = time.time()
+            isLastOfSweep= (data.find('\r')>=0)
+            if self.verbose:
+                print 'isLastOfSweep',isLastOfSweep,data.endswith(self.commandEndCharacter)
+            data = self.clearString(data)
+            try:
+                retVal = self.convertData(timestamp,data)
+                invalid = False
+            except:
+                pass
+            if invalid:
+                print 'Could not convert data, "%s", retry'%data
+
         tripped = not retVal
         if retVal == -1:
             pass
@@ -552,6 +595,12 @@ class keithleyInterface:
         retVal =  self.readSweepOutput(nTrig,True)
         print 'doLinearSweep retVal %s'%retVal
         return retVal
+
+    def setCurrentMeasurmentRange(self,range):
+        self.write(":SENSe:CURRent:RANGe %E"%range)
+
+    def setOutputDigits(self,n_digits):
+        self.write(":DISPlay:DIGits %d"%n_digits)
                             
     def initKeithley(self,protection = 500e-6):
         time.sleep(1);
@@ -569,10 +618,12 @@ class keithleyInterface:
         self.setAverageFilterCount(3)
         self.setCurrentProtection(100e-6)
         self.setCurrentMeasurmentSpeed(10)
+        self.setCurrentMeasurmentRange(100e-6)
+        self.setOutputDigits(7)
         self.setImmidiateVoltage(self.immidiateVoltage)
         self.clearErrorQueue()
-        #self.setComplianceAbortLevel('LATE')
-        self.setComplianceAbortLevel('NEVER')
+        self.setComplianceAbortLevel('LATE')
+#        self.setComplianceAbortLevel('NEVER')
         time.sleep(1);
 
     def identify(self):
