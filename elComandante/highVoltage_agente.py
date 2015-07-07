@@ -45,6 +45,7 @@ class highVoltage_agente(el_agente.el_agente):
     def check_client_running(self):
         if not self.active:
             return False
+#        return True
         process = os.system("ps aux | grep -v grep | grep -v vim | grep -v emacs | grep %s" % self.client_name)
         if type(process) == str and process != "":
             raise Exception("Another %s self.sclient is already running. Please close this self.sclient first." % self.sclient.name)
@@ -59,6 +60,7 @@ class highVoltage_agente(el_agente.el_agente):
         self.timestamp = timestamp
         if not self.active:
             return True
+ #       return True
         command  = "xterm  -T 'HighVoltage' +sb -geometry 80x25+1200+1300 -fs 10 -fa 'Mono' -e "
         command += "%s/keithleyClient.py "%(self.keithleyDir)
         command += "-d %s "%(self.keithleyPort)

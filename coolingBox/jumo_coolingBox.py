@@ -213,7 +213,7 @@ class jumo_coolingBox(coolingBox):
             sys.stdout.flush()
             return
 
-        if temp - self.setpoint > 0:
+        if temp - self.setpoint > self.deltaT_Max:
             #self.deltaT_Max:
             self.cooling()
             log_message += 'Cooling'
