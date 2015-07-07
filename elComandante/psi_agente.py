@@ -138,9 +138,9 @@ class psi_agente(el_agente.el_agente):
         self.currenttest='powercycle'
         for Testboard in self.Testboards:
             self._prepare_testboard(Testboard)
-        time.sleep(1)
+        time.sleep(4)
         self.execute_test()
-        time.sleep(1)
+        time.sleep(4)
         self.log <<" %s: do internal power_cycle" %(self.agente_name)
         start_time = time.time()
         while True:
@@ -151,8 +151,8 @@ class psi_agente(el_agente.el_agente):
                 self.log <<" %s: internal power_cycle didn't finished in 120sec, restarting powercycle" % self.agente_name
                 self.execute_test()
                 start_time = time.time()
-            sleep(1)
-        time.sleep(1)
+            sleep(4)
+        time.sleep(4)
         self.cleanup_test()
         self.sclient.clearPackets(self.subscription)
 
@@ -169,7 +169,7 @@ class psi_agente(el_agente.el_agente):
             pass
         else:
             self.log << 'Powercycling Testboards'
-        self.log << 'self.currenttest.lower() = "%s"'%self.currenttest.lower()
+
         if self.currenttest.lower().startswith('pause'):
             self.log << self.currenttest;
             pos1 = self.currenttest.find('(')
@@ -198,6 +198,7 @@ class psi_agente(el_agente.el_agente):
         else:
             for Testboard in self.Testboards:
                 self._execute_testboard(Testboard)
+                sleep(10)
             sleep(1)
 
         self.sclient.clearPackets(self.subscription)
@@ -264,12 +265,12 @@ class psi_agente(el_agente.el_agente):
     def check_finished(self):
         if not self.active or not self.pending:
             return True
-        sleep(.1)
+        sleep(1)
         for Testboard in self.Testboards:
             if Testboard.busy:
                 self.sclient.send(self.subscription,":STAT:TB%d?\n"%Testboard.slot)
-                sleep(.1)
-        sleep(.1)
+                sleep(1)
+        sleep(1)
         while True:
             packet = self.sclient.getFirstPacket(self.subscription) 
             if packet.isEmpty() or not self.pending:
