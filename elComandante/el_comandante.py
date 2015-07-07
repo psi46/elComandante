@@ -296,7 +296,77 @@ class el_comandante:
         iniFile = configDir+'/elComandante.ini'
         self.init = BetterConfigParser(dict_type=OrderedDict)
         self.init.read(iniFile)
-        self.write_initialization(configDir)
+
+    def display_configuration(self):
+        TBMax = 99
+        print 'Module configuration:'
+
+        # read module, module type and testboard identifier from ini and conf file
+        Testboards = []
+        for TB in range(0,TBMax):
+            if self.config.has_option('TestboardAddress','TB%d'%TB):
+                Testboards.append(self.config.get('TestboardAddress','TB%d'%TB))
+            else:
+                break
+
+        Modules = []
+        for TB in range(0,TBMax):
+            if self.init.has_option('Modules','TB%d'%TB):
+                Modules.append(self.init.get('Modules','TB%d'%TB))
+            else:
+                break
+
+        ModuleTypes = []
+        for TB in range(0,TBMax):
+            if self.init.has_option('ModuleType','TB%d'%TB):
+                ModuleTypes.append(self.init.get('ModuleType','TB%d'%TB))
+            else:
+                break
+
+        TBUse = []
+        for TB in range(0,TBMax):
+            if self.init.has_option('TestboardUse','TB%d'%TB):
+                TBUse.append(self.init.get('TestboardUse','TB%d'%TB))
+            else:
+                break
+
+        # display modules table
+        for TBIndex in range(0, len(Testboards)):
+            BoxWidth = 54
+            print '     +%s+'%('-'*BoxWidth)
+            InfoStr = '%s %s (%s) %r'%(Testboards[TBIndex], Modules[TBIndex], ModuleTypes[TBIndex], TBUse[TBIndex])
+            InfoStrLen = len(InfoStr)
+            if TBUse[TBIndex].strip().lower() != 'true':
+                InfoStr = '\x1b[31m%s\x1b[0m'%InfoStr
+            print '     |     %s%s|'%(InfoStr, ' '*max(0, BoxWidth - 5 - InfoStrLen))
+            print '     +%s+'%('-'*BoxWidth)
+
+        # verify all tests in testlist exist
+        print 'Verify test list:'
+        TestListProblems = 0
+        testlist=self.init.get('Tests','Test')
+        test_chain = testchain.parse_test_list(testlist)
+        testlist= testlist.replace('>',',').replace('{','').replace('}','').split(',')
+        while '' in testlist:
+                testlist.remove('')
+        testlist = [testname.split('@')[0] if '@' in testname else testname for testname in testlist]
+        SpecialTests = ['powercycle', 'iv', 'leakagecurrent', 'pause', 'cycle']
+        for testname in testlist:
+            TestFound = False
+            for SpecialTest in SpecialTests:
+                if testname.lower().strip().startswith(SpecialTest):
+                    TestFound = True
+                    break
+
+            if not TestFound and not os.path.isfile("%s/%s"%(self.directories['testdefDir'], testname)):
+                    print "\x1b[31mwarning: test '%s' does not exist! \x1b[0m"%testname
+                    TestListProblems += 1
+        if TestListProblems < 1:
+            print "no problems found."
+        else:
+            print "\x1b[31m%s problems found!\x1b[0m"%TestListProblems
+
+        print ""
 
     def setup_directories(self):
         try:
@@ -416,6 +486,8 @@ class el_comandante:
         self.check_config_directory(args.configDir)
         self.read_configuration(args.configDir)
         self.read_initialization(args.configDir)
+        self.display_configuration()
+        self.write_initialization(args.configDir)
         self.setup_directories()
         self.initialize_logger(timestamp)
 
