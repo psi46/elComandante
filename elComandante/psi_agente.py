@@ -98,13 +98,13 @@ class psi_agente(el_agente.el_agente):
                 self.currenttest = 'IV'
                 self.activeTestboard = int(activeTestboard[1].strip('TB'))
                 #print 'active testboard for IV is: %s'%self.activeTestboard
-        elif 'leakageCurrent' in self.currenttest:
+        elif 'leakagecurrent' in self.currenttest.lower():
             activeTestboard = self.currenttest.split('_')
             if len(activeTestboard) == 2:
-                if 'PON' in self.currenttest:
-                    self.currenttest = 'leakageCurrentPON'
-                elif 'POFF' in self.currenttest:
-                    self.currenttest = 'leakageCurrentPOFF'
+                if 'PON' in self.currenttest.upper():
+                    self.currenttest = 'LeakageCurrentPON'
+                elif 'POFF' in self.currenttest.upper():
+                    self.currenttest = 'LeakageCurrentPOFF'
                 self.activeTestboard = int(activeTestboard[1].strip('TB'))
                 #print 'active testboard for IV is: %s'%self.activeTestboard
         for Testboard in self.Testboards:
@@ -113,7 +113,7 @@ class psi_agente(el_agente.el_agente):
         return True
 
     def _prepare_testboard(self,Testboard):
-        if 'IV' in self.currenttest or 'leakageCurrent' in self.currenttest:
+        if 'IV' in self.currenttest or 'leakagecurrent' in self.currenttest.lower():
             if Testboard.slot != self.activeTestboard:
             #check if it's this TB's turn
                 return
@@ -130,9 +130,9 @@ class psi_agente(el_agente.el_agente):
         if 'IV' in self.currenttest:
             self.sclient.send(self.highVoltageSubscription,":PROG:IV:TESTDIR %s\n"%Testboard.testdir)
             self.open_testboard(Testboard)
-        elif 'leakageCurrent' in self.currenttest:
+        elif 'leakagecurrent' in self.currenttest.lower():
             poff = False
-            if 'POFF' in self.currenttest:
+            if 'POFF' in self.currenttest.upper():
                 poff = True
             self.sclient.send(self.highVoltageSubscription, ":PROG:LEAKAGECURRENT:TESTDIR %s\n"%Testboard.testdir)
             self.open_testboard(Testboard,poff)
@@ -244,7 +244,7 @@ class psi_agente(el_agente.el_agente):
         # Run after a test has executed
         if not self.active:
             return True
-        if 'IV' in self.currenttest or 'leakageCurrent' in self.currenttest:
+        if 'IV' in self.currenttest or 'leakagecurrent' in self.currenttest.lower():
             for Testboard in self.Testboards:
                 if Testboard.slot == self.activeTestboard:
                     self.close_testboard(Testboard)

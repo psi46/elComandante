@@ -11,6 +11,8 @@ import os
 #import serial
 import signal
 from time import sleep
+from threading import Timer
+
 ON = 1
 OFF = 0
 End = False
@@ -18,6 +20,8 @@ Logger = printer()
 IVLogger = printer()
 Logger.set_name("KeithleyLog")
 IVLogger.set_name("ivLog")
+LeakageCurrentLogger = printer()
+LeakageCurrentLogger.set_name("leakageCurrentLog")
 #sweep parameters TODO anpassen
 startValue = -100
 stopValue = -200
@@ -26,6 +30,7 @@ nSweeps = 1
 delay =.1
 maxSweepTries=1
 doingSweep = False
+do_leakage_current_measurement = False
 
 defSerialPort = '/dev/tty.usbserial-FTG7MJTY'
 serialPort = defSerialPort
@@ -57,10 +62,19 @@ Logger.set_logfile(args.dataDir,'Keithley.log')
 Logger.set_prefix('')
 #default testDir, should be set (by elComandante)  when doing IV curve
 testDir = '%s'%(args.dataDir)
+
 IVLogger.set_logfile(args.dataDir,'IV.log')
 IVLogger.set_prefix('')
 IVLogger.timestamp = float(args.timestamp)
 IVLogger.disable_print()
+
+leakage_current_dir = args.dataDir
+leakage_current_measurement_time = 10*60
+LeakageCurrentLogger.set_logfile(args.dataDir, 'LeakageCurrent.log')
+LeakageCurrentLogger.set_prefix('')
+LeakageCurrentLogger.timestamp = float(args.timestamp)
+LeakageCurrentLogger.disable_print()
+
 if not os.access(serialPort,os.R_OK):
     Logger.warning('serialPort \'%s\' is not accessible'%serialPort)
     sys.exit()
@@ -98,6 +112,7 @@ keithley.setOutput(OFF)
 #Logger << 'status:%s'%keithley.getOutputStatus()
 
 def readCurrentIV():
+    global do_leakage_current_measurement
     global client
     global keithley
     if keithley.getOutputStatus():
@@ -112,6 +127,8 @@ def readCurrentIV():
                 #Logger << '%s: %s V - %s A'%(timestamp,data[0],data[1])
 
                 IVLogger << '%s\t%s\t%s'%(voltage,current,timestamp)
+                if do_leakage_current_measurement:
+                    LeakageCurrentLogger << '%s\t%s\t%s' % (voltage, current, timestamp)
                 #IVLogger << '%s V \t  %s A \t %s'%(data[0],data[1],timestamp)
                 client.send(voltageAbo,'%s\n'%voltage)
                 client.send(currentAbo,'%s\n'%current)
@@ -249,6 +266,9 @@ def printHelp():
     data +='\t:PROG:IV:DELay     XX\tto make an IV Curve for the current device\n'
     data +='\t:PROG:IV:MAXTRIPS  XX\tto set maximum tries if keithley is tripping\n'
     data +='\t:PROG:RESISTANCE   XX\tto enable/disable 4-Wire Resistance Measurement\n'
+    data += '\t:PROG:LEAKAGECURRENT:TESTDIR XX\tdirectory for leakage current measurement\n'
+    data += '\t:PROG:LEAKAGECURRENT:TIME    XX\tduration of leakage current measurement in seconds\n'
+    data += '\t:PROG:LEAKAGECURRENT:START     \tenables leakage current measurement\n'
     data += '************************************************************************\n'
     Logger << data
     client.sendData(aboName,data)
@@ -353,7 +373,83 @@ def  analyseIV(coms,typ,msg):
 #        Logger << 'error prog iv len to long'
         printHelp()
     pass
-        
+
+def finish_leakage_current_measurement():
+    global do_leakage_current_measurement,client
+    global Logger
+    if do_leakage_current_measurement:
+        client.send(aboName, ':PROG:LEAKAGECURRENT! FINISHED\n')
+        Logger << "Finished Leakage Current Meaurement"
+        do_leakage_current_measurement = False
+    else:
+        Logger << "Received Signal for Finished Leakagecurrent Measurement but no measurement active"
+
+def initialise_leakage_current_measurement():
+    pass
+
+def exec_leakage_current_measurement():
+    #check directory
+    global Logger, do_leakage_current_measurement, leakage_current_measurement_time
+    Logger << "Start Leakage Current Measurement for {mtime} s in directory '{dir}'".format(mtime=leakage_current_measurement_time,
+                                                                                           dir=leakage_current_dir)
+    outMsg = ":PROG:LEAKAGECURRENT:START! time: {mtime}s, dir: {dir}".format(mtime=leakage_current_measurement_time,
+                                                                            dir=leakage_current_dir)
+    Logger << outMsg
+    outMsg += '\n'
+    client.send(aboName, outMsg)
+    do_leakage_current_measurement = True
+    Timer(leakage_current_measurement_time, finish_leakage_current_measurement, ()).start()
+    Logger << "leakage measurement running..."
+
+def parse_leakage_current_testdir(typ, msg):
+    global LeakageCurrentLogger, leakage_current_dir
+    if typ == 'c':
+        Logger << 'LeakageCurrentLogFileDir: "{msg}"'.format(msg=msg)
+        new_dir = msg
+        try:
+            Logger << 'checked Directory {testDir}'.format(testDir=new_dir)
+            os.stat(new_dir)
+        except:
+            outMsg = ':LEAKAGECURRENT:TESTDIR! %s: directory does not exist. Error!' % new_dir
+        else:
+            leakage_current_dir = new_dir
+            outMsg = ':LEAKAGECURRENT:TESTDIR! %s' % leakage_current_dir
+            LeakageCurrentLogger.set_logfile(leakage_current_dir, 'leakageCurrent.log')
+    outMsg += '\n'
+    client.send(aboName, outMsg)
+    pass
+
+def parse_leakage_current_measurement_time(typ, msg):
+    global LeakageCurrentLogger, leakage_current_measurement_time
+    if typ == 'c':
+        Logger << "Setting Leakage Current measurement time {time}s".format(time=msg)
+        if is_float(msg):
+            new_time = float(msg)
+            if new_time > 0:
+                leakage_current_measurement_time = float(msg)
+                Logger << "Leakage Current measurement time set to {time}s".format(time=leakage_current_measurement_time)
+                outMsg = ':LEAKAGECURRENT:TIME! {time}'.format(time=leakage_current_measurement_time)
+            else:
+                Logger << "Invalid measurement time: {time}".format(time=new_time)
+                outMsg = ':LEAKAGECURRENT:TIME! ERROR! Invalid time {time}'.format(time=new_time)
+        else:
+            Logger << 'Cannot convert leakage current measurement time "{msg}"'.format(msg=msg)
+            outMsg = ':LEAKAGECURRENT:TIME! ERROR! Cannot convert "{msg}"'.format(msg, msg)
+
+    outMsg += '\n'
+    client.send(aboName, outMsg)
+    pass
+
+def analyse_leakage_current(coms, typ, msg):
+    global do_leakage_current_measurement
+    global Logger
+    if coms[0].find('TIME') >= 0:
+        parse_leakage_current_measurement_time(typ, msg)
+    elif coms[0].find('TESTDIR') >= 0:
+        parse_leakage_current_testdir(typ, msg)
+    elif coms[0].find('START') >= 0:
+        exec_leakage_current_measurement()
+
 def analyseProg(coms,typ,msg):
     global Logger
     global client
@@ -363,6 +459,8 @@ def analyseProg(coms,typ,msg):
     if coms[0].find('IV')>=0:
         analyseIV(coms[1:],typ,msg)
         pass
+    elif coms[0].find('LEAKAGECURRENT') >= 0:
+        analyse_leakage_current(coms[1:], typ, msg)
     elif coms[0].find('RESISTANCE')>=0 and typ =='c':
         if msg in ['ON','TRUE','1']:
             keithley.initFourWireResistensMeasurement()
