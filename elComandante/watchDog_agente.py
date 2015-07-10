@@ -260,10 +260,17 @@ class watchDog_agente(el_agente.el_agente):
             testDict = item[1]
             sortedTests = sorted(testDict.items())
             testNo = max(testDict.keys())
+            errCode = int(self.testOverview[TB][testNo][1])
+            if errCode < 0:
+                sys.stdout.write("\x1b[101m\x1b[97m")
+            elif errCode < 1:
+                sys.stdout.write("\x1b[103m")
+            sys.stdout.flush()
             self.log << "%s  %s-%s\t%s-->%s" % (
                 ' ' * len(self.agente_name), TB, testNo, self.testOverview[TB][testNo][0],
                 self.testOverview[TB][testNo][1])
-
+            if errCode < 1:
+                print "\x1b[0m"
         # self.log << msg
         # if 'waiting' not in self.status()
         # self.log << "%s: Cleaning up %s ..."%(self.agente_name,test)
@@ -305,6 +312,7 @@ class watchDog_agente(el_agente.el_agente):
             msg = "%s   %03d:\t" % (agenteFiller, num)
             testStats = ''
             testName = ''
+            testStatsMin = 1
             for item in sortedOverview:
                 TB = item[0]
                 testDict = item[1]
@@ -315,11 +323,21 @@ class watchDog_agente(el_agente.el_agente):
                     else:
                         testName += '%s/' % status[0]
                     testStat = status[1]
+                    if testStat < testStatsMin:
+                        testStatsMin = testStat
                     testStats += "%2s\t" % testStat
                 else:
                     msg += " \t"
                     testName += '?/'
+            if testStatsMin < 0:
+                sys.stdout.write("\x1b[101m\x1b[97m")
+            elif testStatsMin < 1:
+                sys.stdout.write("\x1b[103m")
+            sys.stdout.flush()
             self.log << '%s%s\t%s' % (msg, testStats, testName)
+            if testStatsMin < 1:
+                print "\x1b[0m"
+
             # sortedTests = sorted(testDict.items())
         # if 'powercycle' in sortedTests[-1][1][0].lower():
         # sortedTest=sortedTests[:-1]
