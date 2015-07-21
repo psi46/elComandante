@@ -33,7 +33,7 @@ import socket
 import tarfile
 import glob
 import traceback
-
+import operator
 
 ## Base class for elComandante
 ##
@@ -296,7 +296,133 @@ class el_comandante:
         iniFile = configDir+'/elComandante.ini'
         self.init = BetterConfigParser(dict_type=OrderedDict)
         self.init.read(iniFile)
-        self.write_initialization(configDir)
+
+    def display_configuration(self):
+        TBMax = 99
+        print 'Module configuration:'
+
+        # read module, module type and testboard identifier from ini and conf file
+        Testboards = []
+        for TB in range(0,TBMax):
+            if self.config.has_option('TestboardAddress','TB%d'%TB):
+                Testboards.append(self.config.get('TestboardAddress','TB%d'%TB))
+            else:
+                break
+
+        Modules = []
+        for TB in range(0,TBMax):
+            if self.init.has_option('Modules','TB%d'%TB):
+                Modules.append(self.init.get('Modules','TB%d'%TB))
+            else:
+                break
+
+        ModuleTypes = []
+        for TB in range(0,TBMax):
+            if self.init.has_option('ModuleType','TB%d'%TB):
+                ModuleTypes.append(self.init.get('ModuleType','TB%d'%TB))
+            else:
+                break
+
+        TBUse = []
+        for TB in range(0,TBMax):
+            if self.init.has_option('TestboardUse','TB%d'%TB):
+                TBUse.append(self.init.get('TestboardUse','TB%d'%TB))
+            else:
+                break
+
+        if not all(i==len(Testboards) for i in [len(Modules), len(ModuleTypes), len(TBUse)]):
+            print '\x1b[31mERROR: number of TestboardAddress/TestboardUse/Modules/ModuleType rows not equal!\x1b[0m'
+
+        # display modules table
+        for TBIndex in range(0, len(Testboards)):
+            BoxWidth = 54
+            print '     +%s+'%('-'*BoxWidth)
+            InfoStr = '%s %s (%s) %r'%(Testboards[TBIndex], Modules[TBIndex], ModuleTypes[TBIndex], TBUse[TBIndex])
+            InfoStrLen = len(InfoStr)
+            if TBUse[TBIndex].strip().lower() != 'true':
+                InfoStr = '\x1b[31m%s\x1b[0m'%InfoStr
+            print '     |     %s%s|'%(InfoStr, ' '*max(0, BoxWidth - 5 - InfoStrLen))
+            print '     +%s+'%('-'*BoxWidth)
+
+        Problems = 0
+
+        # verify all tests in testlist exist
+        print 'Verify test list:'
+        testlist=self.init.get('Tests','Test')
+        test_chain = testchain.parse_test_list(testlist)
+        testlist= testlist.replace('>',',').replace('{','').replace('}','').split(',')
+        while '' in testlist:
+                testlist.remove('')
+        testlist = [testname.split('@')[0] if '@' in testname else testname for testname in testlist]
+        SpecialTests = ['powercycle', 'iv', 'leakagecurrent', 'pause', 'cycle']
+        for testname in testlist:
+            TestFound = False
+            for SpecialTest in SpecialTests:
+                if testname.lower().strip().startswith(SpecialTest):
+                    TestFound = True
+                    break
+
+            if not TestFound and not os.path.isfile("%s/%s"%(self.directories['testdefDir'], testname)):
+                    print "\x1b[31mWARNING: test '%s' does not exist! \x1b[0m"%testname
+                    Problems += 1
+
+        # verify DACs
+        if self.init.has_option('VerifyDACs','dacs'):
+            DacList=self.init.get('VerifyDACs','dacs')
+            DacConditions=[dac for dac in DacList.split(',') if len(dac.strip())>0]
+            print "check DACs: %r"%DacConditions
+            Operators = [
+                    {'repr' : '==', 'op': operator.eq, 'op_swapped': operator.eq},
+                    {'repr' : '!=', 'op': operator.ne, 'op_swapped': operator.ne},
+                    {'repr' : '<=', 'op': operator.le, 'op_swapped': operator.ge},
+                    {'repr' : '>=', 'op': operator.ge, 'op_swapped': operator.le},
+                    {'repr' : '<', 'op': operator.lt, 'op_swapped': operator.gt},
+                    {'repr' : '>', 'op': operator.gt, 'op_swapped': operator.lt},
+                ]
+            for DacCondition in DacConditions:
+
+                Operator = None
+                for CheckOperator in Operators:
+                    OperatorPosition = DacCondition.find(CheckOperator['repr'])
+                    if OperatorPosition > -1:
+                        First = DacCondition[0:OperatorPosition].strip()
+                        Second = DacCondition[OperatorPosition + len(CheckOperator['repr']):].strip()
+                        if First.isdigit() and not Second.isdigit():
+                            Dac = Second.lower()
+                            CompareTo = int(First)
+                            Operator = CheckOperator['op_swapped']
+                        elif not First.isdigit() and Second.isdigit():
+                            Dac = First.lower()
+                            CompareTo = int(Second)
+                            Operator = CheckOperator['op']
+                        else:
+                            print "\x1b[31mWARNING: illegal DAC condition %s! \x1b[0m"%DacCondition
+                            Operator = None
+                        break
+
+                if Operator is not None:
+                    for TBIndex in range(0, len(Testboards)):
+                        if TBUse[TBIndex].lower().strip() == 'true':
+                            module_type = self.init.get("ModuleType", "TB%d"%TBIndex)
+                            ParametersDir = self.directories['defaultParameters'] + '/' + self.config.get("defaultParameters", module_type)
+                            DacParameterFileNames = glob.glob(os.path.join(ParametersDir, 'dacParameters*.dat'))
+                            for DacParameterFileName in DacParameterFileNames:
+                                with open(DacParameterFileName, "r") as DacParameterFile:
+                                    for line in DacParameterFile:
+                                        data = [value for value in line.split(' ') if len(value.strip())>0]
+                                        if data[1].lower() == Dac:
+                                            DacValue = int(data[2])
+                                            if not Operator(DacValue, CompareTo):
+                                                print "\x1b[31mWARNING: DAC condition not fulfilled: '%s' \x1b[0m"%DacCondition
+                                                print " module: %s"%self.init.get("Modules", "TB%d"%TBIndex)
+                                                print " file: %s"%DacParameterFileName
+                                                print " value found: %d"%DacValue
+                                                Problems += 1
+
+        if Problems < 1:
+            print "no problems found."
+        else:
+            print "\x1b[31m%s problems found!\x1b[0m"%Problems
 
     def setup_directories(self):
         try:
@@ -416,6 +542,8 @@ class el_comandante:
         self.check_config_directory(args.configDir)
         self.read_configuration(args.configDir)
         self.read_initialization(args.configDir)
+        self.display_configuration()
+        self.write_initialization(args.configDir)
         self.setup_directories()
         self.initialize_logger(timestamp)
 

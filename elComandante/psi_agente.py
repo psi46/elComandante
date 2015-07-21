@@ -25,6 +25,8 @@ class psi_agente(el_agente.el_agente):
         self.init = None
         self.active = True
         self.Testboards = []
+        self.LogFileName = ""
+        self.RootFileName = ""
         
     def setup_configuration(self, conf):
         self.conf = conf

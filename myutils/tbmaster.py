@@ -33,7 +33,8 @@ class TBmaster(object):
         self.DoTest= False
         self.ClosePSI= False
         self.Abort = False
-
+        self.LogFile = ""
+        self.RootFile = ""
         # default value in Vcal units, -1 means use untrimmed parameters
         #  this setting is overwritten if [Test Trim] is specified in the ini file
         #  containg testParameters=Vcal=*
@@ -122,6 +123,26 @@ class TBmaster(object):
         self.Logger << '>>> Release Testboard %s <<<'%self.TB
         self.TestEnd = True
         self.busy = False
+
+        # check if log and root files have been written
+        try:
+            with open(self.LogFile) as f:
+                lines = f.readlines()
+            if not "welcome to pxar" in lines[0].lower() or not "this is the end, my friend" in lines[-1].lower():
+                print "\x1b[46m\x1b[97mWARNING: incomplete logfile! '%s' \x1b[0m"%self.LogFile
+                internalFailed = True
+                self.failed = True
+
+        except:
+            print "\x1b[46m\x1b[97mWARNING: can't open logfile! \x1b[0m"%self.LogFile
+            internalFailed = True
+            self.failed = True
+
+        if not os.path.isfile(self.RootFile):
+            print "\x1b[45m\x1b[97mCRITICAL: .root file does not exist: %s \x1b[0m"%self.RootFile
+            internalFailed = True
+            self.failed = True
+
         return internalFailed
 
     def _answer(self):
@@ -159,6 +180,8 @@ class TBmaster(object):
             executestr = 'cat %(testfile)s | %(psiVersion)s -d %(dir)s %(trim)s -r %(rootfilename)s.root -L %(logIDString)s'%{'testfile' : whichTest, 'psiVersion' : self.psiVersion, 'dir' : dir, 'rootfilename' : fname, 'trim' : trimParameters, 'logIDString' : logIDString} 
         else:
             executestr='%s -dir %s -f %s -r %s.root -log %s.log'%(self.psiVersion,dir,whichTest,fname,fname)
+        self.LogFile = "%s/%s.log"%(dir, fname)
+        self.RootFile = "%s/%s.root"%(dir, fname)
         self._spawn(executestr)
         self.failed=self._readout()
         self._answer()
