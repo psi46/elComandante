@@ -330,6 +330,9 @@ class el_comandante:
             else:
                 break
 
+        if not all(i==len(Testboards) for i in [len(Modules), len(ModuleTypes), len(TBUse)]):
+            print '\x1b[31mERROR: number of TestboardAddress/TestboardUse/Modules/ModuleType rows not equal!\x1b[0m'
+
         # display modules table
         for TBIndex in range(0, len(Testboards)):
             BoxWidth = 54
