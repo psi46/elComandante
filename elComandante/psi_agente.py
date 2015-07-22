@@ -65,7 +65,7 @@ class psi_agente(el_agente.el_agente):
             xtermParameters = self.conf.get('psiClient','xtermParameters')
         except:
             self.log << "using default xterm config parameters"
-        command = "xterm -T %s"%xtermParameters
+        command = "xterm -T %s "%xtermParameters
         command += "python ../psiClient/psi46master.py "
         command += "-dir %s "%(self.Directories['logDir'])
         command += "-num %s"%self.numTestboards
