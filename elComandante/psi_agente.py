@@ -475,6 +475,7 @@ class psi_agente(el_agente.el_agente):
             keyfield = 1
             datafield = 2
 
+        keys_replaced = []
         # iterate over all lines
         for i in range(len(lines)):
             line = lines[i].strip()
@@ -487,12 +488,28 @@ class psi_agente(el_agente.el_agente):
             if not line[keyfield] in keys:
                 continue
             line[datafield] = keys[line[keyfield]]
+            keys_replaced.append(line[keyfield])
             if line[datafield].startswith('DTB') and line[keyfield] == 'id':
                 lines[i] = " : ".join(line)
                 lines[i] += '\n'
             else:
                 lines[i] = " ".join(line)
                 lines[i] += '\n'
+        try:
+            RequireTestParametersExisting = self.init.get('VerifyTestParameters', 'CheckExistence')
+            if RequireTestParametersExisting.strip().lower() == 'true':
+                RequireTestParametersExisting = True
+            else:
+                RequireTestParametersExisting = False
+        except:
+            RequireTestParametersExisting = False
+
+        for key in keys:
+            if not key in keys_replaced:
+                if RequireTestParametersExisting:
+                    raise Exception("Error: key '%s' in file '%s' does not exist! Update '%s' file in parameters directory or 'Tests *' section in ini file!"%(key, filename, filename))
+                else:
+                    self.log.warning("Error: key '%s' in file '%s' does not exist! Update '%s' file in parameters directory or 'Tests *' section in ini file!"%(key, filename, filename))
 
         try:
             # Write the new file
