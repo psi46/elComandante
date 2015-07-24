@@ -509,10 +509,10 @@ class psi_agente(el_agente.el_agente):
 
         for key in keys:
             if not key in keys_replaced:
+                WarningMessage = "Warning: key '%s' in file '%s' does not exist! Update '%s' file in parameters directory or 'Tests *' section in ini file!"%(key, filename, filename)
+                self.log.warning(WarningMessage)
                 if RequireTestParametersExisting:
-                    raise Exception("Error: key '%s' in file '%s' does not exist! Update '%s' file in parameters directory or 'Tests *' section in ini file!"%(key, filename, filename))
-                else:
-                    self.log.warning("Error: key '%s' in file '%s' does not exist! Update '%s' file in parameters directory or 'Tests *' section in ini file!"%(key, filename, filename))
+                    raise Exception(WarningMessage)
 
         try:
             # Write the new file
