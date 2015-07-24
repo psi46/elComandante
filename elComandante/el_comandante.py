@@ -111,16 +111,16 @@ class el_comandante:
             pass
 
     ## Removes the test result data directory
-    def removeDir(self, dir):
-        if  userQueries.query_yes_no("Do you want to store the data %s?" % dir):
+    def removeDir(self, DirectoryName):
+        AbsolutePath = '%s/%s' % (self.directories['dataDir'], DirectoryName)
+        if not os.path.isdir(AbsolutePath) or userQueries.query_yes_no("Do you want to store the data %s?" % DirectoryName):
             return
-        dir = '%s/%s' % (self.directories['dataDir'], dir)
-        self.log << "Removing Directory: '%s'" % dir
+        self.log << "Removing Directory: '%s'" % AbsolutePath
 
         try:
-            rmtree(dir)
+            rmtree(AbsolutePath)
         except:
-            self.log.warning("Unable to remove '%s'!" % dir)
+            self.log.warning("Unable to remove '%s'!" % AbsolutePath)
             pass
 
     def uploadTarFiles(self, tarList):
@@ -404,7 +404,11 @@ class el_comandante:
                     for TBIndex in range(0, len(Testboards)):
                         if TBUse[TBIndex].lower().strip() == 'true':
                             module_type = self.init.get("ModuleType", "TB%d"%TBIndex)
-                            ParametersDir = self.directories['defaultParameters'] + '/' + self.config.get("defaultParameters", module_type)
+                            try:
+                                ModuleParametersDirectory = self.config.get("defaultParameters", module_type)
+                            except:
+                                ModuleParametersDirectory = module_type
+                            ParametersDir = self.directories['defaultParameters'] + '/' + ModuleParametersDirectory
                             DacParameterFileNames = glob.glob(os.path.join(ParametersDir, 'dacParameters*.dat'))
                             for DacParameterFileName in DacParameterFileNames:
                                 with open(DacParameterFileName, "r") as DacParameterFile:
@@ -580,12 +584,14 @@ class el_comandante:
         while True:
             try:
                 module_type = self.init.get("ModuleType", "TB" + `tb`)
-                dir = self.config.get("defaultParameters", module_type)
+                try:
+                    dir = self.config.get("defaultParameters", module_type)
+                except:
+                    dir = module_type
             except:
                 break
             else:
                 dir = self.directories['defaultParameters'] + '/' + dir
-                self.log << "append " + dir + " to dir_list"
                 dir_list.append(dir)
                 tb += 1
         test_chain.parameter_dir = dir_list

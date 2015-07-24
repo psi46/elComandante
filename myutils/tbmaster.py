@@ -129,17 +129,18 @@ class TBmaster(object):
             with open(self.LogFile) as f:
                 lines = f.readlines()
             if not "welcome to pxar" in lines[0].lower() or not "this is the end, my friend" in lines[-1].lower():
-                print "\x1b[46m\x1b[97mWARNING: incomplete logfile! '%s' \x1b[0m"%self.LogFile
+                print "\x1b[46m\x1b[97mWARNING: incomplete logfile: '%s'! \x1b[0m"%self.LogFile
                 internalFailed = True
                 self.failed = True
 
         except:
-            print "\x1b[46m\x1b[97mWARNING: can't open logfile! \x1b[0m"%self.LogFile
-            internalFailed = True
-            self.failed = True
+            if len(self.LogFile) > 0:
+                print "\x1b[46m\x1b[97mWARNING: can't open logfile: '%s'! \x1b[0m"%self.LogFile
+                internalFailed = True
+                self.failed = True
 
-        if not os.path.isfile(self.RootFile):
-            print "\x1b[45m\x1b[97mCRITICAL: .root file does not exist: %s \x1b[0m"%self.RootFile
+        if len(self.RootFile) > 0 and not os.path.isfile(self.RootFile):
+            print "\x1b[45m\x1b[97mCRITICAL: .root file does not exist: %s! \x1b[0m"%self.RootFile
             internalFailed = True
             self.failed = True
 
