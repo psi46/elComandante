@@ -128,7 +128,7 @@ class TBmaster(object):
         try:
             with open(self.LogFile) as f:
                 lines = f.readlines()
-            if not "welcome to pxar" in lines[0].lower() or not "this is the end, my friend" in lines[-1].lower():
+            if not "welcome to pxar" in lines[0].lower() or not ("this is the end, my friend" in lines[-1].lower() or "pixsetup free fpxarmemory" in lines[-1].lower()):
                 print "\x1b[46m\x1b[97mWARNING: incomplete logfile: '%s'! \x1b[0m"%self.LogFile
                 internalFailed = True
                 self.failed = True
