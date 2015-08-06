@@ -40,7 +40,10 @@ class psi_agente(el_agente.el_agente):
         for tb, module in init.items('Modules'):
             if init.getboolean('TestboardUse',tb):
                 self.Testboards.append(Testboarddefinition(int(tb[2]),module,self.conf.get('TestboardAddress',tb),init.get('ModuleType',tb)))
-                defaultParameterDirectory = self.conf.get('defaultParameters',self.Testboards[-1].type)
+                try:
+                    defaultParameterDirectory = self.conf.get('defaultParameters',self.Testboards[-1].type)
+                except:
+                    defaultParameterDirectory = self.Testboards[-1].type
                 self.Testboards[-1].defparamdir=self.Directories['defaultParameters']+'/'+ defaultParameterDirectory
                 self.log << '\t- Testboard %s at address %s with Module %s reading configuration from %s '%(self.Testboards[-1].slot,self.Testboards[-1].address,self.Testboards[-1].module, defaultParameterDirectory)
         self.numTestboards = len(init.items('Modules'))
@@ -475,6 +478,7 @@ class psi_agente(el_agente.el_agente):
             keyfield = 1
             datafield = 2
 
+        keys_replaced = []
         # iterate over all lines
         for i in range(len(lines)):
             line = lines[i].strip()
@@ -487,12 +491,28 @@ class psi_agente(el_agente.el_agente):
             if not line[keyfield] in keys:
                 continue
             line[datafield] = keys[line[keyfield]]
+            keys_replaced.append(line[keyfield])
             if line[datafield].startswith('DTB') and line[keyfield] == 'id':
                 lines[i] = " : ".join(line)
                 lines[i] += '\n'
             else:
                 lines[i] = " ".join(line)
                 lines[i] += '\n'
+        try:
+            RequireTestParametersExisting = self.init.get('VerifyTestParameters', 'CheckExistence')
+            if RequireTestParametersExisting.strip().lower() == 'true':
+                RequireTestParametersExisting = True
+            else:
+                RequireTestParametersExisting = False
+        except:
+            RequireTestParametersExisting = False
+
+        for key in keys:
+            if not key in keys_replaced:
+                WarningMessage = "Warning: key '%s' in file '%s' does not exist! Update '%s' file in parameters directory or 'Tests *' section in ini file!"%(key, filename, filename)
+                self.log.warning(WarningMessage)
+                if RequireTestParametersExisting:
+                    raise Exception(WarningMessage)
 
         try:
             # Write the new file
