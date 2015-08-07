@@ -2,7 +2,7 @@ import os
 import subprocess
 import sys
 sys.path.insert(1,"../")
-from myutils import sClient,decode,printer,preexec
+from myutils import sClient,decode,printer,preexec,userQueries
 import el_agente
 import time
 
