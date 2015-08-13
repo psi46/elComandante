@@ -98,3 +98,9 @@ Test: powercycle,IV@17,IV@16,IV@17
 #Test: Pretest>{VcalCalibrationStep@Mo,VcalCalibrationStep@Ag,VcalCalibrationStep@Ba,VcalVsThreshold@17},VcalCalibrationStepAnalysisMo,VcalCalibrationStepAnalysisAg,VcalCalibrationStepAnalysisBa,VcalVsThresholdAnalysis,VcalCalibrationAnalysis
 #,Pretest@-10
 #,Cycle,Pretest@17
+
+#Barcode reader support, use 'Fill = Name' for FullQualifications, 'Fill = Both' for X-ray, where each module has it's own parameter folder
+#[BarcodeReader]
+#BarcodeReaderUse = True
+#Fill = Both
+#CorrectModuleNames = True

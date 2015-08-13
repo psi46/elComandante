@@ -297,6 +297,59 @@ class el_comandante:
         self.init = BetterConfigParser(dict_type=OrderedDict)
         self.init.read(iniFile)
 
+    def check_for_barcode_reader(self, configDir):
+        BarcodeReaderUse = False
+        try:
+            if self.init.has_option('BarcodeReader','BarcodeReaderUse') and self.init.get('BarcodeReader','BarcodeReaderUse').strip().lower() == 'true':
+                BarcodeReaderUse = True
+        except:
+            print "no BarcodeReader option defined in .ini file, skipping"
+
+        if BarcodeReaderUse:
+            print 'BarcodeReader is activated'
+
+            # workaround for wrong barcode labels
+            CorrectModuleNames = False
+            try:
+                CorrectModuleNames = self.init.get('BarcodeReader','CorrectModuleNames').strip().lower() == 'true'
+            except:
+                pass
+
+            # get number of modules
+            Modules = []
+            TBMax = 99 #maximum number of testboards to check
+            for TB in range(0,TBMax):
+                if self.init.has_option('Modules','TB%d'%TB):
+                    Modules.append(self.init.get('Modules','TB%d'%TB))
+                else:
+                    break
+            NModules = len(Modules)
+            print "scan modules from TB0 to TB%d, ENTER to leave entry unchanged:"%NModules
+
+            # scan all modules
+            ModulesNew = []
+            for TB in range(0, NModules):
+                ModuleNew = raw_input(" scan module TB%d:"%(TB)).upper().strip()
+                if CorrectModuleNames and len(ModuleNew) > 0 and ModuleNew[0] == 'D':
+                    ModuleNew = 'M' + ModuleNew[1::]
+                    print " => module name corrected to: %s"%ModuleNew
+                ModulesNew.append(ModuleNew)
+
+            # fill module names
+            if self.init.get('BarcodeReader','Fill').lower() in ['name', 'both']:
+                for TB in range(0, NModules):
+                    if len(ModulesNew[TB]) > 0: 
+                        self.init.set('Modules','TB%d'%TB, ModulesNew[TB])
+
+            # fill module types
+            if self.init.get('BarcodeReader','Fill').lower() in ['type', 'both']:
+                for TB in range(0, NModules):
+                    if len(ModulesNew[TB]) > 0: 
+                        self.init.set('ModuleType','TB%d'%TB, ModulesNew[TB])
+
+            self.write_initialization(configDir)
+
+
     def display_configuration(self):
         TBMax = 99
         print 'Module configuration:'
@@ -546,6 +599,7 @@ class el_comandante:
         self.check_config_directory(args.configDir)
         self.read_configuration(args.configDir)
         self.read_initialization(args.configDir)
+        self.check_for_barcode_reader(args.configDir)
         self.display_configuration()
         self.write_initialization(args.configDir)
         self.setup_directories()
