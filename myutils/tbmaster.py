@@ -14,6 +14,7 @@ class TBmaster(object):
         self.color = color
         self.Logger = Logger
         self.TBSubscription = '/TB%s'%self.TB
+        self.alertSubscription = '/alerts'
         self.client.subscribe(self.TBSubscription)
         self.dir = ''
         self.psiVersion = psiVersion
@@ -143,6 +144,12 @@ class TBmaster(object):
             print "\x1b[45m\x1b[97mCRITICAL: .root file does not exist: %s! \x1b[0m"%self.RootFile
             internalFailed = True
             self.failed = True
+
+        # send alert messages
+        if not internalFailed:
+            self.client.send(self.alertSubscription, ":RAISE:TB:TEST:FINISHED TB%s:%s\n"%(self.TB, self.get_directory_name()))
+        else:
+            self.client.send(self.alertSubscription, ":RAISE:TB:TEST:FAILED TB%s:%s, %s\n"%(self.TB, self.get_directory_name(), repr([CheckIntegrityWarnings, CheckIntegrityErrors, CheckIntegrityCriticalErrors])))
 
         return internalFailed
 

@@ -29,6 +29,7 @@ import analysis_agente
 import highVoltage_agente
 import lowVoltage_agente
 import watchDog_agente
+import alerts_agente
 import socket
 import tarfile
 import glob
@@ -66,6 +67,8 @@ class el_comandante:
         self.init = None
         ## Logging handle
         self.log = None
+
+        self.alertSubscription = "/alerts"
 
     ## Kills all the sub processes
     ##
@@ -497,6 +500,11 @@ class el_comandante:
             self.los_agentes.append(coolingBox_agente.coolingBox_agente(timestamp, self.log,self.subsystem_client))
         if self.init.getboolean("LowVoltage", "LowVoltageUse"):
             self.los_agentes.append(lowVoltage_agente.lowVoltage_agente(timestamp, self.log,self.subsystem_client))
+        try:
+            if self.init.getboolean("Alerts", "AlertsUse"):
+                self.los_agentes.append(alerts_agente.alerts_agente(timestamp, self.log, self.subsystem_client))
+        except:
+            pass
 
         # Make the agentes read their configuration and initialization parameters
         for agente in self.los_agentes:
@@ -541,6 +549,7 @@ class el_comandante:
     ## testing, and cleanup. Throws exceptions that have to be caught on the
     ## outside where the procedure is called.
     def run(self):
+
         timestamp = int(time.time())
         args = self.parse_command_line_arguments()
         self.check_config_directory(args.configDir)
@@ -569,6 +578,13 @@ class el_comandante:
 
         for agente in self.los_agentes:
             agente.subscribe()
+
+        try:
+            QualificationType = self.init.get('Tests','TestDescription')
+        except:
+            QualificationType = 'unknown'
+
+        self.subsystem_client.send(self.alertSubscription, ":RAISE:RUN %s\n"%QualificationType)
 
         #directory config
         #get list of tests to do:
@@ -657,6 +673,9 @@ class el_comandante:
 
         self.log.printv()
 
+        # alerts
+        self.subsystem_client.send(self.alertSubscription, ":RAISE:TESTS:START\n")
+
         #--------------LOOP over TESTS-----------------
 
         test = test_chain.next()
@@ -699,6 +718,7 @@ class el_comandante:
             endTime = time.time()
             testDuration = divmod(endTime-startTime, 60)
             self.log << "Test took %i seconds (%i min %i sec)" % (endTime-startTime, testDuration[0], testDuration[1])
+
             # Cleanup tests
             self.log << "Cleaning up after test %s ..." % test.test_str
             for agente in self.los_agentes:
@@ -729,7 +749,12 @@ class el_comandante:
         self.log << "  --------------------------------------------------"
         testDurationMinSec = divmod(totalDuration, 60)
         self.log << "    {0:<30} {1:>4d} min {2:>2d} sec".format("total", int(testDurationMinSec[0]), int(testDurationMinSec[1]))
-       
+        
+        Duration = "{0:>4d} min {1:>2d} sec".format(int(testDurationMinSec[0]), int(testDurationMinSec[1]))
+
+        # alerts
+        self.subsystem_client.send(self.alertSubscription, ":RAISE:TESTS:FINISHED %s\n"%Duration)
+
         userQueries.query_any("Press ENTER to terminate the clients. ", self.log)
 
         self.log << "Asking clients to quit ..."

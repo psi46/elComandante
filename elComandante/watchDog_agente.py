@@ -29,6 +29,7 @@ class watchDog_agente(el_agente.el_agente):
         self.UNKOWN = -2
         self.BUSY = 0
         self.status = 'unkown'
+        self.alertSubscription = '/alerts'
 
     def setup_configuration(self, conf):
         # self.port = conf.get("jumoClient","port")
@@ -255,6 +256,8 @@ class watchDog_agente(el_agente.el_agente):
         if not self.active:
             return True
         sortedOverview = sorted(self.testOverview.items())
+
+        ErrorsOccurred = False
         for item in sortedOverview:
             TB = item[0]
             testDict = item[1]
@@ -263,6 +266,7 @@ class watchDog_agente(el_agente.el_agente):
             errCode = int(self.testOverview[TB][testNo][1])
             if errCode < 0:
                 sys.stdout.write("\x1b[101m\x1b[97m")
+                ErrorsOccurred = True
             elif errCode < 1:
                 sys.stdout.write("\x1b[103m")
             sys.stdout.flush()
@@ -271,6 +275,12 @@ class watchDog_agente(el_agente.el_agente):
                 self.testOverview[TB][testNo][1])
             if errCode < 1:
                 print "\x1b[0m"
+
+        if not ErrorsOccurred:
+            self.sclient.send(self.alertSubscription, ":RAISE:SUBTEST:FINISHED %s"%(self.testOverview[TB][testNo][0]))
+        else:
+            self.sclient.send(self.alertSubscription, ":RAISE:SUBTEST:FAILED %s"%(self.testOverview[TB][testNo][0]))
+        
         # self.log << msg
         # if 'waiting' not in self.status()
         # self.log << "%s: Cleaning up %s ..."%(self.agente_name,test)
