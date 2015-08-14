@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 import sys
+import os
+import re
 sys.path.insert(1, "../")
 from myutils import sClient, printer, decode, BetterConfigParser, TBmaster
 from myutils import colorgenerator as colorGenerator
@@ -9,6 +11,8 @@ import argparse
 import signal
 import select
 from time import sleep
+from smtplib import SMTP
+from email.MIMEText import MIMEText
 
 #------------some configuration--------------
 parser = argparse.ArgumentParser()
@@ -79,8 +83,47 @@ def RaiseException(exception, msg):
     NotificationTargets = list(set(NotificationTargets))
 
     print "notify: %s"%repr(NotificationTargets)
+    notify(NotificationTargets, exception, msg)
 
+def sendMail(target, exception, msg):
 
+    # mail configuration
+    SMTPserver = 'mail.phys.ethz.ch'
+    sender =     'pixelproduction@phys.ethz.ch'
+    destination = [target]
+    USERNAME = "pixelproduction"
+    PASSWORD = ""
+    text_subtype = 'plain'
+
+    # contents
+    subject="elComandante notification %s"%exception
+    content="""\
+    type: {exception}\n\
+    message: {msg}
+    """.format(exception=exception, msg=msg)
+
+    try:
+        msg = MIMEText(content, text_subtype)
+        msg['Subject']= subject
+        msg['From']   = sender # some SMTP servers will do this automatically, not all
+
+        conn = SMTP(SMTPserver, 587)
+        conn.set_debuglevel(False)
+        try:
+            conn.sendmail(sender, destination, msg.as_string())
+        finally:
+            conn.close()
+
+    except Exception, exc:
+        Logger << "mail failed; %s" % str(exc)
+
+def notify(targets, exception, msg):
+    for target in targets:
+        if '@' in target:
+            sendMail(target, exception, msg)
+        elif target[0] == '+':
+            print "not implemented"
+            #sendSMS(target, exception, msg)
 
 def analysePacket(packet):
     time,coms,typ,msg,cmd = decode(packet.data)
@@ -91,7 +134,7 @@ def analysePacket(packet):
             AlertName = '.'.join([x.upper() for x in coms[1:]])
             RaiseException(AlertName, msg)
             return
-    if len(coms) > 0 and coms[0].startswith('exit'):
+    if len(coms) > 0 and coms[0].lower().startswith('exit'):
         print "exiting..."
         End = True
         return

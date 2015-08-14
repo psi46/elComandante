@@ -828,12 +828,14 @@ class el_comandante:
 elComandante = el_comandante()
 try:
     elComandante.run()
-except:
+except Exception as e:
     # Print information about the exception
     traceback.print_exc()
 
     # Print an empty line
     print
+
+    elComandante.subsystem_client.send(elComandante.alertSubscription, ":RAISE:EXCEPTION %s\n"%str(e))
 
     # Wait for the user to acknowledge
     userQueries.query_any("An exception occurred. Press ENTER to close the program. ")
