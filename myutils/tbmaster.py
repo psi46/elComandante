@@ -195,7 +195,10 @@ class TBmaster(object):
             executestr='%s --dir %s --nogui'%(self.psiVersion,dir)
         elif self.version == 'pxar':
             # cat test | ../bin/pXar -d whereever
-            executestr = '%(psiVersion)s -d %(dir)s -r %(rootfilename)s.root'%{'psiVersion' : self.psiVersion, 'dir' : dir, 'rootfilename' : fname}
+            trimParameters = ''
+            if self.trimVcal >= 0:
+                trimParameters = '-T %i'%self.trimVcal
+            executestr = '%(psiVersion)s -d %(dir)s %(trim)s -r %(rootfilename)s.root'%{'psiVersion' : self.psiVersion, 'dir' : dir, 'rootfilename' : fname, 'trim' : trimParameters}
         else:
             executestr='%s -dir %s -r %s.root -log %s.log'%(self.psiVersion,dir,fname,fname)
             if poff:
