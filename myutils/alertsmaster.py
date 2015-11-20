@@ -14,6 +14,7 @@ from time import sleep
 from smtplib import SMTP
 from email.MIMEText import MIMEText
 import datetime
+import shutil
 
 #------------some configuration--------------
 parser = argparse.ArgumentParser()
@@ -35,6 +36,11 @@ configDir= args.configDir
 
 #load config
 alerts = BetterConfigParser()
+if not os.path.isfile(configDir+'/alerts.conf'):
+    if os.path.isfile(configDir+'/alerts.conf.default'):
+        shutil.copy(configDir+'/alerts.conf.default', configDir+'/alerts.conf')
+    else:
+        print "warning: no default alerts configuration file found!"
 alerts.read(configDir+'/alerts.conf')
 config = BetterConfigParser()
 config.read(configDir+'/elComandante.conf')
@@ -145,7 +151,7 @@ def notify(targets, exception, msg, msg_time=None):
     for target in targets:
         if '@' in target:
             sendMail(target=target, exception=exception, msg=msg, msg_time=msg_time)
-        elif target[0] == '+':
+        elif len(target) > 0 and target[0] == '+':
             print "not implemented"
             #sendSMS(target, exception, msg)
 
