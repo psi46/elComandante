@@ -3,7 +3,7 @@ import re,ConfigParser
 class BetterConfigParser(ConfigParser.SafeConfigParser):
 
     def get(self, section, option):
-        result = ConfigParser.SafeConfigParser.get(self, section, option, raw=True)
+        result = ConfigParser.SafeConfigParser.get(self, section, option, raw=True,dict_type=OrderedDict)
         result = self.__replaceSectionwideTemplates(result)
         return result
 
