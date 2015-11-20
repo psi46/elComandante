@@ -266,10 +266,13 @@ class el_comandante:
             self.directories[dir] = os.path.abspath(self.directories[dir].replace("$configDir$",configDir))
 
         for fname in configFileNames:
-            if os.path.isfile(fname):
-                self.config.read(fname)
-            elif os.path.isfile(fname + '.conf'):
-                self.config.read(fname + '.conf')
+            confFileFullPath = configDir + '/' + fname
+            if os.path.isfile(confFileFullPath):
+                self.config.read(confFileFullPath)
+                print "read additional config file: %s"%fname
+            elif os.path.isfile(confFileFullPath + '.conf'):
+                self.config.read(confFileFullPath + '.conf')
+                print "read additional config file: %s.conf"%fname
 
     def set_operator(self):
         operator = raw_input('Please enter the name of the operator:\t')
@@ -311,10 +314,13 @@ class el_comandante:
         self.init = BetterConfigParser(dict_type=OrderedDict)
         self.init.read(iniFile)
         for fname in iniFileNames:
-            if os.path.isfile(fname):
-                self.init.read(fname)
-            elif os.path.isfile(fname + '.ini'):
-                self.init.read(fname + '.ini')
+            iniFileFullPath = configDir + '/' + fname
+            if os.path.isfile(iniFileFullPath):
+                self.init.read(iniFileFullPath)
+                print "read additional ini file: %s"%fname
+            elif os.path.isfile(configDir+ '/' + fname + '.ini'):
+                self.init.read(iniFileFullPath + '.ini')
+                print "read additional ini file: %s.ini"%fname
 
 
     def check_for_barcode_reader(self, configDir):
@@ -625,13 +631,18 @@ class el_comandante:
         # if barcode reader is enabled, user is asked to read in barcodes now
         self.check_for_barcode_reader(args.configDir)
 
-        self.display_configuration()
-
-        # write changes made to main config file (operator etc. and module id's from barcode scanner)
+        # ask if operator/host information is correct, write changes made to main config file (operator etc. and module id's from barcode scanner)
         self.write_initialization(args.configDir)
 
         # now read again including also additional config files specified in command line
-        self.read_initialization(args.configDir, initFileNames=args.initfiles)
+        self.read_initialization(args.configDir, iniFileNames=args.initfiles)
+
+        # display full configuration
+        self.display_configuration()
+
+        correct = userQueries.query_yes_no('Start Qualification?')
+        if not correct:
+            exit()
 
         self.setup_directories()
         self.initialize_logger(timestamp)
