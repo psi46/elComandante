@@ -101,3 +101,8 @@ class environment():
             pos = env.lower().find("mhz")
             self.name = env[0:pos]
             self.xray = True
+
+        if env.lower() == "0mhz/cm2":
+            pos = env.lower().find("mhz")
+            self.name = env[0:pos]
+            self.xray = False

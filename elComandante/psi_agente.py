@@ -499,11 +499,7 @@ class psi_agente(el_agente.el_agente):
                 lines[i] = " ".join(line)
                 lines[i] += '\n'
         try:
-            RequireTestParametersExisting = self.init.get('VerifyTestParameters', 'CheckExistence')
-            if RequireTestParametersExisting.strip().lower() == 'true':
-                RequireTestParametersExisting = True
-            else:
-                RequireTestParametersExisting = False
+            RequireTestParametersExisting = self.init.get('VerifyTestParameters', 'CheckExistence').strip().lower() == 'true'
         except:
             RequireTestParametersExisting = False
 
