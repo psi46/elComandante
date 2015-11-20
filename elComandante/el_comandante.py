@@ -269,10 +269,12 @@ class el_comandante:
             confFileFullPath = configDir + '/' + fname
             if os.path.isfile(confFileFullPath):
                 self.config.read(confFileFullPath)
-                print "read additional config file: %s"%fname
+                print "read additional config file: \x1b[32m%s\x1b[0m"%fname
             elif os.path.isfile(confFileFullPath + '.conf'):
                 self.config.read(confFileFullPath + '.conf')
-                print "read additional config file: %s.conf"%fname
+                print "read additional config file: \x1b[32m%s.conf\x1b[0m"%fname
+            else:
+                print "\x1b[31madditional config file not found: %s\x1b[0m"%fname
 
     def set_operator(self):
         operator = raw_input('Please enter the name of the operator:\t')
@@ -317,10 +319,12 @@ class el_comandante:
             iniFileFullPath = configDir + '/' + fname
             if os.path.isfile(iniFileFullPath):
                 self.init.read(iniFileFullPath)
-                print "read additional ini file: %s"%fname
+                print "read additional ini file: \x1b[32m%s\x1b[0m"%fname
             elif os.path.isfile(configDir+ '/' + fname + '.ini'):
                 self.init.read(iniFileFullPath + '.ini')
-                print "read additional ini file: %s.ini"%fname
+                print "read additional ini file: \x1b[32m%s.ini\x1b[0m"%fname
+            else:
+                print "\x1b[31madditional ini file not found: %s\x1b[0m"%fname
 
 
     def check_for_barcode_reader(self, configDir):
