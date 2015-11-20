@@ -268,6 +268,8 @@ class el_comandante:
         for fname in configFileNames:
             if os.path.isfile(fname):
                 self.config.read(fname)
+            elif os.path.isfile(fname + '.conf'):
+                self.config.read(fname + '.conf')
 
     def set_operator(self):
         operator = raw_input('Please enter the name of the operator:\t')
@@ -311,6 +313,9 @@ class el_comandante:
         for fname in iniFileNames:
             if os.path.isfile(fname):
                 self.init.read(fname)
+            elif os.path.isfile(fname + '.ini'):
+                self.init.read(fname + '.ini')
+
 
     def check_for_barcode_reader(self, configDir):
         BarcodeReaderUse = False
