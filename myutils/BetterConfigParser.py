@@ -1,9 +1,10 @@
 import re,ConfigParser
+from collections import OrderedDict
 
 class BetterConfigParser(ConfigParser.SafeConfigParser):
 
     def get(self, section, option):
-        result = ConfigParser.SafeConfigParser.get(self, section, option, raw=True,dict_type=OrderedDict)
+        result = ConfigParser.SafeConfigParser.get(self, section, option, raw=True)
         result = self.__replaceSectionwideTemplates(result)
         return result
 
