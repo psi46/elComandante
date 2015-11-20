@@ -79,7 +79,7 @@ def RaiseException(exception, msg, msg_time=None):
     exceptionParts = exception.split('.')
     for i in range(0, len(exceptionParts)):
         exceptionName = '.'.join(exceptionParts[0:i+1])
-        print "test %s"%exceptionName
+        print "test condition %s"%exceptionName
 
         Notify = []
         try:
@@ -156,7 +156,6 @@ def notify(targets, exception, msg, msg_time=None):
             #sendSMS(target, exception, msg)
 
 def analysePacket(packet):
-    print "PD: %s"%packet.data
     time,coms,typ,msg,cmd = decode(packet.data)
     coms = [x.lower() for x in coms]
 
