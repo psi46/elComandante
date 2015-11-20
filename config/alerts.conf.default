@@ -1,0 +1,14 @@
+[EXCEPTION]
+Notify: 
+
+[QUALIFICATION.START]
+Notify: 
+
+[QUALIFICATION.FINISHED]
+Notify: 
+
+[TEST.FINISHED]
+Notify: 
+
+[TEST.FAILED]
+Notify:

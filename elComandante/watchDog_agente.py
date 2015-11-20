@@ -276,10 +276,11 @@ class watchDog_agente(el_agente.el_agente):
             if errCode < 1:
                 print "\x1b[0m"
 
+
         if not ErrorsOccurred:
-            self.sclient.send(self.alertSubscription, ":RAISE:SUBTEST:FINISHED %s"%(self.testOverview[TB][testNo][0]))
+            self.sclient.send(self.alertSubscription, ":RAISE:TEST:FINISHED TB%d %s %s"%(TB, self.testOverview[TB][testNo][0], repr(self.testOverview[TB][testNo])))
         else:
-            self.sclient.send(self.alertSubscription, ":RAISE:SUBTEST:FAILED %s"%(self.testOverview[TB][testNo][0]))
+            self.sclient.send(self.alertSubscription, ":RAISE:TEST:FAILED TB%d %s %s"%(TB, self.testOverview[TB][testNo][0], repr(self.testOverview[TB][testNo])))
         
         # self.log << msg
         # if 'waiting' not in self.status()

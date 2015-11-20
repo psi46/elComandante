@@ -435,16 +435,17 @@ class el_comandante:
         # verify all tests in testlist exist
         print 'Verify test list:'
         testlist=self.init.get('Tests','Test')
+        print "\x1b[32m%s\x1b[0m"%testlist
         test_chain = testchain.parse_test_list(testlist)
         testlist= testlist.replace('>',',').replace('{','').replace('}','').split(',')
         while '' in testlist:
                 testlist.remove('')
         testlist = [testname.split('@')[0] if '@' in testname else testname for testname in testlist]
-        SpecialTests = ['powercycle', 'iv', 'leakagecurrent', 'pause', 'cycle']
+        SpecialTests = ['powercycle', 'leakagecurrent', 'pause', 'cycle']
         for testname in testlist:
             TestFound = False
             for SpecialTest in SpecialTests:
-                if testname.lower().strip().startswith(SpecialTest):
+                if testname.lower().strip().startswith(SpecialTest) or testname.strip() == 'IV':
                     TestFound = True
                     break
 
@@ -585,7 +586,11 @@ class el_comandante:
             self.los_agentes.append(lowVoltage_agente.lowVoltage_agente(timestamp, self.log,self.subsystem_client))
         try:
             if self.init.getboolean("Alerts", "AlertsUse"):
-                self.los_agentes.append(alerts_agente.alerts_agente(timestamp, self.log, self.subsystem_client))
+                try:
+                    AlertsAgenteName = "%s@%s"%(self.init.get('Tests','TestDescription'), socket.gethostname())
+                except:
+                    AlertsAgenteName = 'elComandante'
+                self.los_agentes.append(alerts_agente.alerts_agente(timestamp, self.log, self.subsystem_client, name=AlertsAgenteName))
         except:
             pass
 
@@ -774,7 +779,7 @@ class el_comandante:
         self.log.printv()
 
         # alerts
-        self.subsystem_client.send(self.alertSubscription, ":RAISE:TESTS:START\n")
+        self.subsystem_client.send(self.alertSubscription, ":RAISE:QUALIFICATION:START\n")
 
         #--------------LOOP over TESTS-----------------
 
@@ -853,7 +858,7 @@ class el_comandante:
         Duration = "{0:>4d} min {1:>2d} sec".format(int(testDurationMinSec[0]), int(testDurationMinSec[1]))
 
         # alerts
-        self.subsystem_client.send(self.alertSubscription, ":RAISE:TESTS:FINISHED %s\n"%Duration)
+        self.subsystem_client.send(self.alertSubscription, ":RAISE:QUALIFICATION:FINISHED %s\n"%Duration)
 
         userQueries.query_any("Press ENTER to terminate the clients. ", self.log)
 

@@ -16,14 +16,15 @@ import shutil
 import errno
 
 class alerts_agente(el_agente.el_agente):
-    def __init__(self, timestamp,log, sclient):
+    def __init__(self, timestamp,log, sclient, name='elComandanteAlertAgente'):
         el_agente.el_agente.__init__(self,timestamp, log, sclient)
         self.agente_name = "alertsAgente"
         self.client_name = "alertsClient"
         self.subscription = "/alerts"
         self.Directories['configDir'] = "../config/"
         self.active = True
-        
+        self.Name = name
+
     def setup_configuration(self, conf):
         self.conf = conf
         self.active = True
@@ -57,7 +58,8 @@ class alerts_agente(el_agente.el_agente):
         command += "python ../myutils/alertsmaster.py "
         command += "-c %s "%(self.Directories['configDir'])
         command += "-dir %s "%(self.logDir)
-        command += ";read"
+        command += "-n '%s' "%(self.Name)
+        command += ";"
         self.log << "Starting " + self.client_name + " ..."
         self.child = subprocess.Popen(command, shell = True, preexec_fn = preexec)
         return True
