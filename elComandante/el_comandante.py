@@ -226,6 +226,14 @@ class el_comandante:
         parser.add_argument("-c", "--config", dest="configDir",
                                help="specify directory containing config files e.g. ../config/",
                                default="../config/")
+        parser.add_argument("-I","--initfile",dest='initfiles',
+                           help='additional InitFiles which can overwrite the defaults',
+                           default=[],
+                           action='append')
+        parser.add_argument("-C","--configfile",dest='configfiles',
+                           help='additional ConfigFiles which can overwrite the defaults',
+                           default=[],
+                           action='append')
         args = parser.parse_args()
         return args
 
@@ -237,7 +245,7 @@ class el_comandante:
 
 
 
-    def read_configuration(self, configDir):
+    def read_configuration(self, configDir,configFileNames = []):
         configFile = configDir+'/elComandante.conf'
         self.config = BetterConfigParser()
         self.config.read(configFile)
@@ -259,6 +267,17 @@ class el_comandante:
 
         for dir in self.directories:
             self.directories[dir] = os.path.abspath(self.directories[dir].replace("$configDir$",configDir))
+
+        for fname in configFileNames:
+            confFileFullPath = configDir + '/' + fname
+            if os.path.isfile(confFileFullPath):
+                self.config.read(confFileFullPath)
+                print "read additional config file: \x1b[32m%s\x1b[0m"%fname
+            elif os.path.isfile(confFileFullPath + '.conf'):
+                self.config.read(confFileFullPath + '.conf')
+                print "read additional config file: \x1b[32m%s.conf\x1b[0m"%fname
+            else:
+                print "\x1b[31madditional config file not found: %s\x1b[0m"%fname
 
     def set_operator(self):
         operator = raw_input('Please enter the name of the operator:\t')
@@ -295,10 +314,74 @@ class el_comandante:
 
         print 'ini file has been updated'
 
-    def read_initialization(self, configDir):
+    def read_initialization(self, configDir, iniFileNames = []):
         iniFile = configDir+'/elComandante.ini'
         self.init = BetterConfigParser(dict_type=OrderedDict)
         self.init.read(iniFile)
+        for fname in iniFileNames:
+            iniFileFullPath = configDir + '/' + fname
+            if os.path.isfile(iniFileFullPath):
+                self.init.read(iniFileFullPath)
+                print "read additional ini file: \x1b[32m%s\x1b[0m"%fname
+            elif os.path.isfile(configDir+ '/' + fname + '.ini'):
+                self.init.read(iniFileFullPath + '.ini')
+                print "read additional ini file: \x1b[32m%s.ini\x1b[0m"%fname
+            else:
+                print "\x1b[31madditional ini file not found: %s\x1b[0m"%fname
+
+
+    def check_for_barcode_reader(self, configDir):
+        BarcodeReaderUse = False
+        try:
+            if self.init.has_option('BarcodeReader','BarcodeReaderUse') and self.init.get('BarcodeReader','BarcodeReaderUse').strip().lower() == 'true':
+                BarcodeReaderUse = True
+        except:
+            print "no BarcodeReader option defined in .ini file, skipping"
+
+        if BarcodeReaderUse:
+            print 'BarcodeReader is activated'
+
+            # workaround for wrong barcode labels
+            CorrectModuleNames = False
+            try:
+                CorrectModuleNames = self.init.get('BarcodeReader','CorrectModuleNames').strip().lower() == 'true'
+            except:
+                pass
+
+            # get number of modules
+            Modules = []
+            TBMax = 99 #maximum number of testboards to check
+            for TB in range(0,TBMax):
+                if self.init.has_option('Modules','TB%d'%TB):
+                    Modules.append(self.init.get('Modules','TB%d'%TB))
+                else:
+                    break
+            NModules = len(Modules)
+            print "scan modules from TB0 to TB%d, ENTER to leave entry unchanged:"%NModules
+
+            # scan all modules
+            ModulesNew = []
+            for TB in range(0, NModules):
+                ModuleNew = raw_input(" scan module TB%d:"%(TB)).upper().strip()
+                if CorrectModuleNames and len(ModuleNew) > 0 and ModuleNew[0] == 'D':
+                    ModuleNew = 'M' + ModuleNew[1::]
+                    print " => module name corrected to: %s"%ModuleNew
+                ModulesNew.append(ModuleNew)
+
+            # fill module names
+            if self.init.get('BarcodeReader','Fill').lower() in ['name', 'both']:
+                for TB in range(0, NModules):
+                    if len(ModulesNew[TB]) > 0: 
+                        self.init.set('Modules','TB%d'%TB, ModulesNew[TB])
+
+            # fill module types
+            if self.init.get('BarcodeReader','Fill').lower() in ['type', 'both']:
+                for TB in range(0, NModules):
+                    if len(ModulesNew[TB]) > 0: 
+                        self.init.set('ModuleType','TB%d'%TB, ModulesNew[TB])
+
+            self.write_initialization(configDir)
+
 
     def display_configuration(self):
         TBMax = 99
@@ -553,10 +636,27 @@ class el_comandante:
         timestamp = int(time.time())
         args = self.parse_command_line_arguments()
         self.check_config_directory(args.configDir)
-        self.read_configuration(args.configDir)
+
+        # read only main ini file first
+        self.read_configuration(args.configDir, configFileNames=args.configfiles)
         self.read_initialization(args.configDir)
-        self.display_configuration()
+
+        # if barcode reader is enabled, user is asked to read in barcodes now
+        self.check_for_barcode_reader(args.configDir)
+
+        # ask if operator/host information is correct, write changes made to main config file (operator etc. and module id's from barcode scanner)
         self.write_initialization(args.configDir)
+
+        # now read again including also additional config files specified in command line
+        self.read_initialization(args.configDir, iniFileNames=args.initfiles)
+
+        # display full configuration
+        self.display_configuration()
+
+        correct = userQueries.query_yes_no('Start Qualification?')
+        if not correct:
+            exit()
+
         self.setup_directories()
         self.initialize_logger(timestamp)
 

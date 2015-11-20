@@ -1,4 +1,5 @@
 import re,ConfigParser
+from collections import OrderedDict
 
 class BetterConfigParser(ConfigParser.SafeConfigParser):
 
