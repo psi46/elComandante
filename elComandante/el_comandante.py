@@ -223,6 +223,14 @@ class el_comandante:
         parser.add_argument("-c", "--config", dest="configDir",
                                help="specify directory containing config files e.g. ../config/",
                                default="../config/")
+        parser.add_argument("-I","--initfile",dest='initfiles',
+                           help='additional InitFiles which can overwrite the defaults',
+                           default=[],
+                           action='append')
+        parser.add_argument("-C","--configfile",dest='configfiles',
+                           help='additional ConfigFiles which can overwrite the defaults',
+                           default=[],
+                           action='append')
         args = parser.parse_args()
         return args
 
@@ -234,7 +242,7 @@ class el_comandante:
 
 
 
-    def read_configuration(self, configDir):
+    def read_configuration(self, configDir,configFileNames = []):
         configFile = configDir+'/elComandante.conf'
         self.config = BetterConfigParser()
         self.config.read(configFile)
@@ -256,6 +264,10 @@ class el_comandante:
 
         for dir in self.directories:
             self.directories[dir] = os.path.abspath(self.directories[dir].replace("$configDir$",configDir))
+
+        for fname in configFileNames:
+            if os.path.isfile(fname):
+                self.config.read(fname)
 
     def set_operator(self):
         operator = raw_input('Please enter the name of the operator:\t')
@@ -292,10 +304,13 @@ class el_comandante:
 
         print 'ini file has been updated'
 
-    def read_initialization(self, configDir):
+    def read_initialization(self, configDir, iniFileNames = []):
         iniFile = configDir+'/elComandante.ini'
         self.init = BetterConfigParser(dict_type=OrderedDict)
         self.init.read(iniFile)
+        for fname in iniFileNames:
+            if os.path.isfile(fname):
+                self.init.read(fname)
 
     def display_configuration(self):
         TBMax = 99
@@ -544,10 +559,11 @@ class el_comandante:
         timestamp = int(time.time())
         args = self.parse_command_line_arguments()
         self.check_config_directory(args.configDir)
-        self.read_configuration(args.configDir)
-        self.read_initialization(args.configDir)
+        self.read_configuration(args.configDir, configFileNames=args.configfiles)
+        self.read_initialization(args.configDir, initFileNames=args.initfiles)
         self.display_configuration()
-        self.write_initialization(args.configDir)
+        if args.initfiles==[]:
+            self.write_initialization(args.configDir)
         self.setup_directories()
         self.initialize_logger(timestamp)
 
