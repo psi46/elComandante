@@ -54,7 +54,7 @@ class alerts_agente(el_agente.el_agente):
         self.timestamp = timestamp
         if not self.active:
             return True
-        command = "xterm -T 'AlertsMaster' +sb -sl 5000 -geometry 30x10+860+32 -fs 12 -fa 'Mono' -e "
+        command = "xterm -T 'AlertsMaster' +sb -sl 5000 -geometry 30x10+860+32 -fs 8 -fa 'Mono' -e "
         command += "python ../myutils/alertsmaster.py "
         command += "-c %s "%(self.Directories['configDir'])
         command += "-dir %s "%(self.logDir)

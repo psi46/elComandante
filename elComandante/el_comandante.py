@@ -662,6 +662,14 @@ class el_comandante:
         if not correct:
             exit()
 
+        try:
+            with open(args.configDir+'/LastQualification.ini', 'wb') as inifile:
+                self.init.write(inifile)
+            with open(args.configDir+'/LastQualification.conf', 'wb') as conffile:
+                self.config.write(conffile)
+        except:
+            print "could not write LastQualification.ini/conf"
+
         self.setup_directories()
         self.initialize_logger(timestamp)
 
@@ -892,8 +900,10 @@ class el_comandante:
                     dest = Testboard.parentDir+'/configfiles/'
                     if not os.path.exists(dest):
                         os.mkdir(dest)
-                    shutil.copy2(args.configDir+'/elComandante.ini', dest)
-                    shutil.copy2(args.configDir+'/elComandante.conf', dest)
+                    with open(dest+'/elComandante.ini', 'wb') as inifile:
+                        self.init.write(inifile)
+                    with open(dest+'/elComandante.conf', 'wb') as conffile:
+                        self.config.write(conffile)
                 except:
                     raise
         self.createTarFiles(self.los_agentes[0])
