@@ -258,6 +258,7 @@ class watchDog_agente(el_agente.el_agente):
         sortedOverview = sorted(self.testOverview.items())
 
         ErrorsOccurred = False
+        TestName = ""
         for item in sortedOverview:
             TB = item[0]
             testDict = item[1]
@@ -275,12 +276,12 @@ class watchDog_agente(el_agente.el_agente):
                 self.testOverview[TB][testNo][1])
             if errCode < 1:
                 print "\x1b[0m"
-
+            TestName = TestName + "%s %s /"%(self.testOverview[TB][testNo][0], repr(self.testOverview[TB][testNo]))
 
         if not ErrorsOccurred:
-            self.sclient.send(self.alertSubscription, ":RAISE:TEST:FINISHED TB%d %s %s"%(TB, self.testOverview[TB][testNo][0], repr(self.testOverview[TB][testNo])))
+            self.sclient.send(self.alertSubscription, ":RAISE:TEST:FINISHED %s"%TestName)
         else:
-            self.sclient.send(self.alertSubscription, ":RAISE:TEST:FAILED TB%d %s %s"%(TB, self.testOverview[TB][testNo][0], repr(self.testOverview[TB][testNo])))
+            self.sclient.send(self.alertSubscription, ":RAISE:TEST:FAILED %s"%TestName)
         
         # self.log << msg
         # if 'waiting' not in self.status()
