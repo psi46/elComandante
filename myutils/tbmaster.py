@@ -126,22 +126,26 @@ class TBmaster(object):
         self.busy = False
 
         # check if log and root files have been written
+        ErrorMessage = ""
         try:
             with open(self.LogFile) as f:
                 lines = f.readlines()
             if not "welcome to pxar" in lines[0].lower() or not ("this is the end, my friend" in lines[-1].lower() or "pixsetup free fpxarmemory" in lines[-1].lower()):
-                print "\x1b[46m\x1b[97mWARNING: incomplete logfile: '%s'! \x1b[0m"%self.LogFile
+                ErrorMessage = "WARNING: incomplete logfile: '%s'!"%self.LogFile
+                print "\x1b[46m\x1b[97m",ErrorMessage,"\x1b[0m"
                 internalFailed = True
                 self.failed = True
 
         except:
             if len(self.LogFile) > 0:
-                print "\x1b[46m\x1b[97mWARNING: can't open logfile: '%s'! \x1b[0m"%self.LogFile
+                ErrorMessage = "WARNING: can't open logfile: '%s'!"%self.LogFile
+                print "\x1b[46m\x1b[97m",ErrorMessage,"\x1b[0m"
                 internalFailed = True
                 self.failed = True
 
         if len(self.RootFile) > 0 and not os.path.isfile(self.RootFile):
-            print "\x1b[45m\x1b[97mCRITICAL: .root file does not exist: %s! \x1b[0m"%self.RootFile
+            ErrorMessage = "CRITICAL: .root file does not exist: %s!"%self.RootFile
+            print "\x1b[46m\x1b[97m",ErrorMessage,"\x1b[0m"
             internalFailed = True
             self.failed = True
 
@@ -149,7 +153,7 @@ class TBmaster(object):
         if not internalFailed:
             self.client.send(self.alertSubscription, ":RAISE:TB:TEST:FINISHED TB%s:%s\n"%(self.TB, self.get_directory_name()))
         else:
-            self.client.send(self.alertSubscription, ":RAISE:TB:TEST:FAILED TB%s:%s, %s\n"%(self.TB, self.get_directory_name(), repr([CheckIntegrityWarnings, CheckIntegrityErrors, CheckIntegrityCriticalErrors])))
+            self.client.send(self.alertSubscription, ":RAISE:TB:TEST:FAILED TB%s:%s %s\n"%(self.TB, self.get_directory_name(), ErrorMessage))
 
         return internalFailed
 
