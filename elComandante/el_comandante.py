@@ -948,9 +948,32 @@ except Exception as e:
     traceback.print_exc()
 
     # Print an empty line
-    print
+    print ""
 
-    elComandante.subsystem_client.send(elComandante.alertSubscription, ":RAISE:EXCEPTION %s\n"%str(e))
+    try:
+        elComandante.subsystem_client.send(elComandante.alertSubscription, ":RAISE:EXCEPTION %s\n"%str(e))
+    except:
+        pass
+
+    # Wait for the user to acknowledge
+    userQueries.query_any("An exception occurred. Press ENTER to close the program. ")
+
+    # Allow elComandante to clean up
+    elComandante.clean_up_exception()
+
+    sys.exit(0)
+
+except KeyboardInterrupt:
+    # Print information about the exception
+    traceback.print_exc()
+
+    # Print an empty line
+    print ""
+
+    try:
+        elComandante.subsystem_client.send(elComandante.alertSubscription, ":RAISE:EXCEPTION:KEYBBOARDINTERRUPT \n")
+    except:
+        pass
 
     # Wait for the user to acknowledge
     userQueries.query_any("An exception occurred. Press ENTER to close the program. ")
