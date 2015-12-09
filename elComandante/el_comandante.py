@@ -362,7 +362,7 @@ class el_comandante:
             # scan all modules
             ModulesNew = []
             for TB in range(0, NModules):
-                ModuleNew = raw_input(" scan module TB%d:"%(TB)).upper().strip()
+                ModuleNew = raw_input(" scan module TB%d (current parameters: %s):"%(TB, Modules[TB])).upper().strip()
                 if CorrectModuleNames and len(ModuleNew) > 0 and ModuleNew[0] == 'D':
                     ModuleNew = 'M' + ModuleNew[1::]
                     print " => module name corrected to: %s"%ModuleNew
