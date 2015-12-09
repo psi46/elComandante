@@ -246,10 +246,25 @@ class el_comandante:
 
 
     def read_configuration(self, configDir,configFileNames = []):
+
+        # read main config file
         configFile = configDir+'/elComandante.conf'
         self.config = BetterConfigParser()
         self.config.read(configFile)
 
+        # read additional config files which can overwrite configuration
+        for fname in configFileNames:
+            confFileFullPath = configDir + '/' + fname
+            if os.path.isfile(confFileFullPath):
+                self.config.read(confFileFullPath)
+                print "read additional config file: \x1b[32m%s\x1b[0m"%fname
+            elif os.path.isfile(confFileFullPath + '.conf'):
+                self.config.read(confFileFullPath + '.conf')
+                print "read additional config file: \x1b[32m%s.conf\x1b[0m"%fname
+            else:
+                print "\x1b[31madditional config file not found: %s\x1b[0m"%fname
+
+        # set directories
         self.directories['configDir'] = configDir
         self.directories['baseDir'] = self.config.get('Directories','baseDir')
         self.directories['testdefDir'] = self.config.get('Directories','testDefinitions')
@@ -267,17 +282,6 @@ class el_comandante:
 
         for dir in self.directories:
             self.directories[dir] = os.path.abspath(self.directories[dir].replace("$configDir$",configDir))
-
-        for fname in configFileNames:
-            confFileFullPath = configDir + '/' + fname
-            if os.path.isfile(confFileFullPath):
-                self.config.read(confFileFullPath)
-                print "read additional config file: \x1b[32m%s\x1b[0m"%fname
-            elif os.path.isfile(confFileFullPath + '.conf'):
-                self.config.read(confFileFullPath + '.conf')
-                print "read additional config file: \x1b[32m%s.conf\x1b[0m"%fname
-            else:
-                print "\x1b[31madditional config file not found: %s\x1b[0m"%fname
 
     def set_operator(self):
         operator = raw_input('Please enter the name of the operator:\t')
