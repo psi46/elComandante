@@ -27,6 +27,7 @@ class psi_agente(el_agente.el_agente):
         self.Testboards = []
         self.LogFileName = ""
         self.RootFileName = ""
+        self.alertSubscription = '/alerts'
         
     def setup_configuration(self, conf):
         self.conf = conf
@@ -273,12 +274,12 @@ class psi_agente(el_agente.el_agente):
     def check_finished(self):
         if not self.active or not self.pending:
             return True
-        sleep(1)
+        sleep(2)
         for Testboard in self.Testboards:
             if Testboard.busy:
                 self.sclient.send(self.subscription,":STAT:TB%d?\n"%Testboard.slot)
                 sleep(1)
-        sleep(1)
+        sleep(2)
         while True:
             packet = self.sclient.getFirstPacket(self.subscription) 
             if packet.isEmpty() or not self.pending:
@@ -342,7 +343,15 @@ class psi_agente(el_agente.el_agente):
                                 self.Testboards[index].busy=False
                                 TBsbusy = [TB.busy for TB in self.Testboards]
                                 TBsindex= [TB.slot for TB in self.Testboards]
-                                self.log<<"%s:  self.Testboards[%s] failed- the following boards are busy: %s: %s-%s" % (self.agente_name,index, self.pending, TBsindex,TBsbusy)
+                                TBsBusyStrings = []
+                                for TB in self.Testboards:
+                                    if TB.busy:
+                                        TBsBusyStrings.append('TB%d(%s:%s)'%(TB.slot, TB.address, TB.module))
+                                TBsBusyString = ', '.join(TBsBusyStrings)
+
+                                self.log<<"%s:  self.Testboards[%s] failed- the following boards are busy: %s" % (self.agente_name,index, TBsBusyString)
+                                self.sclient.send(self.alertSubscription, ":RAISE:WARNING:TESTBOARD:BUSY One or more TBs are busy after test finished! %s"%TBsBusyString)
+
                         elif msg[1].startswith('unknown'):
                             TBsbusy = [TB.busy for TB in self.Testboards]
                             TBsindex= [TB.slot for TB in self.Testboards]
