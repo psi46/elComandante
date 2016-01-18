@@ -791,7 +791,17 @@ class el_comandante:
         self.log.printv()
 
         # alerts
-        self.subsystem_client.send(self.alertSubscription, ":RAISE:QUALIFICATION:START\n")
+        try:
+            AlertsMessageModules = []
+            for TB in range(0, 99):
+                if self.init.has_option('Modules','TB%d'%TB):
+                    AlertsMessageModules.append(self.init.get('Modules','TB%d'%TB))
+                else:
+                    break
+            AlertsMessage = "Modules: " + ", ".join(AlertsMessageModules)
+        except:
+            AlertsMessage = "Unable to read module configuration!"
+        self.subsystem_client.send(self.alertSubscription, ":RAISE:QUALIFICATION:START %s\n"%AlertsMessage)
 
         #--------------LOOP over TESTS-----------------
 
@@ -870,7 +880,17 @@ class el_comandante:
         Duration = "{0:>4d} min {1:>2d} sec".format(int(testDurationMinSec[0]), int(testDurationMinSec[1]))
 
         # alerts
-        self.subsystem_client.send(self.alertSubscription, ":RAISE:QUALIFICATION:FINISHED %s\n"%Duration)
+        try:
+            AlertsMessageModules = []
+            for TB in range(0, 99):
+                if self.init.has_option('Modules','TB%d'%TB):
+                    AlertsMessageModules.append(self.init.get('Modules','TB%d'%TB))
+                else:
+                    break
+            AlertsMessage = "Modules: " + ", ".join(AlertsMessageModules)
+        except:
+            AlertsMessage = "Unable to read module configuration!"
+        self.subsystem_client.send(self.alertSubscription, ":RAISE:QUALIFICATION:FINISHED %s; %s\n"%(AlertsMessage, Duration))
 
         userQueries.query_any("Press ENTER to terminate the clients. ", self.log)
 
