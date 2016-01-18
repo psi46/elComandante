@@ -803,7 +803,8 @@ class el_comandante:
             AlertsMessageModules = []
             for TB in range(0, 99):
                 if self.init.has_option('Modules','TB%d'%TB):
-                    AlertsMessageModules.append(self.init.get('Modules','TB%d'%TB))
+                    if self.init.get('TestboardUse','TB%d'%TB).strip().lower() == 'true':
+                        AlertsMessageModules.append(self.init.get('Modules','TB%d'%TB))
                 else:
                     break
             AlertsMessage = "Modules: " + ", ".join(AlertsMessageModules)
@@ -895,7 +896,8 @@ class el_comandante:
             AlertsMessageModules = []
             for TB in range(0, 99):
                 if self.init.has_option('Modules','TB%d'%TB):
-                    AlertsMessageModules.append(self.init.get('Modules','TB%d'%TB))
+                    if self.init.get('TestboardUse','TB%d'%TB).strip().lower() == 'true':
+                        AlertsMessageModules.append(self.init.get('Modules','TB%d'%TB))
                 else:
                     break
             AlertsMessage = "Modules: " + ", ".join(AlertsMessageModules)
