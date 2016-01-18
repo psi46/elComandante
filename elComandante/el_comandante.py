@@ -69,6 +69,8 @@ class el_comandante:
         self.log = None
 
         self.alertSubscription = "/alerts"
+        self.agenteTimeoutMins = 120
+        self.agenteTimeoutAlertSent = False
 
     ## Kills all the sub processes
     ##
@@ -630,6 +632,12 @@ class el_comandante:
                 timeDuration = divmod(time1-time0, 60)
                 sys.stdout.write("\r\x1b[2K" + self.log.get_prefix() + "Waiting for " + ", ".join(queue) + " ... %d min %d sec"%(timeDuration[0], timeDuration[1]))
                 sys.stdout.flush()
+                try:
+                    if timeDuration[0] >= self.agenteTimeoutMins and not self.agenteTimeoutAlertSent:
+                        self.subsystem_client.send(self.alertSubscription, ":RAISE:WARNING:AGENTE:TIMEOUT waiting for %s for %d min %d sec\n"%(", ".join(queue), timeDuration[0], timeDuration[1]))
+                        self.agenteTimeoutAlertSent = True
+                except:
+                    pass
             time.sleep(0.25)
             finished = all([agente.check_finished() for agente in self.los_agentes])
             if finished:
@@ -817,6 +825,9 @@ class el_comandante:
             testno += 1
             self.log << "Test %i/%i: %s" % (testno, number_of_tests, test.test_str)
             self.log.printn()
+
+            # reset timeout alerts for each new test
+            self.agenteTimeoutAlertSent = False
 
             for agente in self.los_agentes:
                 agente.set_test(test)
