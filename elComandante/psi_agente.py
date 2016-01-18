@@ -121,8 +121,23 @@ class psi_agente(el_agente.el_agente):
     def _prepare_testboard(self,Testboard):
         if 'IV' in self.currenttest or 'leakagecurrent' in self.currenttest.lower():
             if Testboard.slot != self.activeTestboard:
-            #check if it's this TB's turn
+
+                # reset DTBs which are stuck
+                try:
+                    resetDTB = self.conf.get('psiClient', 'resetDTB')
+                    print "\x1b[102m    |  reset %r\x1b[0m"%Testboard.address
+                    ResetTestboardCommand = [resetDTB, Testboard.address]
+                    ResetTestboardProcess = subprocess.Popen(ResetTestboardCommand, stdout=subprocess.PIPE)
+                    for line in ResetTestboardProcess.stdout:
+                        print "\x1b[103m    |  > %s \x1b[0m"%line.strip('\n')
+                    ResetTestboardProcess.wait()
+                except:
+                    pass
+
                 return
+            else:
+                print "\x1b[102m    |  do not reset %r\x1b[0m"%Testboard.address
+
         if self.test.environment.xray and (self.test.environment.xray_target == "" or self.test.environment.xray_target.lower() == "none"):
             tempString = self.test.environment.name
         else:
