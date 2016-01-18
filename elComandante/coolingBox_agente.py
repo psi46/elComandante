@@ -20,6 +20,7 @@ class coolingBox_agente(el_agente.el_agente):
         self.counter = 0
         self.currentTest = "none"
         self.nCycles = 1
+        self.alertSubscription = '/alerts'
 
     def setup_configuration(self, conf):
         self.port = conf.get("jumoClient","port")
@@ -129,6 +130,11 @@ class coolingBox_agente(el_agente.el_agente):
         # Cleanup after all tests have finished to return
         # everything to the state before the test
         #Heat Up again
+        try:
+            self.sclient.send(self.alertSubscription, ":RAISE:QUALIFICATION:TAKEOUTMODULES")
+        except:
+            pass
+
         self.stabalizeTemperature(20)
         userQueries.query_any("Press ENTER after taking out the modules ", self.log)
         self.currentTest = "final_heating"

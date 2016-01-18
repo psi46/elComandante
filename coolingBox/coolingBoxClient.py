@@ -65,6 +65,11 @@ tempAbo = '/temperature/jumo'
 humAbo = '/humidity'
 curAbo = '/jumo/current'
 dewPointAbo = '/temperature/dewPoint'
+alertsAbo = '/alerts'
+maxTemperatureAllowed = 30
+maxTempErrorSent = -99
+alertsSentLastTime = 0
+alertsCheckedLastTime = time.time()
 client = sClient(serverZiel,serverPort,"coolingboxClient")
 client.subscribe(aboName)
 client.send(aboName,'Connecting coolingBox Client with Subsystem\n')
@@ -277,6 +282,11 @@ def check_if_dry(isDry):
 
 
 def mainLoop():
+    global client
+    global alertsCheckedLastTime
+    global alertsSentLastTime
+    global maxTempErrorSent
+    global maxTemperatureAllowed
 
     sleep(0.5)
     counter = 0 
@@ -292,7 +302,19 @@ def mainLoop():
         if now - lastMeasurementSend > 5:
             sendMeasurements()
             lastMeasurementSend = now
-        
+
+        # alerts
+        try:
+            if now - alertsCheckedLastTime > 10:
+                temp = jumo.get_temperature()
+                alertsCheckedLastTime = now
+                if temp - maxTemperatureAllowed > 0.1 and ((temp - maxTempErrorSent > 1.0) or (now-alertsSentLastTime > 300)):
+                    client.send(alertsAbo, ":RAISE:WARNING:COLDBOX:TEMPERATURE Temperature of cold box too high temp=%2.1f degC > %2.1f degC"%(temp, maxTemperatureAllowed))
+                    maxTempErrorSent = temp
+                    alertsSentLastTime = now
+        except Exception as exception:
+            print "EXC:", exception
+
         if packet.isEmpty():
             sleep(.5)
             continue

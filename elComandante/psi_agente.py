@@ -131,6 +131,7 @@ class psi_agente(el_agente.el_agente):
                     for line in ResetTestboardProcess.stdout:
                         print "\x1b[103m    |  > %s \x1b[0m"%line.strip('\n')
                     ResetTestboardProcess.wait()
+                    sleep(1)
                 except:
                     pass
 
