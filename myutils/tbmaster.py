@@ -7,7 +7,7 @@ import select
 from time import sleep
 import os
 class TBmaster(object):
-    def __init__(self, TB, client, psiSubscription, Logger, color='black', psiVersion='psi46expert'):
+    def __init__(self, TB, client, psiSubscription, Logger, color='black', psiVersion='psi46expert', trimVcal=-1):
         self.TB = TB
         self.client = client
         self.psiSubscription = psiSubscription
@@ -37,22 +37,14 @@ class TBmaster(object):
         self.LogFile = ""
         self.RootFile = ""
         # default value in Vcal units, -1 means use untrimmed parameters
-        #  this setting is overwritten if [Test Trim] is specified in the ini file
-        #  containg testParameters=Vcal=*
-        self.trimVcal = -1 
-
-        self.init = BetterConfigParser()
-        self.init.read("../config/elComandante.ini")
         try:
-            testParameters = self.init.get('Test Trim','testParameters')
-            pos1 = testParameters.find("=")
-            if pos1 > 0:
-                testParametersName = testParameters[0:pos1]
-                testParametersValue = testParameters[pos1+1:]
-                if testParametersName.lower() == "vcal":
-                    self.trimVcal = int(testParametersValue)
-                    self.Logger << "TB%s: using option '-T %s' when calling pxar"%(self.TB, self.trimVcal)
+            self.trimVcal = int(trimVcal)
         except:
+            self.trimVcal = -1
+
+        if self.trimVcal > -1:
+            self.Logger << "TB%s: using option '-T %s' when calling pxar"%(self.TB, self.trimVcal)
+        else:
             self.Logger << "TB%s: no [Test Trim] section found in ini file, using untrimmed parameters"%self.TB
 
     def _spawn(self,executestr):
