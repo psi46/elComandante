@@ -378,7 +378,11 @@ class el_comandante:
             if self.init.get('BarcodeReader','Fill').lower() in ['name', 'both']:
                 for TB in range(0, NModules):
                     if len(ModulesNew[TB]) > 0: 
-                        self.init.set('Modules','TB%d'%TB, ModulesNew[TB])
+                        if ModulesNew[TB].strip() == '-':
+                            self.init.set('TestboardUse','TB%d'%TB, 'False')
+                        else:
+                            self.init.set('TestboardUse','TB%d'%TB, 'True')
+                            self.init.set('Modules','TB%d'%TB, ModulesNew[TB])
 
             # fill module types
             if self.init.get('BarcodeReader','Fill').lower() in ['type', 'both']:
