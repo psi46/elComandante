@@ -207,6 +207,7 @@ class TBmaster(object):
             if poff:
                 executestr+=' -t poff -i'
         self.Logger << 'exec string  = %s'%executestr
+        sleep(2)
         self._spawn(executestr)
         self.failed=self._readout()
         self.Logger << 'done, failed = %s'%self.failed

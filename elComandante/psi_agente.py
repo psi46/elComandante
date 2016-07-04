@@ -117,13 +117,13 @@ class psi_agente(el_agente.el_agente):
                 #print 'active testboard for IV is: %s'%self.activeTestboard
         for Testboard in self.Testboards:
             self._prepare_testboard(Testboard)
+            sleep(3)
         self.pending = False
         return True
 
     def _prepare_testboard(self,Testboard):
         if 'IV' in self.currenttest or 'leakagecurrent' in self.currenttest.lower():
             if Testboard.slot != self.activeTestboard:
-
                 # reset DTBs which are stuck
                 try:
                     resetDTB = self.conf.get('psiClient', 'resetDTB')
