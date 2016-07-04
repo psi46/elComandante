@@ -27,6 +27,9 @@ parser.add_argument("-dir","--directory", dest="loggingDir",
 parser.add_argument("-num","--numTB", dest="numTB",
                         help="specify the number of Testboards in use",
                         default="1")
+parser.add_argument("-T","--trimVcal", dest="trimVcal",
+                        help="load trimmed configuration to vcal",
+                        default="-1")
 #parse args and setup logdir
 args = parser.parse_args()
 Logger = printer()
@@ -81,7 +84,7 @@ psiVersion = config.get('psiClient','psiVersion')
 #init TBmasters:
 TBmasters=[]
 for i in range(numTB):
-    TBmasters.append(TBmaster(i, client, psiSubscription, Logger, next(color), psiVersion))
+    TBmasters.append(TBmaster(TB=i, client=client, psiSubscription=psiSubscription, Logger=Logger, color=next(color), psiVersion=psiVersion, trimVcal=args.trimVcal))
 
 def openTB(TBno,msg,poff=False):
     if TBno>=0:

@@ -67,6 +67,7 @@ class el_comandante:
         self.init = None
         ## Logging handle
         self.log = None
+        self.trimVcal = -1
 
         self.alertSubscription = "/alerts"
         self.agenteTimeoutMins = 120
@@ -236,6 +237,9 @@ class el_comandante:
                            help='additional ConfigFiles which can overwrite the defaults',
                            default=[],
                            action='append')
+        parser.add_argument("-T", "--trim", dest="trim",
+                               help="trim to vcal",
+                               default="")
         args = parser.parse_args()
         return args
 
@@ -395,6 +399,10 @@ class el_comandante:
 
     def display_configuration(self):
         TBMax = 99
+        if self.trimVcal > 0:
+            print 'Using parameters trimmed to: %d Vcal'%self.trimVcal
+        else:
+            print 'Using untrimmed parameters.'
         print 'Module configuration:'
 
         # read module, module type and testboard identifier from ini and conf file
@@ -583,7 +591,7 @@ class el_comandante:
 
     def create_los_agentes(self, timestamp):
         # Create agentes that are responsible for client processes
-        self.los_agentes.append(psi_agente.psi_agente(timestamp, self.log, self.subsystem_client))
+        self.los_agentes.append(psi_agente.psi_agente(timestamp=timestamp, log=self.log, sclient=self.subsystem_client, trimVcal=self.trimVcal))
         if self.init.getboolean("Keithley", "KeithleyUse"):
             self.los_agentes.append(highVoltage_agente.highVoltage_agente(timestamp,self.log,self.subsystem_client))
         self.los_agentes.append(watchDog_agente.watchDog_agente(timestamp,self.log,self.subsystem_client))
@@ -670,6 +678,26 @@ class el_comandante:
 
         # now read again including also additional config files specified in command line
         self.read_initialization(args.configDir, iniFileNames=args.initfiles)
+
+        # try to read trimming parameter from command line first
+        if len(args.trim.strip()) > 0:
+            try:
+                self.trimVcal = int(args.trim)
+            except:
+                print "bad trim parameter: '%s'"%args.trim
+
+        # otherwise from config file
+        if self.trimVcal < 0:
+            try:
+                testParameters = self.init.get('Test Trim','testParameters')
+                pos1 = testParameters.find("=")
+                if pos1 > 0:
+                    testParametersName = testParameters[0:pos1]
+                    testParametersValue = testParameters[pos1+1:]
+                    if testParametersName.lower() == "vcal":
+                        self.trimVcal = int(testParametersValue)
+            except:
+                pass
 
         # display full configuration
         self.display_configuration()

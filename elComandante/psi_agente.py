@@ -17,7 +17,7 @@ import shutil
 import errno
 
 class psi_agente(el_agente.el_agente):
-    def __init__(self, timestamp,log, sclient):
+    def __init__(self, timestamp,log, sclient,trimVcal=-1):
         el_agente.el_agente.__init__(self,timestamp, log, sclient)
         self.agente_name = "psiAgente"
         self.client_name = "psiClient"
@@ -27,6 +27,7 @@ class psi_agente(el_agente.el_agente):
         self.Testboards = []
         self.LogFileName = ""
         self.RootFileName = ""
+        self.trimVcal = trimVcal
         self.alertSubscription = '/alerts'
         
     def setup_configuration(self, conf):
@@ -72,7 +73,8 @@ class psi_agente(el_agente.el_agente):
         command = "xterm -T %s "%xtermParameters
         command += "python ../psiClient/psi46master.py "
         command += "-dir %s "%(self.Directories['logDir'])
-        command += "-num %s"%self.numTestboards
+        command += "-num %s "%self.numTestboards
+        command += "-T %d "%self.trimVcal
         self.log << "Starting " + self.client_name + " ..."
         self.child = subprocess.Popen(command, shell = True, preexec_fn = preexec)
         return True
