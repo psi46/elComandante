@@ -135,7 +135,7 @@ class coolingBox_agente(el_agente.el_agente):
         except:
             pass
 
-        self.stabalizeTemperature(20)
+        self.stabalizeTemperature(17)
         userQueries.query_any("Press ENTER after taking out the modules ", self.log)
         self.currentTest = "final_heating"
         self.log << "%s: Heating up ..." % self.agente_name
