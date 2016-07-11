@@ -126,6 +126,7 @@ class psi_agente(el_agente.el_agente):
             if Testboard.slot != self.activeTestboard:
                 # reset DTBs which are stuck
                 try:
+                    sleep(5)
                     resetDTB = self.conf.get('psiClient', 'resetDTB')
                     print "\x1b[102m    |  reset %r\x1b[0m"%Testboard.address
                     ResetTestboardCommand = [resetDTB, Testboard.address]
@@ -133,7 +134,7 @@ class psi_agente(el_agente.el_agente):
                     for line in ResetTestboardProcess.stdout:
                         print "\x1b[103m    |  > %s \x1b[0m"%line.strip('\n')
                     ResetTestboardProcess.wait()
-                    sleep(1)
+                    sleep(2)
                 except:
                     pass
 
