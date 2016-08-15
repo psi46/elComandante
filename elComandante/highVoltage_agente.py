@@ -14,22 +14,48 @@ import subprocess
 
 
 class highVoltage_agente(el_agente.el_agente):
-    def __init__(self, timestamp,log, sclient):
+    def __init__(self, timestamp,log, sclient, clientName = 'keithleyClient'):
         el_agente.el_agente.__init__(self,timestamp, log, sclient)
+
+        self.clientNames = {
+            'KEITHLEY': 'keithleyClient', 
+            'ISEG': 'isegClient'
+        }
+
+        if clientName not in self.clients.values:
+            raise Exception("Unknown client: " % clientName)
+            return True
+
         self.agente_name = "highVoltageAgente"
-        self.client_name = "keithleyClient"
-        self.currenttest=None
+        self.client_name = clientName
+        self.currenttest = None
         self.ivDone = True
         self.leakageCurrentTestDone = True
         self.log = log
         self.active = True
 
+    def is_type(self, hvClientType):
+        if hvClientType in self.clientNames:
+            if self.clientNames[hvClientType] == self.client_name:
+                return True
+            else:
+                return False
+        else:
+            raise Exception("Unknown client type: " % hvClientType)
+            return False
+
     def setup_configuration(self, conf):
        # self.conf = conf
         self.numerator = 0
-        self.subscription = conf.get("subsystem", "keithleySubscription")
-        self.keithleyDir = conf.get('Directories','keithleyDir')
-        self.keithleyPort = conf.get("keithleyClient","port")
+        if self.is_type('KEITHLEY'):
+            self.subscription = conf.get("subsystem", "keithleySubscription")
+            self.keithleyDir = conf.get('Directories','keithleyDir')
+            self.keithleyPort = conf.get("keithleyClient","port")
+        elif self.is_type('ISEG'):
+            self.subscription = conf.get("subsystem", "isegSubscription")
+            self.isegDir = conf.get('Directories','isegDir')
+            self.isegPort = conf.get("isegClient","port")
+
         #do i need logdir?
         self.logDir = conf.get("Directories", "dataDir") + "/logfiles/"
 
@@ -38,9 +64,19 @@ class highVoltage_agente(el_agente.el_agente):
         self.ivStop  = float(init.get('IV','Stop'))
         self.ivStep  = float(init.get('IV','Step'))
         self.ivDelay = float(init.get('IV','Delay'))
-        self.leakageCurrentMeasurementTime = float(init.get('LeakageCurrent','Duration'))
-        self.biasVoltage = -abs(float(init.get('Keithley','BiasVoltage')))
-        self.active = init.getboolean("Keithley","KeithleyUse")
+
+        if self.is_type('KEITHLEY'):
+            self.leakageCurrentMeasurementTime = float(init.get('LeakageCurrent','Duration'))
+            self.biasVoltage = -abs(float(init.get('Keithley','BiasVoltage')))
+            self.active = init.getboolean("Keithley","KeithleyUse")
+        elif self.is_type('ISEG'):
+            self.leakageCurrentMeasurementTime = float(init.get('LeakageCurrent','Duration'))
+            self.biasVoltage = -abs(float(init.get('Iseg','BiasVoltage')))
+            self.active = init.getboolean("Iseg","IsegUse")
+        else:
+            raise Exception("Unknown client: " % self.client_name)
+            return False
+
 
     def check_client_running(self):
         if not self.active:
@@ -61,12 +97,24 @@ class highVoltage_agente(el_agente.el_agente):
         if not self.active:
             return True
  #       return True
-        command  = "xterm  -T 'HighVoltage' +sb -geometry 80x25+1200+1300 -fs 10 -fa 'Mono' -e "
-        command += "%s/keithleyClient.py "%(self.keithleyDir)
-        command += "-d %s "%(self.keithleyPort)
-        command += "-dir %s "%(self.logDir)
-        command += "-ts %s "%(self.timestamp)
-        command += "-iV %s"%self.biasVoltage
+
+        if self.is_type('KEITHLEY'):
+            command  = "xterm  -T 'HighVoltage' +sb -geometry 80x25+1200+1300 -fs 10 -fa 'Mono' -e "
+            command += "%s/keithleyClient.py "%(self.keithleyDir)
+            command += "-d %s "%(self.keithleyPort)
+            command += "-dir %s "%(self.logDir)
+            command += "-ts %s "%(self.timestamp)
+            command += "-iV %s"%self.biasVoltage
+        elif self.is_type('ISEG'):
+            command  = "xterm  -T 'HighVoltage' +sb -geometry 80x25+1200+1300 -fs 10 -fa 'Mono' -e "
+            command += "%s/isegClient.py "%(self.isegDir)
+            command += "-d %s "%(self.isegPort)
+            command += "-dir %s "%(self.logDir)
+            command += "-ts %s "%(self.timestamp)
+            command += "-iV %s"%self.biasVoltage
+        else:
+            print "nothing to do..."
+
         self.log << '%s: Starting %s..."%s" '% (self.agente_name, self.client_name,command)
 
         self.child = subprocess.Popen(command, shell = True, preexec_fn = preexec)

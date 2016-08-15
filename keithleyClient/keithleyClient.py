@@ -145,7 +145,7 @@ def sweep():
     global testDir
     global maxSweepTries 
     global client
-    global keithley
+    global iseg
     global aboName
     doingSweep = True
     outputStatus = keithley.getOutputStatus()
