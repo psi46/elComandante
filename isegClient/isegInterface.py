@@ -195,21 +195,32 @@ class ISEG(HVInterface):
     def set_channel_current(self, current, channel=-1):
         self.is_valid_channel_string(channel)
         self.is_valid_current(current, channel)
-        data = ':CURR %.3f (@%d)' % (current, channel)
-        print 'set Current of channel %d to %.3f V' % (channel, current)
+        data = ':CURR %.6f,(@%d)' % (current, channel)
+        print 'set Current of channel %d to %.6f A' % (channel, current)
         return self.write(data)
 
     def set_channel_current_bound(self, current_bound, channel=-1):
         self.is_valid_channel_string(channel)
         self.is_valid_current_bound(current_bound, channel)
-        data = ':CURR:BOU %.3e (@%s)' % (current_bound, channel)
+        data = ':CURR:BOU %.3e,(@%s)' % (current_bound, channel)
         print 'set current bound of %d to %.3e A' % (channel, current_bound)
+        return self.write(data)
+
+    def set_current_bound(self, current_bound):
+        data = ':CURR:BOU %.6f' % (current_bound)
+        print 'set current bound to %.6f A' % (current_bound)
+        return self.write(data)
+
+    def set_current(self, current):
+        self.is_valid_current(current, -1)
+        data = ':CURR %.6f' % (current)
+        print 'set Current to %.6f A' % (current)
         return self.write(data)
 
     def clear_channel_events(self, channel=-1):
         self.is_valid_channel_string(channel)
         data = ':EV:CLEAR (@%s)' % channel
-        print 'Clear channel events @ch' % channel
+        print 'Clear channel events @ch %d' % channel
         return self.write(data)
 
     def set_channel_event_mask(self, mask_word, channel=-1):
@@ -273,6 +284,9 @@ class ISEG(HVInterface):
     # todo :CONF:EV <WORD>
     # todo :CONF:EV:MASK
     # todo :CONF:EV:CHANMASK
+
+    def clear_events(self):
+        return self.get_answer_for_query(':CONF:EV CLEAR')
 
     def read_current(self, channel=-1):
         ch = self.get_channel_string(channel)

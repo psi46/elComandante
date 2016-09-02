@@ -153,6 +153,7 @@ class psi_agente(el_agente.el_agente):
         self._setupdir_testboard(Testboard)
         if 'IV' in self.currenttest:
             self.sclient.send(self.highVoltageSubscription,":PROG:IV:TESTDIR %s\n"%Testboard.testdir)
+            self.sclient.send(self.highVoltageSubscription,":PROG:IV:TESTDIR%d %s\n"%(Testboard.slot, Testboard.testdir))
             self.open_testboard(Testboard)
         elif 'leakagecurrent' in self.currenttest.lower():
             poff = False

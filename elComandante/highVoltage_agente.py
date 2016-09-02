@@ -14,7 +14,7 @@ import subprocess
 
 
 class highVoltage_agente(el_agente.el_agente):
-    def __init__(self, timestamp,log, sclient, clientName = 'keithleyClient'):
+    def __init__(self, timestamp,log, sclient, clientName = 'keithleyClient', configFileNames = []):
         el_agente.el_agente.__init__(self,timestamp, log, sclient)
 
         self.clientNames = {
@@ -22,7 +22,7 @@ class highVoltage_agente(el_agente.el_agente):
             'ISEG': 'isegClient'
         }
 
-        if clientName not in self.clients.values:
+        if clientName not in self.clientNames.values():
             raise Exception("Unknown client: " % clientName)
             return True
 
@@ -33,6 +33,7 @@ class highVoltage_agente(el_agente.el_agente):
         self.leakageCurrentTestDone = True
         self.log = log
         self.active = True
+        self.configFileNames = configFileNames
 
     def is_type(self, hvClientType):
         if hvClientType in self.clientNames:
@@ -42,6 +43,14 @@ class highVoltage_agente(el_agente.el_agente):
                 return False
         else:
             raise Exception("Unknown client type: " % hvClientType)
+            return False
+
+    def supports_multichannel_hv(self):
+        if self.is_type('KEITHLEY'):
+            return False
+        elif self.is_type('ISEG'):
+            return True
+        else:
             return False
 
     def setup_configuration(self, conf):
@@ -109,6 +118,8 @@ class highVoltage_agente(el_agente.el_agente):
             command  = "xterm  -T 'HighVoltage' +sb -geometry 80x25+1200+1300 -fs 10 -fa 'Mono' -e "
             command += "%s/isegClient.py "%(self.isegDir)
             command += "-d %s "%(self.isegPort)
+            if len(self.configFileNames) > 0:
+                command += "-c %s "%(','.join(self.configFileNames))
             command += "-dir %s "%(self.logDir)
             command += "-ts %s "%(self.timestamp)
             command += "-iV %s"%self.biasVoltage

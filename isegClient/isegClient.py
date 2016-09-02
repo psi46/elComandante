@@ -23,14 +23,14 @@ class isegConfigObject:
 
         #
         self.serialPort = '/dev/iseg'
-        self.testDir = '.'
+        self.testDirs = {0: '.', 1: '.', 2:'.', 3:'.', 4:'.', 5:'.'}
 
         # sweep
         self.startValue = -100
         self.stopValue = -200
         self.stepValue = 15
         self.nSweeps = 1
-        self.delay =.1
+        self.delay = 1
         self.maxSweepTries=1
         self.doingSweep = False
 
@@ -55,8 +55,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--device", dest="serialPort",
                        help="serial Port address e.g. /dev/ttyF0",
                        default='/dev/iseg')
-parser.add_argument("-c", "--config", dest="configFile",
-                       help="config file",
+parser.add_argument("-c", "--config", dest="configFiles",
+                       help="config files",
                        default='')
 parser.add_argument("-dir","--directory", dest='dataDir',
                        help='directory where LogFilse is Stored',
@@ -80,7 +80,6 @@ except:
     os.mkdir(args.dataDir)
 
 #default testDir, should be set (by elComandante)  when doing IV curve
-isegConfig.testDir = '%s'%(args.dataDir)
 
 #Setup Logger 
 Logger = printer()
@@ -95,20 +94,23 @@ if not os.access(isegConfig.serialPort, os.R_OK):
     sys.exit()
     raise SystemExit
 Logger<<'SerialPort: %s'% isegConfig.serialPort
+Logger<<'Config files: %s'% args.configFiles
 
 # handle CTRL+C
 def handler(signum, frame):
     Logger << 'Close Connection'
     client.closeConnection()
     Logger << 'Signal handler called with signal %s'%signum
+    End=True
     try:
         iseg.set_output(False, 'all')
     except:
         pass
+
     if client.isClosed == True:
         Logger << 'client connection closed: kill all'
-        End=True
         Logger << 'End: %s'%End
+    exit()
     
 signal.signal(signal.SIGINT, handler)
 
@@ -154,16 +156,38 @@ client = sClient(serverZiel, serverPort, clientName)
 client.subscribe(aboName)
 client.send(aboName,'Connecting {clientName} with Subsystem\n'.format(clientName=clientName))
 
+# load configuration files
 conf = ConfigParser.ConfigParser()
-conf.read(args.configFile)
-iseg = isegInterface.ISEG(conf, 1, False)
+try:
+    configFiles = args.configFiles.split(',')
+except:
+    configFiles = []
 
+for configFile in configFiles:
+    conf.read(configFile)
+iseg = isegInterface.ISEG(conf, 1, False)
 iseg.set_output(False, 'all')
+iseg.set_emergency_clear()
+
+# status
 printStatus()
-#Logger << 'status:%s'%iseg.get_all_channel_status()
 activeChannels = iseg.get_list_of_active_channels()
 Logger << 'active channels: %r'%activeChannels
 
+immediateVoltage = float(args.immidiateVoltage)
+
+currentBound = 0.000105   # 105 uA 1.05e-4 A
+Logger << 'set current bound: %e'%currentBound
+iseg.set_current(currentBound)
+
+for channel in activeChannels:
+    Logger << 'set voltage %e'%immediateVoltage
+    iseg.clear_channel_events(channel)
+    iseg.set_channel_current(currentBound, channel)
+    iseg.set_voltage(immediateVoltage, channel)
+
+iseg.clear_events()
+iseg.set_emergency_clear()
 
 #start leakage current vs time logger
 LeakageCurrentLoggers = {}
@@ -199,11 +223,14 @@ def readCurrentIV():
 
     if len(activeChannels) > 0:
         timestamp = time.time()
-        currents = iseg.read_current(activeChannels)
-        voltages = iseg.read_voltage(activeChannels)
-        for i in range(len(activeChannels)):
-            Logger << "Ch%d: %f V / %f A"%(activeChannels[i], voltages[i], currents[i])
-            LeakageCurrentLoggers[activeChannels[i]] << '%s\t%s\t%s' % (voltages[i], currents[i], timestamp)
+        try:
+            currents = iseg.read_current(activeChannels)
+            voltages = iseg.read_voltage(activeChannels)
+            for i in range(len(activeChannels)):
+                Logger << "Ch%d: %f V / %f A"%(activeChannels[i], voltages[i], currents[i])
+                LeakageCurrentLoggers[activeChannels[i]] << '%s\t%s\t%s' % (voltages[i], currents[i], timestamp)
+        except:
+            Logger << 'could not read from ISEG'
 
     '''
                 #Logger << '%s: %s V - %s A'%(timestamp,data[0],data[1])
@@ -243,6 +270,10 @@ def doLinearSweep(startValue, stopValue, stepValue, nSweeps = 1, delay = 5):
 
     # start IV curve
     startTimestamp = time.time()
+    activeChannels = iseg.get_list_of_active_channels()
+
+    for channel in activeChannels:
+        iseg.set_output(True, channel)
 
     for iSweep in range(nSweeps):
         voltageValue = startValueAbs
@@ -260,8 +291,15 @@ def doLinearSweep(startValue, stopValue, stepValue, nSweeps = 1, delay = 5):
                 iCh = activeChannels[idxCh]
                 IVLoggers[iCh] << '%+8.3f\t%+11.4e\t%d'%(voltages[idxCh],currents[idxCh],timestamp)
                 measurements.append([timestamp, voltages[idxCh], currents[idxCh], iCh])
-            Logger << "Measured currents: %s"%(', '.join(["%1.4f"%x for x in currents]))
+            Logger << "Measured currents: %s"%(', '.join(["%1.4e"%x for x in currents]))
             voltageValue += stepValueAbs
+
+            if End:
+                break
+
+    activeChannels = iseg.get_list_of_active_channels()
+    for channel in activeChannels:
+        iseg.set_output(False, channel)
 
     endTimestamp = time.time()
     Logger << "IV curve(s) took %d seconds"%(endTimestamp-startTimestamp) 
@@ -279,7 +317,7 @@ def sweep():
     isegConfig.doingSweep = True
 
     client.send(aboName,':MSG! Start with Linear Sweep from %sV to %sV in %sV steps\n'%(isegConfig.startValue, isegConfig.stopValue, isegConfig.stepValue))
-    Logger << "TestDirectory is: %s"%isegConfig.testDir
+    Logger << "TestDirectory is: %s"%isegConfig.testDirs
     Logger << "Max Sweep Tries:  %d"%isegConfig.maxSweepTries
     ntries = 0
     while True:
@@ -417,7 +455,7 @@ def  analyseIV(coms,typ,msg):
         if msg.lower().startswith('meas') and typ=='c':
             outMsg= ':MSG! Do Sweep from %.2f V to %.2f'%(isegConfig.startValue, isegConfig.stopValue)
             outMsg+=' in steps of %.2fV with a delay of %.f\n'%(isegConfig.stepValue, isegConfig.delay)
-            outMsg+='\tTestDirectory is "%s"\n'%isegConfig.testDir
+            outMsg+='\tTestDirectory is "%r"\n'%isegConfig.testDirs
             Logger << outMsg
             client.send(aboName,outMsg)
             sweep()
@@ -430,14 +468,22 @@ def  analyseIV(coms,typ,msg):
         if coms[0].startswith('testdir'):
             if typ =='c':
 #                Logger << '%s: "%s"'%(coms[0],msg)
-                isegConfig.testDir = msg
                 try:
-                    os.stat(testDir)
-#                    Logger << 'checked Directory'
+                    slot = int(coms[0][7:])
+                    isegConfig.testDirs[slot] = msg
+
+                    try:
+                        os.stat(isegConfig.testDirs[slot])
+                    except:
+                        outMsg = ':IV:TESTDIR! %s: directory does not exist. Error!'%isegConfig.testDirs[slot]
+                    else:
+                        outMsg = ':IV:TESTDIR! %s'%isegConfig.testDirs[slot]
+
+                    IVLoggers.set_logfile(msg, 'ivCurve.log')
+                    print isegConfig.testDirs
                 except:
-                    outMsg = ':IV:TESTDIR! %s: directory does not exist. Error!'%isegConfig.testDir
-                else:
-                    outMsg = ':IV:TESTDIR! %s'%isegConfig.testDir
+                    pass
+
 
         if coms[0].startswith('start'):
             if typ =='c' and is_float(msg):
@@ -538,10 +584,13 @@ def analyseOutp(coms,typ,msg):
         elif typ=='c':
             if msg in ['1','ON','True']:
                 activeChannels = iseg.get_list_of_active_channels()
-                iseg.set_output(True, activeChannels)
+                for channel in activeChannels:
+                    iseg.set_output(True, channel)
+                    Logger << "output on!"
             elif msg in ['0','OFF','False']:
                 activeChannels = iseg.get_list_of_active_channels()
-                iseg.set_output(False, activeChannels)
+                for channel in activeChannels:
+                    iseg.set_output(False, channel)
             elif  typ != 'a':
                 Logger << 'message of :OUTP not valid: %s, valid messages are \'ON\',\'OFF\''%msg
                 printHelp()
@@ -566,10 +615,16 @@ def analysePacket(coms,typ,msg):
         pass
     elif coms[0].find('HELP')>=0 and typ != 'a':
         printHelp()
+    elif coms[0].find('STATUS')>=0:
+        printStatus()
     elif coms[0]=='K':
         command = ":".join(map(str, coms[1:]))+' '+msg
-        Logger << 'send command to iseg: '
+        Logger << 'send command to iseg: %s'%command
         iseg.write(command)
+    elif coms[0]=='Q':
+        command = ":" + ":".join(map(str, coms[1:]))+ '?0\r\n'
+        Logger << 'send command to iseg: %s'%command
+        print iseg.get_answer_for_query(command)
     elif coms[0].lower().startswith('exit') and typ != 'a':
         client.closeConnection()
     else:
