@@ -367,12 +367,20 @@ class el_comandante:
                 else:
                     break
             NModules = len(Modules)
+            NModulesMax = NModules
+            try:
+                NModulesMax = int(self.init.get('BarcodeReader', 'NModulesMax'))
+            except:
+                pass
             print "scan modules from TB0 to TB%d, ENTER to leave entry unchanged:"%NModules
 
             # scan all modules
             ModulesNew = []
             for TB in range(0, NModules):
-                ModuleNew = raw_input(" scan module TB%d (current parameters: %s):"%(TB, Modules[TB])).upper().strip()
+                if TB < NModulesMax:
+                    ModuleNew = raw_input(" scan module TB%d (current parameters: %s):"%(TB, Modules[TB])).upper().strip()
+                else:
+                    ModuleNew = '-'
                 if CorrectModuleNames and len(ModuleNew) > 0 and ModuleNew[0] == 'D':
                     ModuleNew = 'M' + ModuleNew[1::]
                     print " => module name corrected to: %s"%ModuleNew
@@ -550,7 +558,7 @@ class el_comandante:
                     except:
                         pass
                 if not Found:
-                    print "not found: parameters '" + ModuleType + "'"
+                    print "\x1b[31mnot found: parameters '" + ModuleType + "'\x1b[0m"
                     Problems += 1
 
         if Problems < 1:
