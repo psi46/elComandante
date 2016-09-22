@@ -528,6 +528,31 @@ class el_comandante:
                                                 print " value found: %d"%DacValue
                                                 Problems += 1
 
+
+        # verify all tests in testlist exist
+        print 'Verify parameters:'
+        for TBIndex in range(0, len(Testboards)):
+            if TBUse[TBIndex].strip().lower() == 'true':
+                ModuleType = ModuleTypes[TBIndex].strip()
+                Found = False
+                tbParDir = ''
+                try:
+                    tbParDir = self.config.get('Directories', 'defaultParameters') + self.config.get('defaultParameters', ModuleType)
+                    if os.path.isdir(tbParDir):
+                        Found = True
+                except:
+                    pass
+                if not Found:
+                    try:
+                        tbParDir = self.config.get('Directories', 'defaultParameters') + ModuleType
+                        if os.path.isdir(tbParDir):
+                            Found = True
+                    except:
+                        pass
+                if not Found:
+                    print "not found: parameters '" + ModuleType + "'"
+                    Problems += 1
+
         if Problems < 1:
             print "no problems found."
         else:
