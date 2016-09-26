@@ -34,8 +34,8 @@ class psi_agente(el_agente.el_agente):
         self.conf = conf
         self.subscription = conf.get("subsystem", "psiSubscription")
         self.highVoltageSubscription = conf.get("subsystem","keithleySubscription");
-        #self.logdir = conf.get("Directories", "dataDir") + "/logfiles/"
         self.active = True
+
     def setup_initialization(self, init):
         self.init = init
         self.Testboards=[]
@@ -123,7 +123,7 @@ class psi_agente(el_agente.el_agente):
 
     def _prepare_testboard(self,Testboard):
         if 'IV' in self.currenttest or 'leakagecurrent' in self.currenttest.lower():
-            if Testboard.slot != self.activeTestboard:
+            if Testboard.slot != self.activeTestboard and self.activeTestboard > -1:
                 # reset DTBs which are stuck
                 try:
                     sleep(5)
@@ -136,7 +136,8 @@ class psi_agente(el_agente.el_agente):
                     ResetTestboardProcess.wait()
                     sleep(2)
                 except:
-                    pass
+                    print "\x1b[104m    |  can not reset %r\x1b[0m"%Testboard.address
+                    #print "\x1b[104m    |   number (active): %r (%r)\x1b[0m"%(Testboard.slot, self.activeTestboard)
 
                 return
             else:
@@ -154,12 +155,17 @@ class psi_agente(el_agente.el_agente):
         self._setupdir_testboard(Testboard)
         if 'IV' in self.currenttest:
             self.sclient.send(self.highVoltageSubscription,":PROG:IV:TESTDIR %s\n"%Testboard.testdir)
+            self.sclient.send(self.highVoltageSubscription,":PROG:IV:TESTDIR%d %s\n"%(Testboard.slot, Testboard.testdir))
+            print "    | \x1b[32mIV TESTDIR %r\x1b[0m"%Testboard.testdir
+            sleep(3)
             self.open_testboard(Testboard)
         elif 'leakagecurrent' in self.currenttest.lower():
             poff = False
             if 'POFF' in self.currenttest.upper():
                 poff = True
             self.sclient.send(self.highVoltageSubscription, ":PROG:LEAKAGECURRENT:TESTDIR %s\n"%Testboard.testdir)
+            self.sclient.send(self.highVoltageSubscription, ":PROG:LEAKAGECURRENT:TESTDIR%d %s\n"%(Testboard.slot, Testboard.testdir))
+            print "    | \x1b[32mOPEN DTB %r\x1b[0m"%Testboard.slot
             self.open_testboard(Testboard,poff)
 
     def powercycle(self):
@@ -271,7 +277,7 @@ class psi_agente(el_agente.el_agente):
             return True
         if 'IV' in self.currenttest or 'leakagecurrent' in self.currenttest.lower():
             for Testboard in self.Testboards:
-                if Testboard.slot == self.activeTestboard:
+                if Testboard.slot == self.activeTestboard or self.activeTestboard < 0:
                     self.close_testboard(Testboard)
                     Testboard.numerator += 1 
         elif not self.currenttest == 'powercycle':  
@@ -409,8 +415,7 @@ class psi_agente(el_agente.el_agente):
             self.sclient.send('/watchDog',':TB%s:TESTDIR! %s\n'%(Testboard.slot,Testboard.testdir))
             copytree(self.test.parent.parameter_dir[Testboard.slot], Testboard.testdir)
             if Testboard.DTB:    
-                #self.log.warning("if Testboard.DTB is fulfilled") 
-                print self.test.parent.parameter_dir[Testboard.slot]
+                #self.log.warning("if Testboard.DTB is fulfilled")
                 directories = [self.test.parent.parameter_dir[Testboard.slot]+d for d in os.listdir(self.test.parent.parameter_dir[Testboard.slot]) if os.path.isdir(self.test.parent.parameter_dir[Testboard.slot]+d)] 
                 if len(directories) > 0:
                     self.log.warning("len(directories)>0 is fulfilled") 

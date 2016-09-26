@@ -14,22 +14,57 @@ import subprocess
 
 
 class highVoltage_agente(el_agente.el_agente):
-    def __init__(self, timestamp,log, sclient):
+    def __init__(self, timestamp,log, sclient, clientName = 'keithleyClient', configFileNames = []):
         el_agente.el_agente.__init__(self,timestamp, log, sclient)
+
+        self.clientNames = {
+            'KEITHLEY': 'keithleyClient', 
+            'ISEG': 'isegClient'
+        }
+
+        if clientName not in self.clientNames.values():
+            raise Exception("Unknown client: " % clientName)
+            return True
+
         self.agente_name = "highVoltageAgente"
-        self.client_name = "keithleyClient"
-        self.currenttest=None
+        self.client_name = clientName
+        self.currenttest = None
         self.ivDone = True
         self.leakageCurrentTestDone = True
         self.log = log
         self.active = True
+        self.configFileNames = configFileNames
+
+    def is_type(self, hvClientType):
+        if hvClientType in self.clientNames:
+            if self.clientNames[hvClientType] == self.client_name:
+                return True
+            else:
+                return False
+        else:
+            raise Exception("Unknown client type: " % hvClientType)
+            return False
+
+    def supports_multichannel_hv(self):
+        if self.is_type('KEITHLEY'):
+            return False
+        elif self.is_type('ISEG'):
+            return True
+        else:
+            return False
 
     def setup_configuration(self, conf):
        # self.conf = conf
         self.numerator = 0
-        self.subscription = conf.get("subsystem", "keithleySubscription")
-        self.keithleyDir = conf.get('Directories','keithleyDir')
-        self.keithleyPort = conf.get("keithleyClient","port")
+        if self.is_type('KEITHLEY'):
+            self.subscription = conf.get("subsystem", "keithleySubscription")
+            self.keithleyDir = conf.get('Directories','keithleyDir')
+            self.keithleyPort = conf.get("keithleyClient","port")
+        elif self.is_type('ISEG'):
+            self.subscription = conf.get("subsystem", "isegSubscription")
+            self.isegDir = conf.get('Directories','isegDir')
+            self.isegPort = conf.get("isegClient","port")
+
         #do i need logdir?
         self.logDir = conf.get("Directories", "dataDir") + "/logfiles/"
 
@@ -38,9 +73,19 @@ class highVoltage_agente(el_agente.el_agente):
         self.ivStop  = float(init.get('IV','Stop'))
         self.ivStep  = float(init.get('IV','Step'))
         self.ivDelay = float(init.get('IV','Delay'))
-        self.leakageCurrentMeasurementTime = float(init.get('LeakageCurrent','Duration'))
-        self.biasVoltage = -abs(float(init.get('Keithley','BiasVoltage')))
-        self.active = init.getboolean("Keithley","KeithleyUse")
+
+        if self.is_type('KEITHLEY'):
+            self.leakageCurrentMeasurementTime = float(init.get('LeakageCurrent','Duration'))
+            self.biasVoltage = -abs(float(init.get('Keithley','BiasVoltage')))
+            self.active = init.getboolean("Keithley","KeithleyUse")
+        elif self.is_type('ISEG'):
+            self.leakageCurrentMeasurementTime = float(init.get('LeakageCurrent','Duration'))
+            self.biasVoltage = -abs(float(init.get('Iseg','BiasVoltage')))
+            self.active = init.getboolean("Iseg","IsegUse")
+        else:
+            raise Exception("Unknown client: " % self.client_name)
+            return False
+
 
     def check_client_running(self):
         if not self.active:
@@ -61,12 +106,26 @@ class highVoltage_agente(el_agente.el_agente):
         if not self.active:
             return True
  #       return True
-        command  = "xterm  -T 'HighVoltage' +sb -geometry 80x25+1200+1300 -fs 10 -fa 'Mono' -e "
-        command += "%s/keithleyClient.py "%(self.keithleyDir)
-        command += "-d %s "%(self.keithleyPort)
-        command += "-dir %s "%(self.logDir)
-        command += "-ts %s "%(self.timestamp)
-        command += "-iV %s"%self.biasVoltage
+
+        if self.is_type('KEITHLEY'):
+            command  = "xterm  -T 'HighVoltage' +sb -geometry 80x25+1200+1300 -fs 10 -fa 'Mono' -e "
+            command += "%s/keithleyClient.py "%(self.keithleyDir)
+            command += "-d %s "%(self.keithleyPort)
+            command += "-dir %s "%(self.logDir)
+            command += "-ts %s "%(self.timestamp)
+            command += "-iV %s"%self.biasVoltage
+        elif self.is_type('ISEG'):
+            command  = "xterm  -T 'HighVoltage' +sb -geometry 80x25+1200+1300 -fs 10 -fa 'Mono' -e "
+            command += "%s/isegClient.py "%(self.isegDir)
+            command += "-d %s "%(self.isegPort)
+            if len(self.configFileNames) > 0:
+                command += "-c %s "%(','.join(self.configFileNames))
+            command += "-dir %s "%(self.logDir)
+            command += "-ts %s "%(self.timestamp)
+            command += "-iV %s"%self.biasVoltage
+        else:
+            print "nothing to do..."
+
         self.log << '%s: Starting %s..."%s" '% (self.agente_name, self.client_name,command)
 
         self.child = subprocess.Popen(command, shell = True, preexec_fn = preexec)
@@ -91,16 +150,28 @@ class highVoltage_agente(el_agente.el_agente):
         self.currenttest = whichtest.split('@')[0]
         #todo
         if 'IV' in self.currenttest:
-            self.prepareIVCurve();
+            self.prepareIVCurve()
         elif 'leakagecurrent' in self.currenttest.lower():
+            if self.is_type('ISEG'):
+                self.sclient.send(self.subscription,':OUTP CLEAR\n')
+                time.sleep(2)
+                self.sclient.send(self.subscription,':OUTP ON\n')
             self.prepareLeakageCurrent()
+
         #todo: is the output on or off while cycling???/
         elif not whichtest == 'Cycle':
-            self.sclient.send(self.subscription,':OUTP ON\n')
-            time.sleep(1)
-            self.sclient.send(self.subscription,':OUTP OFF\n')
-            time.sleep(1)
-            self.sclient.send(self.subscription,':OUTP ON\n')
+            if self.is_type('KEITHLEY'):
+                self.sclient.send(self.subscription,':OUTP ON\n')
+                time.sleep(1)
+                self.sclient.send(self.subscription,':OUTP OFF\n')
+                time.sleep(1)
+                self.sclient.send(self.subscription,':OUTP ON\n')
+            else:
+                self.sclient.send(self.subscription,':OUTP CLEAR\n')
+                time.sleep(2)
+                self.sclient.send(self.subscription,':OUTP ON\n')
+                time.sleep(1)
+
         return True
 
 
@@ -111,16 +182,21 @@ class highVoltage_agente(el_agente.el_agente):
         if 'IV' in self.currenttest:
             self.doIVCurve()
         elif 'leakagecurrent' in self.currenttest.lower():
-            time.sleep(3)
-            self.sclient.send(self.subscription,':OUTP OFF\n')
-            time.sleep(1)
-            self.sclient.send(self.subscription,':OUTP ON\n')
+            if self.is_type('KEITHLEY'):
+                time.sleep(3)
+                self.sclient.send(self.subscription,':OUTP OFF\n')
+                time.sleep(1)
+                self.sclient.send(self.subscription,':OUTP ON\n')
+
             self.doLeakageCurrent()
         else:
-            #time.sleep(3)
-            #self.sclient.send(self.subscription,':OUTP OFF\n')
-            time.sleep(1)
-            self.sclient.send(self.subscription,':OUTP ON\n')
+            if self.is_type('KEITHLEY'):
+                time.sleep(1)
+                self.sclient.send(self.subscription,':OUTP ON\n')
+            else:
+                self.sclient.send(self.subscription,':OUTP ON\n')
+                time.sleep(2)
+
         self.pending = True
         self.sclient.clearPackets(self.subscription)
         return True
@@ -192,6 +268,7 @@ class highVoltage_agente(el_agente.el_agente):
 
     def doLeakageCurrent(self):
 #        self.sclient.send(self.subscription,':PROG:IV:TESTDIR %s\n'%testdir)
+        self.log << "run: doLeakageCurrent()"
         self.sclient.send(self.subscription,':PROG:LEAKAGECURRENT:START\n')
 
     def checkIVCurveFinished(self,data):
