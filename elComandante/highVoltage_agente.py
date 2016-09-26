@@ -150,16 +150,28 @@ class highVoltage_agente(el_agente.el_agente):
         self.currenttest = whichtest.split('@')[0]
         #todo
         if 'IV' in self.currenttest:
-            self.prepareIVCurve();
+            self.prepareIVCurve()
         elif 'leakagecurrent' in self.currenttest.lower():
+            if self.is_type('ISEG'):
+                self.sclient.send(self.subscription,':OUTP CLEAR\n')
+                time.sleep(2)
+                self.sclient.send(self.subscription,':OUTP ON\n')
             self.prepareLeakageCurrent()
+
         #todo: is the output on or off while cycling???/
         elif not whichtest == 'Cycle':
-            self.sclient.send(self.subscription,':OUTP ON\n')
-            time.sleep(1)
-            self.sclient.send(self.subscription,':OUTP OFF\n')
-            time.sleep(1)
-            self.sclient.send(self.subscription,':OUTP ON\n')
+            if self.is_type('KEITHLEY'):
+                self.sclient.send(self.subscription,':OUTP ON\n')
+                time.sleep(1)
+                self.sclient.send(self.subscription,':OUTP OFF\n')
+                time.sleep(1)
+                self.sclient.send(self.subscription,':OUTP ON\n')
+            else:
+                self.sclient.send(self.subscription,':OUTP CLEAR\n')
+                time.sleep(2)
+                self.sclient.send(self.subscription,':OUTP ON\n')
+                time.sleep(1)
+
         return True
 
 
@@ -170,16 +182,21 @@ class highVoltage_agente(el_agente.el_agente):
         if 'IV' in self.currenttest:
             self.doIVCurve()
         elif 'leakagecurrent' in self.currenttest.lower():
-            time.sleep(3)
-            self.sclient.send(self.subscription,':OUTP OFF\n')
-            time.sleep(1)
-            self.sclient.send(self.subscription,':OUTP ON\n')
+            if self.is_type('KEITHLEY'):
+                time.sleep(3)
+                self.sclient.send(self.subscription,':OUTP OFF\n')
+                time.sleep(1)
+                self.sclient.send(self.subscription,':OUTP ON\n')
+
             self.doLeakageCurrent()
         else:
-            #time.sleep(3)
-            #self.sclient.send(self.subscription,':OUTP OFF\n')
-            time.sleep(1)
-            self.sclient.send(self.subscription,':OUTP ON\n')
+            if self.is_type('KEITHLEY'):
+                time.sleep(1)
+                self.sclient.send(self.subscription,':OUTP ON\n')
+            else:
+                self.sclient.send(self.subscription,':OUTP ON\n')
+                time.sleep(2)
+
         self.pending = True
         self.sclient.clearPackets(self.subscription)
         return True
@@ -251,6 +268,7 @@ class highVoltage_agente(el_agente.el_agente):
 
     def doLeakageCurrent(self):
 #        self.sclient.send(self.subscription,':PROG:IV:TESTDIR %s\n'%testdir)
+        self.log << "run: doLeakageCurrent()"
         self.sclient.send(self.subscription,':PROG:LEAKAGECURRENT:START\n')
 
     def checkIVCurveFinished(self,data):

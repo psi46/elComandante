@@ -38,7 +38,9 @@ class isegConfigObject:
         self.do_leakage_current_measurement = False
         self.leakage_current_dir = '.'
         self.leakage_current_measurement_time = 60
-
+        self.currentBound = 0.000105   # 105 uA 1.05e-4 A
+        self.immidiateVoltage = -150
+        self.dataDir = '.'
 
 LoggerName = 'IsegLog'
 LoggerFileName = 'Iseg.log'
@@ -49,6 +51,8 @@ IvLoggerFileName = 'IVCh%d.log'
 LeakageCurrentLoggerName = 'LeaakgeCurrentCh%d'
 LeakageCurrentLoggerFileName = 'LeakageCurrentCh%d.log'
 
+CurrentLoggerName = 'CurrentCh%d'
+CurrentLoggerFileName = 'IVch%d.log'
 
 parser = argparse.ArgumentParser()
 
@@ -89,10 +93,11 @@ Logger.set_logfile(args.dataDir, LoggerFileName)
 Logger.set_prefix('')
 
 #check serial connection
-if not os.access(isegConfig.serialPort, os.R_OK):
+while not os.access(isegConfig.serialPort, os.R_OK):
     Logger.warning('serialPort \'%s\' is not accessible'%isegConfig.serialPort)
-    sys.exit()
-    raise SystemExit
+    Logger << "Press enter to retry"
+    raw_input()
+
 Logger<<'SerialPort: %s'% isegConfig.serialPort
 Logger<<'Config files: %s'% args.configFiles
 
@@ -113,6 +118,20 @@ def handler(signum, frame):
     exit()
     
 signal.signal(signal.SIGINT, handler)
+
+def resetOutput():
+    global isegConfig
+    Logger << 'set current bound: %e'%isegConfig.currentBound
+    iseg.set_current(isegConfig.currentBound)
+
+    for channel in activeChannels:
+        Logger << 'set voltage %e'%isegConfig.immediateVoltage
+        iseg.clear_channel_events(channel)
+        iseg.set_channel_current(isegConfig.currentBound, channel)
+        iseg.set_voltage(isegConfig.immediateVoltage, channel)
+
+    iseg.clear_events()
+    iseg.set_emergency_clear()
 
 # status output helper
 def printStatus():
@@ -147,11 +166,11 @@ def printStatus():
 clientName = 'isegClient'
 serverZiel = '127.0.0.1'
 serverPort = 12334
-aboName = '/iseg'
-IVAbo = '/iseg/IV'
-voltageAbo = '/iseg/voltage'
-currentAbo = '/iseg/current'
-resistanceAbo='/iseg/resistance'
+aboName = '/keithley'
+IVAbo = '/keithley/IV'
+voltageAbo = '/keithley/voltage'
+currentAbo = '/keithley/current'
+resistanceAbo='/keithley/resistance'
 client = sClient(serverZiel, serverPort, clientName)
 client.subscribe(aboName)
 client.send(aboName,'Connecting {clientName} with Subsystem\n'.format(clientName=clientName))
@@ -174,20 +193,8 @@ printStatus()
 activeChannels = iseg.get_list_of_active_channels()
 Logger << 'active channels: %r'%activeChannels
 
-immediateVoltage = float(args.immidiateVoltage)
-
-currentBound = 0.000105   # 105 uA 1.05e-4 A
-Logger << 'set current bound: %e'%currentBound
-iseg.set_current(currentBound)
-
-for channel in activeChannels:
-    Logger << 'set voltage %e'%immediateVoltage
-    iseg.clear_channel_events(channel)
-    iseg.set_channel_current(currentBound, channel)
-    iseg.set_voltage(immediateVoltage, channel)
-
-iseg.clear_events()
-iseg.set_emergency_clear()
+isegConfig.immediateVoltage = float(args.immidiateVoltage)
+resetOutput()
 
 #start leakage current vs time logger
 LeakageCurrentLoggers = {}
@@ -212,6 +219,48 @@ for iCh in activeChannels:
     IVLoggers[iCh] = IVLogger
 
 
+#start qualification logfiles
+CurrentLoggers = {}
+for iCh in activeChannels:
+    CurrentLogger = printer()
+    CurrentLogger.set_name(CurrentLoggerName%iCh)
+    CurrentLogger.set_logfile(args.dataDir,CurrentLoggerFileName%iCh)
+    CurrentLogger.set_prefix('')
+    CurrentLogger.timestamp = float(args.timestamp)
+    CurrentLogger.disable_print()
+    CurrentLoggers[iCh] = CurrentLogger
+
+def setIVlogger(channel, dirName, fileName):
+    global IVLoggers
+    IVLoggers[channel] = printer()
+    IVLoggers[channel].set_name("IVloggerCh%d"%channel)
+    IVLoggers[channel].set_logfile(dirName, fileName)
+    IVLoggers[channel].set_prefix('')
+    IVLoggers[channel].timestamp = float(args.timestamp)
+    IVLoggers[channel].disable_print()
+
+
+def setLeakageCurrentlogger(channel, dirName, fileName):
+    global LeakageCurrentLoggers
+    LeakageCurrentLoggers[channel] = printer()
+    LeakageCurrentLoggers[channel].set_name("LeakageCurrentCh%d"%channel)
+    LeakageCurrentLoggers[channel].set_logfile(dirName, fileName)
+    LeakageCurrentLoggers[channel].set_prefix('')
+    LeakageCurrentLoggers[channel].timestamp = float(args.timestamp)
+    LeakageCurrentLoggers[channel].disable_print()
+
+def resetLoggers():
+    global iseg
+    global isegConfig
+    activeChannels = iseg.get_list_of_active_channels()
+    for iCh in activeChannels:
+        setLeakageCurrentLogger(iCh, isegConfig.leakage_current_dir,  LeakageCurrentLoggerFileName%iCh)
+        setIVlogger(iCh, isegConfig.leakage_current_dir, IVLoggerFileName%iCh)
+
+#start leakage current vs time logger
+LeakageCurrentLoggers = {}
+for iCh in activeChannels:
+
 def readCurrentIV():
     global do_leakage_current_measurement
     global client
@@ -229,26 +278,14 @@ def readCurrentIV():
             for i in range(len(activeChannels)):
                 Logger << "Ch%d: %f V / %f A"%(activeChannels[i], voltages[i], currents[i])
                 LeakageCurrentLoggers[activeChannels[i]] << '%s\t%s\t%s' % (voltages[i], currents[i], timestamp)
+                try:
+                    CurrentLoggers[activeChannels[i]] << '%s\t%s\t%s' % (voltages[i], currents[i], timestamp)
+                except:
+                    pass
+
         except:
             Logger << 'could not read from ISEG'
 
-    '''
-                #Logger << '%s: %s V - %s A'%(timestamp,data[0],data[1])
-
-                IVLogger << '%s\t%s\t%s'%(voltage,current,timestamp)
-                if do_leakage_current_measurement:
-                    LeakageCurrentLogger << '%s\t%s\t%s' % (voltage, current, timestamp)
-                #IVLogger << '%s V \t  %s A \t %s'%(data[0],data[1],timestamp)
-                client.send(voltageAbo,'%s\n'%voltage)
-                client.send(currentAbo,'%s\n'%current)
-                client.send(resistanceAbo,'%s\n'%resistance)
-        else:
-            #Logger << ' could somehow not read data correctly: %s'%data
-            pass
-    else:
-        pass
-        #Logger << 'output is off'
-    '''
 
 def doLinearSweep(startValue, stopValue, stepValue, nSweeps = 1, delay = 5):
     global isegConfig
@@ -290,6 +327,10 @@ def doLinearSweep(startValue, stopValue, stepValue, nSweeps = 1, delay = 5):
             for idxCh in range(len(currents)):
                 iCh = activeChannels[idxCh]
                 IVLoggers[iCh] << '%+8.3f\t%+11.4e\t%d'%(voltages[idxCh],currents[idxCh],timestamp)
+                try:
+                    CurrentLoggers[iCh] << '%+8.3f\t%+11.4e\t%d'%(voltages[idxCh],currents[idxCh],timestamp)
+                except:
+                    pass
                 measurements.append([timestamp, voltages[idxCh], currents[idxCh], iCh])
             Logger << "Measured currents: %s"%(', '.join(["%1.4e"%x for x in currents]))
             voltageValue += stepValueAbs
@@ -378,26 +419,31 @@ def exec_leakage_current_measurement():
     Timer(isegConfig.leakage_current_measurement_time, finish_leakage_current_measurement, ()).start()
     Logger << "leakage measurement running..."
 
-def parse_leakage_current_testdir(typ, msg):
+
+def parse_leakage_current_testdir(coms, typ, msg):
     global LeakageCurrentLoggers
     global LeakageCurrentLoggerFileName
     global isegConfig
-
+    outMsg = ''
     if typ == 'c':
         Logger << 'LeakageCurrentLogFileDir: "{msg}"'.format(msg=msg)
         new_dir = msg
-        try:
-            Logger << 'checked Directory {testDir}'.format(testDir=new_dir)
-            os.stat(new_dir)
-        except:
-            outMsg = ':LEAKAGECURRENT:TESTDIR! %s: directory does not exist. Error!' % new_dir
-        else:
-            isegConfig.leakage_current_dir = new_dir
-            outMsg = ':LEAKAGECURRENT:TESTDIR! %s' % isegConfig.leakage_current_dir
 
-            activeChannels = iseg.get_list_of_active_channels()
-            for iCh in activeChannels:
-                LeakageCurrentLoggers[iCh].set_logfile(isegConfig.leakage_current_dir, LeakageCurrentLoggerFileName%iCh)
+        slotString = coms[0][7:].strip()
+        if len(slotString) > 0:
+            slot = int(slotString)
+            isegConfig.testDirs[slot] = msg
+
+            try:
+                os.stat(isegConfig.testDirs[slot])
+            except:
+                outMsg = ':LEAKAGECURRENT:TESTDIR! %s: directory does not exist. Error!'%isegConfig.testDirs[slot]
+            else:
+                outMsg = ':LEAKAGECURRENT:TESTDIR! %s'%isegConfig.testDirs[slot]
+
+            setLeakageCurrentlogger(slot, msg, 'leakageCurrent.log')
+            Logger << "Ch%d: set testdir to: %r"%(slot, msg)
+       
     outMsg += '\n'
     client.send(aboName, outMsg)
     pass
@@ -433,14 +479,14 @@ def analyse_leakage_current(coms, typ, msg):
     if coms[0].find('TIME') >= 0:
         parse_leakage_current_measurement_time(typ, msg)
     elif coms[0].find('TESTDIR') >= 0:
-        parse_leakage_current_testdir(typ, msg)
+        parse_leakage_current_testdir(coms, typ, msg)
     elif coms[0].find('START') >= 0:
         exec_leakage_current_measurement()
 
 def printHelp():
     print "help menu..."
 
-def  analyseIV(coms,typ,msg):
+def analyseIV(coms,typ,msg):
     global Logger
     global client
     global iseg
@@ -469,19 +515,23 @@ def  analyseIV(coms,typ,msg):
             if typ =='c':
 #                Logger << '%s: "%s"'%(coms[0],msg)
                 try:
-                    slot = int(coms[0][7:])
-                    isegConfig.testDirs[slot] = msg
+                    slotString = coms[0][7:].strip()
+                    if len(slotString) > 0:
+                        slot = int(slotString)
+                        isegConfig.testDirs[slot] = msg
 
-                    try:
-                        os.stat(isegConfig.testDirs[slot])
-                    except:
-                        outMsg = ':IV:TESTDIR! %s: directory does not exist. Error!'%isegConfig.testDirs[slot]
-                    else:
-                        outMsg = ':IV:TESTDIR! %s'%isegConfig.testDirs[slot]
+                        try:
+                            os.stat(isegConfig.testDirs[slot])
+                        except:
+                            outMsg = ':IV:TESTDIR! %s: directory does not exist. Error!'%isegConfig.testDirs[slot]
+                        else:
+                            outMsg = ':IV:TESTDIR! %s'%isegConfig.testDirs[slot]
 
-                    IVLoggers.set_logfile(msg, 'ivCurve.log')
-                    print isegConfig.testDirs
+                        setIVlogger(slot, msg, 'ivCurve.log')
+                        Logger << "Ch%d: set testdir to: %r"%(slot, msg)
                 except:
+                    raise
+                    Logger << "cannot set testdir to: %r"%coms
                     pass
 
 
@@ -554,7 +604,13 @@ def analyseProg(coms,typ,msg):
     elif coms[0].find('LEAKAGECURRENT') >= 0:
         analyse_leakage_current(coms[1:], typ, msg)
     elif coms[0].find('EXIT')>=0 and typ =='c':
-        client.closeConnection();
+        Logger << "EXIT -> turn HV off"
+        activeChannels = iseg.get_list_of_active_channels()
+        for channel in activeChannels:
+            iseg.set_output(False, channel)
+        iseg.set_emergency_clear()
+        Logger << "HV OFF"
+        client.closeConnection()
     else:
         printHelp()
     pass
@@ -591,8 +647,12 @@ def analyseOutp(coms,typ,msg):
                 activeChannels = iseg.get_list_of_active_channels()
                 for channel in activeChannels:
                     iseg.set_output(False, channel)
+                iseg.set_emergency_clear()
+            elif msg in ['CL','CLEAR']:
+                Logger << "clear output flags and reset voltage/current limits to default"
+                resetOutput()
             elif  typ != 'a':
-                Logger << 'message of :OUTP not valid: %s, valid messages are \'ON\',\'OFF\''%msg
+                Logger << 'message of :OUTP not valid: %s, valid messages are \'ON\',\'OFF\', \'CLEAR\''%msg
                 printHelp()
         elif  typ != 'a':
             Logger << 'this a non valid typ'
@@ -626,6 +686,10 @@ def analysePacket(coms,typ,msg):
         Logger << 'send command to iseg: %s'%command
         print iseg.get_answer_for_query(command)
     elif coms[0].lower().startswith('exit') and typ != 'a':
+        activeChannels = iseg.get_list_of_active_channels()
+        for channel in activeChannels:
+            iseg.set_output(False, channel)
+        iseg.set_emergency_clear()
         client.closeConnection()
     else:
         Logger << 'not Valid Packet %s'%coms
