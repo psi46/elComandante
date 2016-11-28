@@ -1,2 +1,3 @@
 OnShellQuickTest:signaltest
-Pretest:programroc
+OnShellQuickTest:powercycle
+OnShellQuickTest:programroc
