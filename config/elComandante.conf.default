@@ -41,6 +41,16 @@ programName: coolingBoxClient.py
 #port: /dev/ttyUSB0
 port: /dev/ttyUSB1
 
+[isegClient]
+port: /dev/iseg
+
+[HV1]
+name: ISEG
+model: 6220n
+address: /dev/iseg
+active_channels: 15
+ramp: 200
+
 [lowVoltageClient]
 lowVoltageType: yoctorelay
 

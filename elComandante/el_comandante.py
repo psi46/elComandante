@@ -55,6 +55,7 @@ class el_comandante:
     def __init__(self):
         ## List of el_agente classes that control clients
         self.los_agentes = []
+        self.hvAgente = None
         ## Dictionary of all file directories that are used
         self.directories = {}
         ## List of subsystem subscriptions that are not handled by any el_agente
@@ -257,16 +258,20 @@ class el_comandante:
         configFile = configDir+'/elComandante.conf'
         self.config = BetterConfigParser()
         self.config.read(configFile)
+        self.configFiles = []
+        self.configFiles.append(configFile)
 
         # read additional config files which can overwrite configuration
         for fname in configFileNames:
             confFileFullPath = configDir + '/' + fname
             if os.path.isfile(confFileFullPath):
                 self.config.read(confFileFullPath)
+                self.configFiles.append(confFileFullPath)
                 print "read additional config file: \x1b[32m%s\x1b[0m"%fname
             elif os.path.isfile(confFileFullPath + '.conf'):
                 self.config.read(confFileFullPath + '.conf')
                 print "read additional config file: \x1b[32m%s.conf\x1b[0m"%fname
+                self.configFiles.append(confFileFullPath + '.conf')
             else:
                 print "\x1b[31madditional config file not found: %s\x1b[0m"%fname
 
@@ -625,8 +630,18 @@ class el_comandante:
     def create_los_agentes(self, timestamp):
         # Create agentes that are responsible for client processes
         self.los_agentes.append(psi_agente.psi_agente(timestamp=timestamp, log=self.log, sclient=self.subsystem_client, trimVcal=self.trimVcal))
+
+        # HV agente
+        self.hvAgente = None
         if self.init.getboolean("Keithley", "KeithleyUse"):
-            self.los_agentes.append(highVoltage_agente.highVoltage_agente(timestamp,self.log,self.subsystem_client))
+            self.hvAgente = highVoltage_agente.highVoltage_agente(timestamp,self.log,self.subsystem_client)
+            self.log << "using Keithley HV supply"
+        elif self.init.getboolean("Iseg", "IsegUse"):
+            self.hvAgente = highVoltage_agente.highVoltage_agente(timestamp,self.log,self.subsystem_client, "isegClient", self.configFiles)
+            self.log << "using ISEG HV supply"
+        if self.hvAgente:
+            self.los_agentes.append(self.hvAgente)
+
         self.los_agentes.append(watchDog_agente.watchDog_agente(timestamp,self.log,self.subsystem_client))
         if self.init.getboolean("Xray", "XrayUse"):
             self.los_agentes.append(xray_agente.xray_agente(timestamp, self.log, self.subsystem_client))
@@ -846,10 +861,25 @@ class el_comandante:
                 whichtest = test.test_str
                 env = 17.0
             if whichtest== "IV" or whichtest.lower()=='leakagecurrentpon' or whichtest.lower()=='leakagecurrentpoff':
-                test_str_list = []
-                for Testboard in self.los_agentes[0].Testboards:
-                    test_str_list.append('%s_TB%s@%s' % (whichtest, Testboard.slot, env))
-                test.multiply(test_str_list)
+
+                multichannelHV = False
+                try:
+                    if self.hvAgente and self.hvAgente.supports_multichannel_hv():
+                        multichannelHV = True
+                except:
+                    pass
+
+                if not multichannelHV:
+                    test_str_list = []
+                    for Testboard in self.los_agentes[0].Testboards:
+                        test_str_list.append('%s_TB%s@%s' % (whichtest, Testboard.slot, env))
+                    test.multiply(test_str_list)
+                    self.log << 'single channel HV -> run tests sequentially'
+                    self.log.printn()
+                else:
+                    self.log << 'multi channel HV -> run tests in parallel'
+                    self.log.printn()
+
             test = test.next()
 
         self.log << 'The following tests will be executed:'
